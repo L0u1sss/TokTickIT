@@ -12,11 +12,18 @@
 ## Project Structure
 ```text
 toktickit/
-├── client/          # โค้ดส่วนหน้าเว็บ React (Vite + Bootstrap)
-├── server/          # โค้ดส่วนหลังบ้าน Node.js & Express
-├── prisma/          # สคีมาและไฟล์ไมเกรตของฐานข้อมูล
-├── tests/           # ไฟล์ทดสอบอัตโนมัติ (Vitest & Supertest)
-└── docs/            # เอกสารประกอบแล็บ (reviewer.md, ai_use.md, tests.md)
+├── client/
+├── server/
+│ ├── prisma/
+│ ├── src/
+│ └── tests/
+│ └── lab-01/
+├── docs/
+│ └── lab-01/
+│ ├── ai_use.md
+│ └── reviewer.md
+├── .gitignore
+└── README.md
 
 ```
 
@@ -27,7 +34,7 @@ toktickit/
 ### 1. โคลน Repository
 
 ```
-git clone <https://github.com/L0u1sss/TokTickIT>
+git clone [https://github.com/L0u1sss/TokTickIT](https://github.com/L0u1sss/TokTickIT)
 cd toktickit
 
 ```
@@ -92,8 +99,6 @@ cd client
 npm run dev
 
 ```
-
-
 
 ---
 
