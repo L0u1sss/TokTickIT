@@ -1,7 +1,7 @@
 
 # TokTickIT - IT Service Desk (Lab 1)
 
-## Tech Stack (เทคโนโลยีที่ใช้)
+## Tech Stack
 * **Frontend:** React + TypeScript + Vite + Bootstrap
 * **Backend:** Node.js + Express + TypeScript
 * **Database & ORM:** PostgreSQL + Prisma
@@ -9,7 +9,7 @@
 
 ---
 
-## Project Structure (โครงสร้างโปรเจกต์)
+## Project Structure
 ```text
 toktickit/
 ├── client/          # โค้ดส่วนหน้าเว็บ React (Vite + Bootstrap)
@@ -103,3 +103,4 @@ npm run dev
 
 * **ทดสอบฝั่ง Frontend:** ไปที่โฟลเดอร์ `client/` แล้วรัน `npm run test`
 * **ทดสอบฝั่ง Backend:** ไปที่โฟลเดอร์ `server/` แล้วรัน `npm run test`
+
