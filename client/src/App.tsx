@@ -1,22 +1,24 @@
 import { useState } from "react";
-import { checkHealth, Category } from "./api.js";
+import { checkSystem, Category } from "./api.js";
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
+// UI states for Issue 4: idle, loading, success, error.
 type UiState = "idle" | "loading" | "success" | "error";
 
 export default function App() {
   const [state, setState] = useState<UiState>("idle");
   const [categories, setCategories] = useState<Category[]>([]);
-  void categories;
-  const [errorMsg, setErrorMsg] = useState("");
+  const [error, setError] = useState("");
 
   async function handleCheck() {
     setState("loading");
+    setError("");
+    setCategories([]);
     try {
-      await checkHealth();
+      const status = await checkSystem();
+      setCategories(status.categories);
       setState("success");
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Unknown error");
+    } catch {
+      setError("Unable to connect to TokTickIT API");
       setState("error");
     }
   }
@@ -32,18 +34,25 @@ export default function App() {
       </button>
 
       {state === "success" && (
-        <div className="alert alert-success mt-3" role="alert">
-          <strong>System Status: Online</strong>
+        <div className="mt-4">
+          <p className="text-success fw-semibold mb-2">System Status: Online</p>
+          <h2 className="h5 mb-2">Supported Request Categories</h2>
+          <ul className="list-group">
+            {categories.map((category) => (
+              <li key={category.id} className="list-group-item">
+                {category.id}. {category.name}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
       {state === "error" && (
-        <div className="alert alert-danger mt-3" role="alert">
-          <strong>System Status: Offline</strong> — {errorMsg}
+        <div className="mt-4">
+          <p className="text-danger fw-semibold mb-2">System Status: Offline</p>
+          <p className="text-danger mb-0">{error}</p>
         </div>
       )}
-
-      {/* TODO(Issue 4): render loading / success (Online + categories) / error (Offline) states. */}
     </div>
   );
 }
