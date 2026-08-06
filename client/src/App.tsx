@@ -11,6 +11,8 @@ export default function App() {
 
   async function handleCheck() {
     setState("loading");
+    setError("");
+    setCategories([]);
     try {
       const status = await checkSystem();
       setCategories(status.categories);
@@ -33,11 +35,12 @@ export default function App() {
 
       {state === "success" && (
         <div className="mt-4">
-          <p className="text-success fw-semibold mb-2">Online</p>
+          <p className="text-success fw-semibold mb-2">System Status: Online</p>
+          <h2 className="h5 mb-2">Supported Request Categories</h2>
           <ul className="list-group">
             {categories.map((category) => (
               <li key={category.id} className="list-group-item">
-                {category.name}
+                {category.id}. {category.name}
               </li>
             ))}
           </ul>
@@ -46,7 +49,7 @@ export default function App() {
 
       {state === "error" && (
         <div className="mt-4">
-          <p className="text-danger fw-semibold mb-2">Offline</p>
+          <p className="text-danger fw-semibold mb-2">System Status: Offline</p>
           <p className="text-danger mb-0">{error}</p>
         </div>
       )}

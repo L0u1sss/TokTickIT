@@ -20,5 +20,8 @@ describe("GET /api/categories", () => {
 
     const ids = categories.map((c) => c.id);
     expect(ids).toEqual([...ids].sort((a, b) => a - b));
+
+    const keys = new Set(categories.flatMap((c) => Object.keys(c)));
+    expect([...keys].sort()).toEqual(["id", "name"]);
   });
 });
