@@ -56,11 +56,14 @@ npm install
 
 
 3. สร้างไฟล์ `.env` โดยคัดลอกมาจาก `.env.example` แล้วกำหนดค่าเชื่อมต่อฐานข้อมูล PostgreSQL (`DATABASE_URL`) ของคุณ
-4. เริ่มต้นใช้งาน Prisma และรัน migration:
+4. รัน Prisma migration เพื่อสร้างตารางในฐานข้อมูล และ seed ข้อมูลหมวดหมู่เริ่มต้น:
 ```
-npx prisma generate
+npx prisma migrate dev
+npx prisma db seed
 
 ```
+> **หมายเหตุ:** รัน seed ซ้ำได้เรื่อยๆ จะไม่สร้างข้อมูลซ้ำ (ใช้ `upsert`)
+> หากเปลี่ยน schema แล้วต้องการ reset ฐานข้อมูล: `npx prisma migrate reset`
 
 
 
