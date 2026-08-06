@@ -50,7 +50,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: /check system/i }));
 
     expect(await screen.findByText("System Status: Offline")).toBeInTheDocument();
-    expect(screen.getByText("API unavailable")).toBeInTheDocument();
+    expect(screen.getByText("Unable to connect to TokTickIT API")).toBeInTheDocument();
     expect(screen.queryByText("System Status: Online")).not.toBeInTheDocument();
   });
 

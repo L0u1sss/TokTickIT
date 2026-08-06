@@ -17,8 +17,8 @@ export default function App() {
       const status = await checkSystem();
       setCategories(status.categories);
       setState("success");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to reach the TokTickIT API");
+    } catch {
+      setError("Unable to connect to TokTickIT API");
       setState("error");
     }
   }
