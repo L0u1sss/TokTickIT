@@ -1,6 +1,6 @@
 # Lab 1 — AI Use and Reflection  (fill this in)
 
-**LLM/agent used:** <name>
+**LLM/agent used:** gemini 3.5 pro, claude opus, deepseek v4
 
 ## Selected key prompts (6–10)
 | # | Prompt (summarised) | What I did with the result |
