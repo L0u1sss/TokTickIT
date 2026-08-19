@@ -1,0 +1,403 @@
+# Lab 02 UI Specification — Requester Ticketing MVP
+
+| Item | Value |
+|---|---|
+| Product | TokTickIT requester portal |
+| Sprint | Lab 02 — Issue 1 |
+| Status | Implementation contract |
+| UI theme | Zen Green |
+| Related documents | [Sprint specification](./specification.md), [API contract](./api-spec.md), [test plan](./tests.md) |
+
+This document defines the testable visual and interaction contract for the Lab 02 requester experience. Normative words such as **must**, **must not**, and **should** are intentional. This issue produces documentation only; application implementation is out of scope.
+
+## 1. Experience Goals and Boundaries
+
+The UI must let a requester:
+
+1. choose an active requester as a simulated login context;
+2. create a ticket;
+3. find and inspect only that requester's tickets; and
+4. upload, download, and soft-remove attachments on an owned ticket.
+
+The experience should feel calm, compact, and task-focused. Pale surfaces, restrained green accents, plain language, and generous spacing are preferred over decoration.
+
+The UI must not expose controls for real authentication, IT Staff workflows, public comments, assignment, or status changes. In this sprint, ticket status is read-only and remains **New**.
+
+## 2. Information Architecture and Requester Context
+
+### 2.1 Primary screens
+
+| Screen | Target route | Primary purpose | Primary action |
+|---|---|---|---|
+| Create Ticket | `/tickets/new` | Submit a new request | **Create ticket** |
+| My Tickets | `/tickets` | Search and browse owned tickets | Open a ticket |
+| Ticket Detail | `/tickets/:id` | Read one owned ticket and manage its attachments | **Upload attachment** |
+
+The application header must contain the TokTickIT product name, navigation links for **Create Ticket** and **My Tickets**, and the requester selector. The active navigation item must be identifiable by text/shape or an underline in addition to color.
+
+### 2.2 Simulated requester selector
+
+- The persistent control label is **Viewing as** and its unselected option is **Select a requester**.
+- A visible **Demo context — not secure authentication** hint must appear next to or immediately below the control.
+- Options come from `GET /api/requesters`; only active requesters may appear.
+- Until a requester is selected, requester-owned content must not be requested. Create and list actions are disabled and an explanatory prompt is shown.
+- The selected requester ID is sent as the `x-requester-id` header on every ticket and attachment request.
+- The selector may be retained for the current browser session for convenience, but it must never be presented as authenticated identity.
+- While requesters load, the selector is disabled and shows **Loading requesters…**. On failure, show an inline error and a **Retry** button.
+- When the requester changes, the UI must immediately remove previously rendered ticket or attachment data, cancel or disregard obsolete requests, reset list pagination to page 1, and fetch the new requester's data.
+- Changing requester while on Ticket Detail must navigate to **My Tickets** before new requester-owned content is rendered. This prevents a prior requester's detail from remaining visible.
+
+On mobile, the requester control moves below the brand/navigation but remains visible without opening a separate menu.
+
+## 3. Zen Green Design Tokens
+
+### 3.1 Required colors
+
+| Token | Exact value | Required usage |
+|---|---:|---|
+| Primary Green | `#006B3C` | Primary buttons, selected navigation, links, focus emphasis |
+| Secondary Green | `#0B7A46` | Secondary accent, hover treatment, icons |
+| Pale Green | `#EAF6EF` | Informational panels, selected/hovered rows, **New** status background |
+| Page Background | `#F5F7F6` | Application page background |
+| Text Charcoal | `#1A2E22` | Body text, headings, labels |
+| Error | `#D32F2F` | Validation text, error border/icon, destructive confirmation |
+| Read-only Field | `#F0F4F1` | Read-only and immutable field backgrounds |
+| Surface | `#FFFFFF` | Forms, cards, tables, dialogs |
+
+Color application rules:
+
+- Primary controls use Primary Green with white text. Secondary Green is the hover accent; hover must also change a border, underline, or elevation so color is not the only cue.
+- Pale Green must use Text Charcoal or Primary Green text, never white text.
+- Errors must include an icon and/or explanatory text, not a red-only indicator.
+- Status must always include the word **New**; the green badge alone is insufficient.
+- Focus indicators must be clearly visible against both white and pale surfaces. Use a 3 px Primary Green outline with at least 2 px visual separation from the component.
+- Disabled content must remain readable; reduced opacity alone must not make text illegible.
+
+### 3.2 Typography, spacing, and surfaces
+
+- Use the application's system sans-serif stack. Body text is at least 16 px with a line height of at least 1.5.
+- Each screen has one `h1`; subsections follow a logical `h2`/`h3` hierarchy.
+- Use a 4 px spacing base, with common gaps of 8, 12, 16, 24, and 32 px.
+- Form/card surfaces use a subtle border, modest radius, and no heavy shadow.
+- Long summaries, descriptions, filenames, and requester names must wrap without causing horizontal page overflow.
+- The page shell has a maximum content width of 1200 px and remains centered.
+
+## 4. Responsive Layout Contract
+
+The breakpoints align with the existing Bootstrap stack and are inclusive as shown.
+
+| Viewport | Width | Global behavior | Forms and detail | My Tickets results |
+|---|---:|---|---|---|
+| Desktop | `>= 992px` | Centered container; 24–32 px gutters; header content on one row | Multi-column grid; detail uses a main-content column plus metadata/attachment column where useful | Semantic table; controls may share a row |
+| Tablet | `768–991px` | 24 px gutters; header may wrap | Two-column field grid; full-width summary/description and action row | Table retained inside a labelled horizontal-scroll region |
+| Mobile | `< 768px` | 16 px gutters; navigation and requester control wrap/stack | Single vertical stack; actions are full width | Table is replaced by one card per ticket |
+
+Additional responsive rules:
+
+- At desktop and tablet widths, Category and Related System share a row. Summary and Description span the full form width.
+- At mobile width, labels remain above controls and all controls use the full available width.
+- Primary buttons, icon buttons, navigation controls, file controls, pagination controls, and card links must provide a touch target of at least **44 × 44 px** on mobile.
+- No screen may introduce horizontal page scrolling at 320 px viewport width. Tablet table overflow is confined to its own scroll container.
+- Content must remain usable at 200% browser zoom and with text spacing overrides.
+- Responsive behavior is based on viewport width, not device detection.
+
+## 5. Shared Component and Control States
+
+### 5.1 Form controls
+
+| State | Visual treatment | Behavior and accessibility |
+|---|---|---|
+| Editable | White background, visible neutral border, Text Charcoal | Persistent visible label; no placeholder-only labels |
+| Hover | Strengthened border/accent | Cursor and visual change must match interactivity |
+| Focus | 3 px Primary Green focus ring | Never remove the native/custom visible focus indication |
+| Read-only | `#F0F4F1` shaded background | Remains selectable/readable; identified as read-only where not obvious |
+| Required | Label followed by a visible red asterisk | A form-level note says **`* Required`**; use `aria-required="true"` |
+| Invalid | Error border/icon and field message immediately below | Set `aria-invalid="true"`; associate the message using `aria-describedby` |
+| Disabled | Muted but legible treatment | Native disabled semantics; do not use disabled controls to present useful read-only data |
+| Busy | Button remains disabled and shows spinner plus action text such as **Creating ticket…** | Prevent duplicate requests; expose busy state with `aria-busy` and a polite live announcement |
+
+Validation runs after a field is blurred and again on submit. A message must disappear once its condition is corrected. On an invalid submit, show a concise error summary at the top of the form, move focus to it, and link each summary item to its field. Field-level messages remain immediately below their inputs.
+
+### 5.2 Feedback patterns
+
+| Pattern | Contract |
+|---|---|
+| Loading | Use a labelled spinner or skeleton; announce loading once; do not show stale requester-owned content |
+| Success | Use a concise dismissible banner and move focus to it after navigation or an asynchronous mutation |
+| Recoverable error | Explain what failed, retain safe user input, and offer **Retry** where the same operation can be repeated |
+| Empty state | Explain whether the requester has no tickets or current filters have no matches |
+| Confirmation dialog | Initial focus on the least destructive useful control; trap focus; support Escape; return focus to the trigger |
+| Destructive action | Use explicit language such as **Remove attachment**, never an ambiguous **OK** |
+
+Use human-readable error copy. Raw stack traces, internal IDs, database errors, and storage paths must never appear in the UI.
+
+## 6. Create Ticket Screen
+
+### 6.1 Page structure
+
+1. Page title: **Create Ticket**.
+2. Introductory sentence explaining that the ticket starts with status **New**.
+3. Current requester summary in a read-only shaded panel.
+4. Ticket form on a white surface.
+5. Primary **Create ticket** and secondary **Cancel** actions.
+
+The form contains:
+
+| Field | Control | Requirement and UI behavior |
+|---|---|---|
+| Requester | Read-only value from **Viewing as** | Required context; cannot be edited inside the form |
+| Category | Select populated from metadata | Required; initial option **Select a category**; only active metadata options appear |
+| Related System | Select populated from metadata | Required; initial option **Select a related system**; only active metadata options appear |
+| Summary | Single-line text input | Required; trim before validation; 5–120 Unicode characters; show `current / 120` counter |
+| Description | Multiline textarea | Required; trim before validation; 10–2,000 Unicode characters; show `current / 2000` counter; grows to a sensible maximum without hiding the page actions |
+
+Required validation messages are:
+
+- **Select a category.**
+- **Select a related system.**
+- **Summary must be 5 to 120 characters.**
+- **Description must be 10 to 2,000 characters.**
+
+Category and Related System controls are disabled while metadata loads. A metadata failure shows an inline error with **Retry** and prevents submission.
+
+Attachment management begins after the ticket has been created because attachment endpoints require a ticket ID. The Create Ticket screen must state: **You can add up to 5 attachments after creating the ticket.**
+
+### 6.2 Submission behavior
+
+- **Create ticket** is enabled when a requester exists, metadata is available, and no submission is running. Activating it runs client-side validation so untouched invalid fields receive actionable messages.
+- On activation, trim text values, disable repeat submission, preserve the button width, and show **Creating ticket…** with a spinner.
+- A `201` response navigates to Ticket Detail and shows **Ticket {ticketNumber} was created.** The generated ticket number and read-only **New** status must be prominent.
+- A `400` response maps known validation issues to their fields and places unknown validation issues in the form error summary.
+- Other failures retain entered values and show **We couldn't create your ticket. Try again.**
+- **Cancel** returns to My Tickets. If the user changed a field, request confirmation before discarding the draft.
+
+The ticket number must not be predicted or rendered before the server returns it.
+
+## 7. My Tickets Screen
+
+### 7.1 Page structure and query controls
+
+The page title is **My Tickets** and the visible requester name appears beneath it. A **Create ticket** action is available near the title.
+
+The query toolbar contains:
+
+| Control | Contract |
+|---|---|
+| Search | Label **Search tickets**; trimmed, case-insensitive substring search over ticket number and summary; submit with Enter or **Search**; separate **Clear search** control |
+| Category filter | Default **All categories**; option values are category IDs |
+| Related System filter | Default **All systems**; option values are related-system IDs |
+| Status filter | Default **All statuses**; **New** is the only sprint status |
+| Sort | Default **Newest first**; additionally expose **Oldest first**, **Ticket number A–Z**, **Ticket number Z–A**, **Summary A–Z**, and **Summary Z–A** |
+| Page size | Label **Tickets per page**; default 10; options 10, 20, and 50 |
+| Reset | **Reset filters** restores defaults and clears search |
+
+Submitting search, changing any filter or sort, changing requester, or changing page size resets to page 1. Query state should be represented in the URL so refresh and Back/Forward retain the view. The requester ID must never be placed in the URL; it remains in the request header.
+
+The UI maps its controls to the exact API query parameters `search`, `status`, `categoryId`, `relatedSystemId`, `sortBy`, `sortOrder`, `page`, and `pageSize`. The default request is `sortBy=createdAt&sortOrder=desc&page=1&pageSize=10` with search and filters omitted. Valid sort fields are `createdAt`, `ticketNumber`, and `summary`; sort order is `asc` or `desc`. Category and system IDs are positive integers, and page size must not exceed 50.
+
+### 7.2 Desktop and tablet results table
+
+The semantic table has the accessible caption **Tickets owned by {requesterName}** and these columns:
+
+1. Ticket number (link to detail)
+2. Summary
+3. Category
+4. Related System
+5. Status
+6. Created
+7. Action (**View details** with accessible name including the ticket number)
+
+Column headings associated with sortable fields expose the current sort direction. On tablet, wrap the table in a focusable region labelled **Ticket results — scroll horizontally for more columns**.
+
+### 7.3 Mobile results cards
+
+At widths below 768 px, render the same result data as cards rather than squeezing or horizontally scrolling the table. Each card contains:
+
+- linked ticket number;
+- summary as the card heading;
+- labelled Category and Related System values;
+- a text **New** badge;
+- created date/time; and
+- a full-width **View details** action.
+
+Card order must match the active sort and pagination exactly. Table and cards are alternate presentations of one result set, not duplicate content in the accessibility tree.
+
+### 7.4 Result and pagination states
+
+- During a fetch, hide old requester-owned rows/cards and show a results loading state.
+- With no tickets and default query controls, show **No tickets yet** plus **Create your first ticket**.
+- With no matches after search/filtering, show **No tickets match your search or filters** plus **Reset filters**.
+- Above the results, show a summary such as **Showing 11–20 of 37 tickets**.
+- Pagination contains **Previous**, numbered page controls, and **Next**. The current page uses `aria-current="page"`; boundary controls are disabled.
+- If a requested page becomes empty after a query change, request the nearest valid page, normally page 1.
+- A list failure shows **We couldn't load your tickets.** and a **Retry** action without exposing cached data from another requester.
+
+## 8. Ticket Detail Screen
+
+### 8.1 Ownership and error states
+
+Ticket detail is requested using the selected requester's header before any ticket content is rendered.
+
+- On `403`, render no ticket metadata or filenames. Show **You don't have permission to view this ticket.** with a **Back to My Tickets** action.
+- On `404`, show **Ticket not found.** with a **Back to My Tickets** action.
+- The two states may share layout but must preserve the API contract's status-specific user message.
+- Switching requester immediately leaves the detail screen as described in Section 2.2.
+
+### 8.2 Owned ticket content
+
+The detail screen includes:
+
+1. **Back to My Tickets** breadcrumb/link.
+2. Ticket number as the page title.
+3. Visible **New** status badge.
+4. Summary and full description.
+5. Read-only metadata: requester, category, related system, created date/time, and last-updated date/time when supplied.
+6. Attachment management section.
+
+Description whitespace and line breaks are preserved safely as text; user-entered content must not be interpreted as HTML. Immutable values use read-only shaded presentation rather than disabled input controls.
+
+On desktop, long-form description is the main column and metadata/attachments may occupy a secondary column. On tablet, compact metadata may use two columns. On mobile, content order is ticket number/status, summary, metadata, description, then attachments.
+
+### 8.3 Attachment upload
+
+The attachment panel shows **Attachments ({activeCount}/5)** and a visible rule summary:
+
+**JPG, PNG, WEBP, or PDF; maximum 5 MiB each; up to 5 active attachments.**
+
+Upload behavior:
+
+- Provide a native file chooser labelled **Choose attachment** and an **Upload attachment** button. Drag-and-drop may supplement, but must not replace, the keyboard-accessible chooser.
+- Accepted extensions/MIME pairs are `.jpg`/`.jpeg` with `image/jpeg`, `.png` with `image/png`, `.webp` with `image/webp`, and `.pdf` with `application/pdf`.
+- Maximum size is **5 MiB (5,242,880 bytes)** per file.
+- No more than **5 active attachments** may exist for a ticket.
+- Client validation occurs before upload, but server validation remains authoritative.
+- Invalid files stay unsubmitted and receive a message immediately below the chooser:
+  - **Choose a JPG, PNG, WEBP, or PDF file.**
+  - **File must be 5 MiB or smaller.**
+  - **This ticket already has 5 active attachments. Remove one before uploading another.**
+- While uploading, disable the chooser and button, show filename plus **Uploading…**, and prevent duplicate submission.
+- On success, announce **{filename} uploaded**, clear the chooser, increment the active count, and add the item to the active list.
+- On failure, preserve the selected filename where the browser permits and show a retryable error.
+
+The upload controls are disabled when the active count is 5, but the rule and existing attachment list remain readable.
+
+### 8.4 Active attachment list and download
+
+Each active attachment row/card shows:
+
+- original filename;
+- file type;
+- human-readable size;
+- upload date/time;
+- **Download** action with an accessible name containing the filename; and
+- **Remove** action with an accessible name containing the filename.
+
+Filenames must wrap or truncate visually with the full value available to assistive technology; they must never overflow the layout. A download action requests the owned active attachment using the requester header. While the download begins, expose a busy state without disabling unrelated rows. If the API returns `404` because the attachment was removed or no longer exists, refresh the attachment list and show **This attachment is no longer available for download.**
+
+### 8.5 Soft-removal dialog and removed attachments
+
+Activating **Remove** opens a confirmation dialog titled **Remove attachment?**. It names the file, explains that the file will no longer be downloadable, and contains:
+
+- required **Removal reason** textarea;
+- `current / 500` counter;
+- **Cancel** action; and
+- destructive **Remove attachment** action.
+
+The removal reason is trimmed and must be 5–500 Unicode characters. The field message is **Removal reason must be 5 to 500 characters.** The destructive action stays disabled until the value is valid and is busy/disabled while the request runs.
+
+After a successful soft-removal:
+
+- close the dialog and return focus to the attachment section heading;
+- announce **{filename} was removed**;
+- decrement the active count;
+- move the record to a collapsed **Removed attachments** subsection; and
+- remove all download and repeated remove controls for that record.
+
+A removed record retains and displays the original filename, MIME/type, size, original upload timestamp, removed timestamp, and removal reason. It is visibly labelled **Removed**. No link, URL, or control may permit its file content to be downloaded.
+
+If removal fails, keep the dialog open, retain the reason, and show the error inside the dialog.
+
+## 9. Accessibility Requirements
+
+The target is WCAG 2.1 Level AA for all in-scope screens.
+
+- Use semantic landmarks: header, navigation, main, forms, sections, and footer where present. Include a **Skip to main content** link.
+- Every control has a programmatic name. Visible labels are preferred; placeholders are hints only.
+- Keyboard focus follows visual order and is never trapped except intentionally within an open modal.
+- All functionality is operable by keyboard, including navigation, filters, pagination, upload, download, dialog confirmation, and dismissal.
+- Screen changes, success messages, and asynchronous errors use a polite live region; validation summaries and blocking request failures use an assertive alert only when immediate attention is required.
+- Status, selection, validation, and removal are communicated with text in addition to color.
+- Icons that repeat adjacent text are decorative; icon-only buttons need a specific accessible name.
+- Tables use a caption, column headers, and correct header associations. Mobile cards use headings and labelled definition-style metadata.
+- Dates use a consistent readable display and a machine-readable `datetime` value where semantic time markup is used.
+- Dialogs have an accessible name and description, trap focus while open, close with Escape/Cancel, and restore focus.
+- File rules and validation messages are associated with the file input. Drag-over visuals are not the only upload instruction.
+- Content remains readable in high-contrast/forced-colors mode; borders and focus indicators must not depend solely on background colors.
+- Motion is nonessential and respects `prefers-reduced-motion`.
+
+Automated UI tests should query by role, accessible name, label, and visible text. Add test IDs only where no stable semantic locator exists.
+
+## 10. Visual and Responsive Verification Checklist
+
+### 10.1 Global checklist
+
+- [ ] All required Zen Green tokens match their exact hex values.
+- [ ] Page background is `#F5F7F6`; primary surfaces are distinct and readable.
+- [ ] Requester selector, demo-context notice, and selected requester are visible.
+- [ ] Header navigation clearly indicates the active screen without color-only communication.
+- [ ] Required asterisks and the **`* Required`** legend are present.
+- [ ] Read-only fields use `#F0F4F1`.
+- [ ] Invalid fields show a message immediately below the associated input.
+- [ ] Busy submit/mutation buttons are disabled, labelled, and do not change width noticeably.
+- [ ] Keyboard focus indicators are visible on every interactive control.
+- [ ] No content clips or creates page-level horizontal scrolling at 320 px.
+- [ ] Mobile interactive targets are at least 44 × 44 px.
+- [ ] Text remains usable at 200% zoom.
+
+### 10.2 Create Ticket checklist
+
+- [ ] Desktop uses a multi-column field grid with full-width Summary and Description.
+- [ ] Tablet uses two columns for Category and Related System.
+- [ ] Mobile stacks all fields and renders full-width actions.
+- [ ] Requester is shown as read-only context.
+- [ ] Summary and Description counters and exact limits are visible.
+- [ ] Attachment-after-creation guidance is visible.
+- [ ] Success navigation exposes the server-generated ticket number and **New** status.
+
+### 10.3 My Tickets checklist
+
+- [ ] Desktop renders the complete semantic table and query controls without clipping.
+- [ ] Tablet confines horizontal table scrolling to a labelled region.
+- [ ] Mobile replaces the table with complete, ordered ticket cards.
+- [ ] Search, category/system/status filters, sort, page size, reset, result count, and pagination are present.
+- [ ] Loading, no-tickets, no-match, API-error, and populated states are visually distinct.
+- [ ] Long summaries and ticket numbers do not break layout.
+
+### 10.4 Ticket Detail checklist
+
+- [ ] Ticket number, **New** status, summary, metadata, and description have clear hierarchy.
+- [ ] Desktop, tablet, and mobile content orders match Section 8.
+- [ ] Active count and attachment constraints are visible.
+- [ ] Upload, download, removal dialog, removed metadata, and error states are represented.
+- [ ] Removed attachments expose metadata and reason but no download control.
+- [ ] A `403` state reveals no foreign ticket fields or filenames.
+- [ ] Long filenames and descriptions wrap without overflow.
+
+## 11. Screenshot Evidence Paths
+
+Capture evidence only after the UI is implemented and seeded with deterministic, non-sensitive sample data. Use a full browser viewport, 100% zoom, and no developer tools in-frame. The agreed reference viewport widths are desktop 1440 px, tablet 834 px, and mobile 390 px.
+
+| Screen | Desktop | Tablet | Mobile |
+|---|---|---|---|
+| Create Ticket | `docs/lab-02/evidence/create-ticket-desktop.png` | `docs/lab-02/evidence/create-ticket-tablet.png` | `docs/lab-02/evidence/create-ticket-mobile.png` |
+| My Tickets | `docs/lab-02/evidence/my-tickets-desktop.png` | `docs/lab-02/evidence/my-tickets-tablet.png` | `docs/lab-02/evidence/my-tickets-mobile.png` |
+| Ticket Detail | `docs/lab-02/evidence/ticket-detail-desktop.png` | `docs/lab-02/evidence/ticket-detail-tablet.png` | `docs/lab-02/evidence/ticket-detail-mobile.png` |
+
+For baseline screenshots, use:
+
+- a valid requester selected;
+- Create Ticket in its clean editable state;
+- My Tickets with enough records to show pagination;
+- Ticket Detail with at least one active and one removed attachment.
+
+Validation, empty, `403`, and busy-state screenshots may be added to the same evidence directory with descriptive suffixes, but they do not replace the nine required responsive captures above.
