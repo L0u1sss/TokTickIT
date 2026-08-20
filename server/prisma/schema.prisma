@@ -7,8 +7,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Status {
+  NEW
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model RequesterUser {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  email     String   @unique @db.VarChar(254)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets   Ticket[]
+
+  @@index([isActive, name])
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
-  name      String   @unique
+  name      String   @unique @db.VarChar(120)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  tickets   Ticket[]
+
+  @@index([isActive, name])
+}
+
+model RelatedSystem {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique @db.VarChar(120)
+  isActive Boolean  @default(true)
+  tickets  Ticket[]
+
+  @@index([isActive, name])
+}
+
+model Ticket {
+  id                Int           @id @default(autoincrement())
+  ticketNumber      String        @unique @db.VarChar(15)
+  summary           String        @db.VarChar(120)
+  description       String        @db.VarChar(2000)
+  requestedPriority Priority
+  currentStatus     Status        @default(NEW)
+  requesterId       Int
+  categoryId        Int
+  relatedSystemId   Int
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  requester         RequesterUser @relation(fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  category          Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  attachments       Attachment[]
+
+  @@index([requesterId])
+  @@index([ticketNumber])
+  @@index([currentStatus])
+  @@index([createdAt])
+  @@index([requesterId, createdAt(sort: Desc)])
+  @@index([requesterId, currentStatus, createdAt(sort: Desc)])
+  @@index([requesterId, categoryId, createdAt(sort: Desc)])
+  @@index([requesterId, relatedSystemId, createdAt(sort: Desc)])
+}
+
+model Attachment {
+  id            Int       @id @default(autoincrement())
+  ticketId      Int
+  fileName      String    @db.VarChar(255)
+  fileKey       String    @unique
+  fileSize      Int
+  mimeType      String    @db.VarChar(100)
+  isRemoved     Boolean   @default(false)
+  removedAt     DateTime?
+  removalReason String?   @db.VarChar(500)
+  createdAt     DateTime  @default(now())
+  ticket        Ticket    @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([ticketId])
+  @@index([isRemoved])
+  @@index([ticketId, isRemoved, createdAt])
 }
