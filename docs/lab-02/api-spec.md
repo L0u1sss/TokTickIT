@@ -22,7 +22,7 @@ This document is the normative HTTP contract for the requester-facing ticket MVP
 - Date-time values are UTC RFC 3339 strings, for example `2026-08-20T07:15:30.000Z`.
 - Text length limits count Unicode characters after leading and trailing whitespace is removed. The API stores the trimmed value.
 - Unless a schema says otherwise, every listed property is required and request bodies reject unknown properties.
-- Successful responses return the resource or collection directly; there is no additional `data` envelope.
+- Successful responses return the resource or collection directly, except `POST /api/tickets`, which returns the `TicketCreateResult` envelope so a caller can distinguish a first creation from an idempotent replay.
 
 ### 1.2 Simulated requester context
 
@@ -48,13 +48,13 @@ For any endpoint containing `:id`, the API applies this order consistently:
 2. Load the ticket identified by `:id` without silently applying an owner filter.
 3. Return `404 TICKET_NOT_FOUND` if that ticket does not exist.
 4. Return `403 TICKET_FORBIDDEN` if it exists but belongs to another requester.
-5. For attachment routes, resolve `:attId` within that ticket; return `404 ATTACHMENT_NOT_FOUND` if it does not exist or belongs to a different ticket.
+5. For attachment routes, resolve `:attId` within that ticket; return `404 ATTACHMENT_NOT_FOUND` if it does not exist or belongs to a different ticket, even when that attachment ID exists under another ticket.
 
-This rule makes `403` behavior testable while ensuring another requester can never read ticket content, attachment metadata, or file bytes, or mutate the ticket's attachments.
+This rule makes `403` behavior testable while ensuring another requester can never read ticket content, attachment metadata, or file bytes, or mutate the ticket's attachments. A foreign parent ticket is rejected with `403 TICKET_FORBIDDEN` before child lookup; a wrong-ticket nested attachment under an owned parent is rejected with `404 ATTACHMENT_NOT_FOUND`.
 
 ### 1.4 Error response schema
 
-Every defined `400`, `403`, and `404` response uses this JSON shape:
+Every defined `400`, `403`, `404`, `409`, and pre-stream `500` response uses this JSON shape:
 
 | Property | Type | Required | Meaning |
 |---|---:|:---:|---|
@@ -93,7 +93,20 @@ Example ownership error:
 }
 ```
 
-Only `200`, `201`, `400`, `403`, and `404` are application outcomes in this Lab 2 contract. In particular, the simulated context does not use `401`, validation does not use `409` or `422`, and an oversized upload is reported as `400` rather than `413`. Unexpected infrastructure failures are operational concerns outside the acceptance contract and must never expose stack traces, filesystem paths, or database details.
+Example unexpected-failure response:
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "The request could not be completed."
+  }
+}
+```
+
+`500 INTERNAL_ERROR` is the defined outcome for an unexpected server, database, or storage failure. Its message is deliberately safe and non-diagnostic, and it never includes `error.details`. Logs and responses must never expose stack traces, SQL or ORM details, credentials, filesystem paths, generated storage names, or database connection information. Endpoint sections may provide a safe operation-specific message without changing the code or envelope.
+
+The application outcomes in this Lab 2 contract are `200`, `201`, `400`, `403`, `404`, `409`, and `500`. The simulated context does not use `401`; validation does not use `409` or `422`; `409` is reserved for conflicting `clientRequestId` reuse; and an oversized upload is reported as `400` rather than `413`.
 
 ## 2. Shared Response Schemas
 
@@ -136,7 +149,7 @@ Used for both categories and related systems.
 | Property | JSON type | Constraints |
 |---|---|---|
 | `id` | integer | Positive |
-| `fileName` | string | Original client filename, safely encoded on download |
+| `fileName` | string | Safe display filename derived from the original client filename; 1-255 Unicode characters and safely encoded on download |
 | `mediaType` | string | One of the allowed MIME types in Section 3.6 |
 | `sizeBytes` | integer | `1` through `5242880` |
 | `uploadedAt` | string | UTC RFC 3339 date-time |
@@ -179,6 +192,8 @@ Soft-removed attachment example:
 
 Storage keys/paths and any server-generated filenames are never exposed by the API.
 
+The server discards client-supplied directory components before validating the basename. A filename containing NUL, CR/LF, or another control character is rejected. The resulting display filename must contain 1-255 Unicode characters and retain one permitted extension. An empty, overlong, or otherwise unsafe result is rejected rather than truncated silently. The display filename is metadata only and is never used as a filesystem path.
+
 ### 2.4 `TicketSummary`
 
 | Property | JSON type | Constraints |
@@ -186,6 +201,7 @@ Storage keys/paths and any server-generated filenames are never exposed by the A
 | `id` | integer | Positive internal ID |
 | `ticketNumber` | string | Unique; pattern `^TKT-[0-9]{4}-[0-9]{6}$` |
 | `summary` | string | 5-120 characters |
+| `requestedPriority` | string | One of `LOW`, `MEDIUM`, or `HIGH` |
 | `status` | string | Exactly `New` in this sprint |
 | `category` | `LookupItem` | Selected category snapshot by relation |
 | `relatedSystem` | `LookupItem` | Selected related system by relation |
@@ -198,6 +214,7 @@ Storage keys/paths and any server-generated filenames are never exposed by the A
   "id": 145,
   "ticketNumber": "TKT-2026-000145",
   "summary": "External monitor flickers intermittently",
+  "requestedPriority": "HIGH",
   "status": "New",
   "category": {
     "id": 3,
@@ -215,7 +232,7 @@ Storage keys/paths and any server-generated filenames are never exposed by the A
 
 ### 2.5 `TicketDetail`
 
-`TicketDetail` contains every `TicketSummary` property plus the following required properties:
+`TicketDetail` contains every `TicketSummary` property, including required `requestedPriority`, plus the following required properties:
 
 | Property | JSON type | Constraints |
 |---|---|---|
@@ -229,6 +246,7 @@ Storage keys/paths and any server-generated filenames are never exposed by the A
   "ticketNumber": "TKT-2026-000145",
   "summary": "External monitor flickers intermittently",
   "description": "The external monitor flickers after the laptop wakes from sleep.",
+  "requestedPriority": "HIGH",
   "status": "New",
   "requester": {
     "id": 12,
@@ -261,6 +279,15 @@ Storage keys/paths and any server-generated filenames are never exposed by the A
   "updatedAt": "2026-08-20T07:16:00.000Z"
 }
 ```
+
+### 2.6 `TicketCreateResult`
+
+| Property | JSON type | Constraints |
+|---|---|---|
+| `ticket` | `TicketDetail` | Newly created or previously created ticket for this logical request |
+| `replayed` | boolean | `false` for the first successful creation; `true` for a same-request replay |
+
+The envelope shape is identical for `201 Created` and `200 OK`; only `replayed` and the HTTP status differ.
 
 ## 3. Endpoint Contracts
 
@@ -297,11 +324,11 @@ Response schema: JSON array of `RequesterSummary`. Only rows with `isActive = tr
 ]
 ```
 
-No `400`, `403`, or `404` application outcome is defined for this parameterless route.
+No `400`, `403`, `404`, or `409` application outcome is defined for this parameterless route. An unexpected requester-data failure returns `500 INTERNAL_ERROR` using the safe envelope in Section 1.4.
 
 ---
 
-### 3.2 Get ticket metadata
+### 3.2 Get selectable reference data
 
 ```http
 GET /api/metadata
@@ -351,7 +378,7 @@ Only rows with `isActive = true` are returned. Each array is ordered by `name` a
 }
 ```
 
-No `400`, `403`, or `404` application outcome is defined for this parameterless route.
+No `400`, `403`, `404`, or `409` application outcome is defined for this parameterless route. An unexpected reference-data failure returns `500 INTERNAL_ERROR` using the safe envelope in Section 1.4.
 
 ---
 
@@ -363,60 +390,97 @@ x-requester-id: 12
 Content-Type: application/json
 ```
 
-The server derives ownership from `x-requester-id`, generates the ticket number, and forces the initial status to `New`. The client must not send `requesterId`, `ticketNumber`, or `status`.
+The server derives ownership from `x-requester-id`, generates the ticket number, and forces the initial status to `New`. The client must not send `requesterId`, `ticketNumber`, or `status`. The client does supply a stable `clientRequestId` so an ambiguous or retried logical submission cannot create a duplicate ticket.
 
 #### Request JSON schema
 
 | Property | JSON type | Required | Validation |
 |---|---|:---:|---|
+| `clientRequestId` | string | yes | Canonical UUID string generated once per logical create attempt |
 | `summary` | string | yes | Trimmed length 5-120 characters |
 | `description` | string | yes | Trimmed length 10-2,000 characters |
 | `categoryId` | integer | yes | Positive ID of an existing active category |
 | `relatedSystemId` | integer | yes | Positive ID of an existing active related system |
+| `requestedPriority` | string | yes | One of `LOW`, `MEDIUM`, or `HIGH` |
 
 `additionalProperties` is false.
 
 ```json
 {
+  "clientRequestId": "c5404d4c-0b9b-4c52-9f3a-24872db6996f",
   "summary": "External monitor flickers intermittently",
   "description": "The external monitor flickers after the laptop wakes from sleep.",
   "categoryId": 3,
-  "relatedSystemId": 8
+  "relatedSystemId": 8,
+  "requestedPriority": "HIGH"
 }
 ```
 
-#### `201 Created`
+#### Duplicate-submission and replay contract
 
-- Response schema: `TicketDetail` with `status: "New"`, `activeAttachmentCount: 0`, and `attachments: []`.
+`clientRequestId` identifies one logical ticket-create attempt and is protected by a database unique constraint. The client generates it once and retains the same value while retrying an unresolved attempt; ordinary field edits before the first submission do not require a new value.
+
+The normalized duplicate-comparison payload consists of the validated requester context, `categoryId`, `relatedSystemId`, trimmed `summary`, trimmed `description`, and `requestedPriority`:
+
+1. The server validates requester context, JSON object shape, known fields, UUID, scalar types, text boundaries, IDs, and priority values, then looks up `clientRequestId`.
+2. An existing key with the same requester and normalized payload returns the original ticket with `200 OK` and `replayed: true`. Replay does not depend on the historical category or related system still being active and does not change `updatedAt`.
+3. An existing key with a different requester or different normalized payload returns `409 DUPLICATE_REQUEST_CONFLICT` and creates or changes nothing.
+4. A new key is accepted only after category and related-system references are also verified as active. It creates exactly one ticket and stores the key and normalized payload atomically.
+5. Concurrent requests using the same key are serialized by the unique constraint. A losing request rereads the winner and applies the same replay-or-conflict rules; it must not expose a raw database error or create a second ticket.
+
+#### `201 Created` — first creation
+
+- Response schema: `TicketCreateResult` with `replayed: false`; its `ticket` is a `TicketDetail` with `status: "New"`, `activeAttachmentCount: 0`, and `attachments: []`.
 - Response header: `Location: /api/tickets/{id}`.
 - `ticketNumber` is allocated by the backend in the form `TKT-YYYY-XXXXXX`, where `YYYY` is the UTC creation year and `XXXXXX` is a zero-padded, collision-safe six-digit sequence. Allocation and insertion are atomic, the database enforces uniqueness, and the number is immutable.
 
 ```json
 {
-  "id": 145,
-  "ticketNumber": "TKT-2026-000145",
-  "summary": "External monitor flickers intermittently",
-  "description": "The external monitor flickers after the laptop wakes from sleep.",
-  "status": "New",
-  "requester": {
-    "id": 12,
-    "displayName": "Mali Chantarangsu",
-    "email": "mali@example.com"
+  "ticket": {
+    "id": 145,
+    "ticketNumber": "TKT-2026-000145",
+    "summary": "External monitor flickers intermittently",
+    "description": "The external monitor flickers after the laptop wakes from sleep.",
+    "requestedPriority": "HIGH",
+    "status": "New",
+    "requester": {
+      "id": 12,
+      "displayName": "Mali Chantarangsu",
+      "email": "mali@example.com"
+    },
+    "category": {
+      "id": 3,
+      "name": "Hardware"
+    },
+    "relatedSystem": {
+      "id": 8,
+      "name": "Office Workstation"
+    },
+    "activeAttachmentCount": 0,
+    "attachments": [],
+    "createdAt": "2026-08-20T07:15:30.000Z",
+    "updatedAt": "2026-08-20T07:15:30.000Z"
   },
-  "category": {
-    "id": 3,
-    "name": "Hardware"
-  },
-  "relatedSystem": {
-    "id": 8,
-    "name": "Office Workstation"
-  },
-  "activeAttachmentCount": 0,
-  "attachments": [],
-  "createdAt": "2026-08-20T07:15:30.000Z",
-  "updatedAt": "2026-08-20T07:15:30.000Z"
+  "replayed": false
 }
 ```
+
+#### `200 OK` — idempotent replay
+
+The response uses the same `TicketCreateResult` shape and `Location` header as first creation, returns the original ticket unchanged, and sets `replayed: true`.
+
+#### `409 Conflict` — conflicting key reuse
+
+```json
+{
+  "error": {
+    "code": "DUPLICATE_REQUEST_CONFLICT",
+    "message": "clientRequestId was already used for a different request."
+  }
+}
+```
+
+This response never reveals the requester or ticket associated with the earlier use of the key.
 
 #### Error outcomes
 
@@ -424,17 +488,19 @@ The server derives ownership from `x-requester-id`, generates the ticket number,
 |---:|---|---|
 | `400` | `INVALID_REQUESTER_CONTEXT` | Missing, malformed, unknown, or inactive requester header |
 | `400` | `INVALID_JSON` | Malformed JSON or wrong JSON value type |
-| `400` | `VALIDATION_ERROR` | Missing/unknown fields or text/ID constraint failure |
-| `400` | `INVALID_REFERENCE` | `categoryId` or `relatedSystemId` is syntactically valid but identifies no active metadata row |
+| `400` | `VALIDATION_ERROR` | Missing/unknown fields, invalid UUID/priority, or text/ID constraint failure |
+| `400` | `INVALID_REFERENCE` | For a new key, `categoryId` or `relatedSystemId` is syntactically valid but identifies no active metadata row |
+| `409` | `DUPLICATE_REQUEST_CONFLICT` | `clientRequestId` was already used by another requester or with a different normalized payload |
+| `500` | `INTERNAL_ERROR` | Unexpected creation, number-allocation, or database failure; no partial new ticket is committed |
 
-No client-selected requester can create a ticket for another requester because requester ownership is not a body field.
+No client-selected requester can create a ticket for another requester because requester ownership is not a body field. A client that loses a response retries with the same `clientRequestId`; it must not generate a new key merely because the first outcome is unknown.
 
 ---
 
 ### 3.4 List my tickets
 
 ```http
-GET /api/tickets?search=monitor&status=New&categoryId=3&relatedSystemId=8&sortBy=createdAt&sortOrder=desc&page=1&pageSize=10
+GET /api/tickets?search=monitor&status=New&requestedPriority=HIGH&categoryId=3&relatedSystemId=8&sortBy=createdAt&sortOrder=desc&page=1&pageSize=10
 x-requester-id: 12
 ```
 
@@ -446,6 +512,7 @@ Every result and the total count are scoped to the validated requester before se
 |---|---|:---:|---|---|
 | `search` | string | no | none | Trimmed, case-insensitive substring match against `ticketNumber` or `summary`; 1-120 characters after trimming |
 | `status` | string | no | none | Currently only `New` |
+| `requestedPriority` | enum | no | none | `LOW`, `MEDIUM`, or `HIGH` |
 | `categoryId` | integer | no | none | Positive decimal ID |
 | `relatedSystemId` | integer | no | none | Positive decimal ID |
 | `sortBy` | enum | no | `createdAt` | `createdAt`, `ticketNumber`, or `summary` |
@@ -470,6 +537,7 @@ Response schema:
 | `sort.order` | string | Effective sort direction |
 | `filters.search` | string or `null` | Effective trimmed search value |
 | `filters.status` | string or `null` | Effective status filter |
+| `filters.requestedPriority` | string or `null` | Effective requested-priority filter |
 | `filters.categoryId` | integer or `null` | Effective category filter |
 | `filters.relatedSystemId` | integer or `null` | Effective related-system filter |
 
@@ -482,6 +550,7 @@ Requesting a page greater than `totalPages` returns `200` with an empty `items` 
       "id": 145,
       "ticketNumber": "TKT-2026-000145",
       "summary": "External monitor flickers intermittently",
+      "requestedPriority": "HIGH",
       "status": "New",
       "category": {
         "id": 3,
@@ -509,6 +578,7 @@ Requesting a page greater than `totalPages` returns `200` with an empty `items` 
   "filters": {
     "search": "monitor",
     "status": "New",
+    "requestedPriority": "HIGH",
     "categoryId": 3,
     "relatedSystemId": 8
   }
@@ -521,6 +591,7 @@ Requesting a page greater than `totalPages` returns `200` with an empty `items` 
 |---:|---|---|
 | `400` | `INVALID_REQUESTER_CONTEXT` | Missing, malformed, unknown, or inactive requester header |
 | `400` | `INVALID_QUERY` | Repeated, unsupported, or out-of-range query parameter |
+| `500` | `INTERNAL_ERROR` | Unexpected requester-scoped list or count failure |
 
 This collection route does not return `403` for unowned tickets; unowned rows are excluded before counting. It does not return `404` for an empty result.
 
@@ -540,7 +611,7 @@ x-requester-id: 12
 
 #### `200 OK`
 
-Response schema: `TicketDetail`. The `attachments` array deliberately includes soft-removed attachment metadata; those entries have `downloadable: false`.
+Response schema: `TicketDetail`. This endpoint is the Lab 2 attachment-metadata retrieval capability; no separate metadata-list endpoint is required. Its `attachments` array includes both active and soft-removed attachment metadata in the deterministic order defined in Section 2.5. Removed entries have `downloadable: false`, and no entry exposes a storage key or filesystem path.
 
 See the complete `TicketDetail` example in Section 2.5.
 
@@ -552,6 +623,7 @@ See the complete `TicketDetail` example in Section 2.5.
 | `400` | `INVALID_PATH_PARAMETER` | `:id` is not a positive decimal integer |
 | `403` | `TICKET_FORBIDDEN` | Ticket exists but is owned by another requester |
 | `404` | `TICKET_NOT_FOUND` | No ticket has that ID |
+| `500` | `INTERNAL_ERROR` | Unexpected ticket-detail or attachment-metadata retrieval failure |
 
 ---
 
@@ -569,17 +641,18 @@ The multipart form must contain exactly one file part named `file`. No JSON meta
 
 | Constraint | Rule |
 |---|---|
+| Display filename | Discard path components; reject NUL, CR/LF, and control characters; the resulting basename must be 1-255 Unicode characters and retain a permitted extension |
 | Filename extension/MIME pairs | `.jpg` or `.jpeg` with `image/jpeg`; `.png` with `image/png`; `.webp` with `image/webp`; `.pdf` with `application/pdf` |
 | Content validation | Declared MIME type, extension, and detected file signature must agree |
-| File size | 1 through 5,242,880 bytes (5 MiB) |
+| File size | 1 through 5,242,880 bytes (5 MB) |
 | Active limit | At most 5 non-removed attachments per ticket |
 | Limit concurrency | Count check and insert are atomic; concurrent uploads cannot create a sixth active attachment |
 
-Soft-removed records do not count toward the active limit, so a replacement can be uploaded after removal. The original filename is stored as metadata, but it is never treated as a server path.
+Soft-removed records do not count toward the active limit, so a replacement can be uploaded after removal. The safe display filename derived from the original filename is stored as metadata, but it is never treated as a server path.
 
 #### `201 Created`
 
-Response schema: the created `Attachment` in its active state.
+Response schema: the created `Attachment` in its active state. Creating the attachment and advancing the parent ticket's `updatedAt` to the successful mutation time occur in the same successful database operation.
 
 ```json
 {
@@ -602,13 +675,17 @@ Response schema: the created `Attachment` in its active state.
 | `400` | `INVALID_REQUESTER_CONTEXT` | Missing, malformed, unknown, or inactive requester header |
 | `400` | `INVALID_PATH_PARAMETER` | `:id` is not a positive decimal integer |
 | `400` | `INVALID_MULTIPART` | Missing/incorrect multipart body, missing `file`, multiple files, or unexpected parts |
+| `400` | `ATTACHMENT_FILENAME_INVALID` | Display filename is empty, longer than 255 characters, contains unsafe control characters, or has no permitted extension |
 | `400` | `ATTACHMENT_TYPE_NOT_ALLOWED` | Extension, MIME type, or signature is unsupported or inconsistent |
 | `400` | `ATTACHMENT_SIZE_INVALID` | Empty file or file larger than 5,242,880 bytes |
 | `400` | `ATTACHMENT_LIMIT_REACHED` | Ticket already has 5 active attachments |
 | `403` | `TICKET_FORBIDDEN` | Ticket exists but is owned by another requester |
 | `404` | `TICKET_NOT_FOUND` | No ticket has that ID |
+| `500` | `INTERNAL_ERROR` | Unexpected storage or database failure; no valid API-addressable attachment is left behind |
 
-Ticket existence and ownership are checked before a file is persisted. A failed request leaves no file or attachment record behind.
+Ticket existence and ownership are checked before a file is made durable. Upload processing uses staging plus cleanup/compensation: a failed request leaves no attachment row or API-addressable file and does not advance the parent ticket's `updatedAt`; request-created temporary or unreferenced bytes are removed where possible and are never exposed by the API.
+
+Attachment upload is not automatically retried and has no attachment-level idempotency key in Lab 2. If the response is lost or otherwise ambiguous, the client first reloads `GET /api/tickets/:id` to retrieve current attachment metadata before offering an explicit manual retry. It must not blindly repeat the multipart request.
 
 ---
 
@@ -651,8 +728,9 @@ Error bodies still use the JSON error envelope and `Content-Type: application/js
 | `404` | `TICKET_NOT_FOUND` | No ticket has `:id` |
 | `404` | `ATTACHMENT_NOT_FOUND` | Attachment does not exist within that ticket |
 | `404` | `ATTACHMENT_NOT_AVAILABLE` | Attachment is soft-removed; its bytes must not be returned |
+| `500` | `INTERNAL_ERROR` | Unexpected lookup/storage failure before streaming, including active metadata whose bytes are unavailable |
 
-The API must never redirect to or reveal a storage path. Authorization is checked before any stream begins.
+The API must never redirect to or reveal a storage path. Authorization and file availability are checked before any stream begins. A pre-stream failure returns the safe JSON `500` envelope; if an I/O failure occurs after response headers have already been sent, the server terminates the stream and records a safe operational event because it can no longer replace the response with JSON. Downloads do not change the parent ticket's `updatedAt`.
 
 ---
 
@@ -682,7 +760,7 @@ This endpoint changes attachment state only. It does not delete the database rec
 
 #### `200 OK`
 
-Response schema: the updated `Attachment`, with `isRemoved: true`, a non-null `removedAt`, the trimmed `removalReason`, and `downloadable: false`.
+Response schema: the updated `Attachment`, with `isRemoved: true`, a non-null `removedAt`, the trimmed `removalReason`, and `downloadable: false`. The removal fields and the parent ticket's `updatedAt` are updated atomically using the successful mutation time.
 
 ```json
 {
@@ -698,7 +776,7 @@ Response schema: the updated `Attachment`, with `isRemoved: true`, a non-null `r
 }
 ```
 
-After success, the record remains visible in owned ticket detail, but both its download endpoint and any repeated removal attempt return `404 ATTACHMENT_NOT_AVAILABLE`. Physical-byte retention or later garbage collection is an internal policy and must not restore download access. A repeated removal never overwrites the original `removedAt` or `removalReason` audit values.
+After success, the record remains visible in owned ticket detail, but both its download endpoint and any repeated removal attempt return `404 ATTACHMENT_NOT_AVAILABLE`. For Lab 2, the attachment row and stored object are retained for audit verification; production retention, quarantine, and garbage-collection policy is deferred. Retained bytes remain unreachable through the API and must never restore download access. A repeated removal never overwrites the original `removedAt` or `removalReason` audit values.
 
 #### Error outcomes
 
@@ -712,30 +790,35 @@ After success, the record remains visible in owned ticket detail, but both its d
 | `404` | `TICKET_NOT_FOUND` | No ticket has `:id` |
 | `404` | `ATTACHMENT_NOT_FOUND` | Attachment does not exist within that ticket |
 | `404` | `ATTACHMENT_NOT_AVAILABLE` | Attachment is already soft-removed; its original audit fields are unchanged |
+| `500` | `INTERNAL_ERROR` | Unexpected removal failure; attachment state, audit fields, and parent `updatedAt` remain unchanged |
 
-The state update is atomic: `isRemoved`, `removedAt`, and `removalReason` become effective together.
+The state update is atomic: `isRemoved`, `removedAt`, `removalReason`, and the parent ticket's `updatedAt` become effective together.
 
 ## 4. Exact Status-Code Matrix
 
-| Endpoint | `200` | `201` | `400` | `403` | `404` |
-|---|:---:|:---:|:---:|:---:|:---:|
-| `GET /api/requesters` | Active requester array | - | - | - | - |
-| `GET /api/metadata` | Metadata object | - | - | - | - |
-| `POST /api/tickets` | - | Created ticket | Header/body/reference validation | - | - |
-| `GET /api/tickets` | Scoped paged list | - | Header/query validation | - | - |
-| `GET /api/tickets/:id` | Owned ticket detail | - | Header/path validation | Existing unowned ticket | Missing ticket |
-| `POST /api/tickets/:id/attachments` | - | Created attachment | Header/path/file/limit validation | Existing unowned ticket | Missing ticket |
-| `GET /api/tickets/:id/attachments/:attId/download` | File bytes | - | Header/path validation | Existing unowned ticket | Missing ticket/attachment or removed attachment |
-| `PATCH /api/tickets/:id/attachments/:attId/remove` | Removed attachment metadata | - | Header/path/body validation | Existing unowned ticket | Missing ticket/attachment or removed attachment |
+| Endpoint | `200` | `201` | `400` | `403` | `404` | `409` | `500` |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `GET /api/requesters` | Active requester array | - | - | - | - | - | Safe unexpected failure |
+| `GET /api/metadata` | Reference-data object | - | - | - | - | - | Safe unexpected failure |
+| `POST /api/tickets` | Replay result (`replayed: true`) | First-create result (`replayed: false`) | Header/body/reference validation | - | - | Conflicting key reuse | Safe unexpected failure |
+| `GET /api/tickets` | Scoped paged list | - | Header/query validation | - | - | - | Safe unexpected failure |
+| `GET /api/tickets/:id` | Owned ticket and attachment metadata | - | Header/path validation | Existing unowned ticket | Missing ticket | - | Safe unexpected failure |
+| `POST /api/tickets/:id/attachments` | - | Created attachment | Header/path/file/limit validation | Existing unowned ticket | Missing ticket | - | Safe unexpected failure |
+| `GET /api/tickets/:id/attachments/:attId/download` | File bytes | - | Header/path validation | Existing unowned ticket | Missing ticket/attachment or removed attachment | - | Safe pre-stream failure |
+| `PATCH /api/tickets/:id/attachments/:attId/remove` | Removed attachment metadata | - | Header/path/body validation | Existing unowned ticket | Missing ticket/attachment or removed attachment | - | Safe unexpected failure |
 
 `-` means the status is not a defined application outcome for that endpoint.
 
 ## 5. Cross-Cutting Implementation Requirements
 
-- Ticket creation, unique number allocation, attachment active-count enforcement, and soft removal must be transaction-safe.
+- Ticket creation, `clientRequestId` replay/conflict handling, unique number allocation, attachment active-count enforcement, and soft removal must be transaction-safe.
 - `ticketNumber`, requester ownership, upload metadata, removal timestamp, and removal reason are server-controlled fields.
-- List count and list items must use the same requester scope and filters.
-- Database indexes should support unique `ticketNumber`, requester-scoped `createdAt` listing, requester/status filtering, category/system filters, and attachment lookup by ticket and removal state.
+- `requestedPriority` is required client input on creation and is validated against `LOW`, `MEDIUM`, and `HIGH`; it is never confused with a future IT-assigned priority.
+- List count and list items must use the same requester scope and filters, including `requestedPriority`.
+- Database indexes should support unique `ticketNumber`, unique `clientRequestId`, requester-scoped `createdAt` listing, requester/status/requested-priority filtering, category/system filters, and attachment lookup by ticket and removal state.
+- Successful attachment upload and soft removal advance the parent ticket's `updatedAt` atomically; reads and downloads do not.
 - Logs and errors must not expose file contents, storage paths, stack traces, database connection details, or tickets belonging to another requester.
 - No endpoint in this document changes a ticket beyond initial `New`, publishes comments, or provides IT Staff actions.
 - Clients must still render server validation errors even when matching client-side validation exists; client validation is not an API security boundary.
+- Ticket-create contract tests cover first creation (`201`, `replayed: false`), sequential and concurrent identical replay (`200`, `replayed: true`), changed-payload and changed-requester conflict (`409`), one persisted logical ticket, and unchanged replay timestamps.
+- Contract tests must force representative unexpected reference-data, create/list/detail, attachment-storage, and removal failures. They assert the exact `500 INTERNAL_ERROR` envelope and JSON content type, absence of internal details, and absence of unintended database/file mutations; download tests cover both the safe pre-stream `500` case and safe termination of an injected mid-stream failure.

@@ -29,25 +29,35 @@ The UI must not expose controls for real authentication, IT Staff workflows, pub
 
 | Screen | Target route | Primary purpose | Primary action |
 |---|---|---|---|
+| Development Requester Selection | `/requester-selection` | Establish the Lab 2 requester context before entering the application | **Continue** |
 | Create Ticket | `/tickets/new` | Submit a new request | **Create ticket** |
 | My Tickets | `/tickets` | Search and browse owned tickets | Open a ticket |
 | Ticket Detail | `/tickets/:id` | Read one owned ticket and manage its attachments | **Upload attachment** |
 
-The application header must contain the TokTickIT product name, navigation links for **Create Ticket** and **My Tickets**, and the requester selector. The active navigation item must be identifiable by text/shape or an underline in addition to color.
+Development Requester Selection is the entry gate. The Create Ticket, My Tickets, and Ticket Detail screens form the requester-facing application and must not render requester-owned content until a valid requester context has been established.
 
-### 2.2 Simulated requester selector
+After selection, the application header must contain the TokTickIT product name, navigation links for **Create Ticket** and **My Tickets**, the current requester as a read-only **Viewing as {requesterName}** value, and a **Change Requester** action. It must not expose an immediately editable requester dropdown in the application shell. The active navigation item must be identifiable by text/shape or an underline in addition to color.
 
-- The persistent control label is **Viewing as** and its unselected option is **Select a requester**.
-- A visible **Demo context — not secure authentication** hint must appear next to or immediately below the control.
-- Options come from `GET /api/requesters`; only active requesters may appear.
-- Until a requester is selected, requester-owned content must not be requested. Create and list actions are disabled and an explanatory prompt is shown.
-- The selected requester ID is sent as the `x-requester-id` header on every ticket and attachment request.
-- The selector may be retained for the current browser session for convenience, but it must never be presented as authenticated identity.
-- While requesters load, the selector is disabled and shows **Loading requesters…**. On failure, show an inline error and a **Retry** button.
-- When the requester changes, the UI must immediately remove previously rendered ticket or attachment data, cancel or disregard obsolete requests, reset list pagination to page 1, and fetch the new requester's data.
-- Changing requester while on Ticket Detail must navigate to **My Tickets** before new requester-owned content is rendered. This prevents a prior requester's detail from remaining visible.
+### 2.2 Development Requester Selection
 
-On mobile, the requester control moves below the brand/navigation but remains visible without opening a separate menu.
+The selection screen contains a heading **Select a Development Requester**, a visible **Demo context — not secure authentication** explanation, a labelled Development Requester dropdown, and a primary **Continue** button. Each option must provide enough visible information to distinguish the seeded requester, using display name and email. Options come from `GET /api/requesters`; only active requesters may appear.
+
+The screen has these mutually exclusive states:
+
+- **Loading:** show and announce **Loading requesters…**; disable both the dropdown and **Continue**.
+- **Ready:** the first option is **Select a requester**; **Continue** remains disabled until the user chooses a valid active requester.
+- **Empty:** when the API returns `[]`, show **No active requesters are available.**; keep **Continue** disabled and do not show an empty interactive dropdown as though selection were possible.
+- **Error:** show **We couldn't load requesters.** and a **Retry** button. Retry repeats only the requester-list request and receives focus after the error is announced.
+
+Selecting an option alone does not establish or change requester context. Activating **Continue** commits the selected requester, stores only its positive integer ID in browser-tab `sessionStorage`, and enters the requester-facing application. The stored value is testing context, not authentication. The selected requester ID is sent as the `x-requester-id` header on every ticket and attachment request.
+
+On application start, the UI must parse the stored value strictly and confirm that it matches an active requester returned by `GET /api/requesters`. A missing, blank, malformed, zero/negative, unknown, or inactive ID is removed from `sessionStorage` before any requester-owned request or content is allowed. The user then remains on, or is redirected to, Development Requester Selection.
+
+A direct or refreshed navigation to `/tickets`, `/tickets/new`, or `/tickets/:id` without a validated requester context must be gated and redirected to `/requester-selection`. The requested protected screen must not briefly render or start a requester-owned request before validation completes.
+
+**Change Requester** removes the committed ID from `sessionStorage`, returns to Development Requester Selection, and immediately removes all requester-specific rendered/cached ticket and attachment data, form drafts, selected files, validation/success/failure messages, query state, and pagination state. It must cancel in-flight requester-owned requests where possible and disregard every obsolete response that completes later. A new requester is not committed until **Continue** is activated again; no prior requester content may remain visible while selecting or loading the next context.
+
+On mobile, the selection form is a single-column surface with a full-width dropdown and **Continue** action. In the application shell, the read-only requester identity and **Change Requester** remain visible without opening a separate menu.
 
 ## 3. Zen Green Design Tokens
 
@@ -61,6 +71,8 @@ On mobile, the requester control moves below the brand/navigation but remains vi
 | Page Background | `#F5F7F6` | Application page background |
 | Text Charcoal | `#1A2E22` | Body text, headings, labels |
 | Error | `#D32F2F` | Validation text, error border/icon, destructive confirmation |
+| Warning (`--color-warning`) | `#8A5500` | Warning and ambiguous-outcome text/icons |
+| Warning Background (`--color-warning-bg`) | `#FFF4D6` | Warning and ambiguous-outcome callouts |
 | Read-only Field | `#F0F4F1` | Read-only and immutable field backgrounds |
 | Surface | `#FFFFFF` | Forms, cards, tables, dialogs |
 
@@ -69,6 +81,8 @@ Color application rules:
 - Primary controls use Primary Green with white text. Secondary Green is the hover accent; hover must also change a border, underline, or elevation so color is not the only cue.
 - Pale Green must use Text Charcoal or Primary Green text, never white text.
 - Errors must include an icon and/or explanatory text, not a red-only indicator.
+- Warnings and ambiguous-outcome states must include the word **Warning**, explanatory text, and/or an understandable icon; `--color-warning` and `--color-warning-bg` are supplementary and must never carry meaning alone.
+- Requested Priority must include the visible text **Low**, **Medium**, or **High**; color alone must not distinguish the values, and **High** is not an error state.
 - Status must always include the word **New**; the green badge alone is insufficient.
 - Focus indicators must be clearly visible against both white and pale surfaces. Use a 3 px Primary Green outline with at least 2 px visual separation from the component.
 - Disabled content must remain readable; reduced opacity alone must not make text illegible.
@@ -94,6 +108,7 @@ The breakpoints align with the existing Bootstrap stack and are inclusive as sho
 
 Additional responsive rules:
 
+- Development Requester Selection is centered at desktop/tablet widths and becomes a single-column, full-width form within the mobile gutters. Its dropdown, state message, **Retry**, and **Continue** must remain visible and usable at 320 px and 200% zoom.
 - At desktop and tablet widths, Category and Related System share a row. Summary and Description span the full form width.
 - At mobile width, labels remain above controls and all controls use the full available width.
 - Primary buttons, icon buttons, navigation controls, file controls, pagination controls, and card links must provide a touch target of at least **44 × 44 px** on mobile.
@@ -124,12 +139,17 @@ Validation runs after a field is blurred and again on submit. A message must dis
 |---|---|
 | Loading | Use a labelled spinner or skeleton; announce loading once; do not show stale requester-owned content |
 | Success | Use a concise dismissible banner and move focus to it after navigation or an asynchronous mutation |
+| Warning / ambiguous outcome | Use `--color-warning` on `--color-warning-bg` with explanatory text or an understandable icon; state what is known, what remains uncertain, and the safe reconciliation or next action |
 | Recoverable error | Explain what failed, retain safe user input, and offer **Retry** where the same operation can be repeated |
 | Empty state | Explain whether the requester has no tickets or current filters have no matches |
 | Confirmation dialog | Initial focus on the least destructive useful control; trap focus; support Escape; return focus to the trigger |
 | Destructive action | Use explicit language such as **Remove attachment**, never an ambiguous **OK** |
 
-Use human-readable error copy. Raw stack traces, internal IDs, database errors, and storage paths must never appear in the UI.
+Every API-consuming screen must define and render its loading, success where applicable, empty where a collection may be empty, validation (`400`), forbidden (`403`), missing (`404`), conflict (`409`), unexpected server (`500`), and network-failure states that the corresponding endpoint can produce. A status not defined for that endpoint need not be fabricated. Retry must preserve only safe state, use the same requester context and operation parameters, and never render stale data as current.
+
+`400 INVALID_REQUESTER_CONTEXT` from any protected request is a context failure rather than an ordinary retryable validation error. The client must remove the stored requester ID, clear requester-owned state, cancel or disregard other requests from that context, and return to Development Requester Selection. It must not offer Retry with the rejected context.
+
+Use human-readable error copy. Raw stack traces, internal IDs, database errors, storage paths, and another requester's content must never appear in the UI. Unexpected `500` and network failures use a safe message such as **Something went wrong. Try again.** and an operation-specific **Retry** where retry is safe.
 
 ## 6. Create Ticket Screen
 
@@ -137,7 +157,7 @@ Use human-readable error copy. Raw stack traces, internal IDs, database errors, 
 
 1. Page title: **Create Ticket**.
 2. Introductory sentence explaining that the ticket starts with status **New**.
-3. Current requester summary in a read-only shaded panel.
+3. Ticket identity/context summary containing read-only Ticket Number, Ticket Date, and current requester values.
 4. Ticket form on a white surface.
 5. Primary **Create ticket** and secondary **Cancel** actions.
 
@@ -145,33 +165,40 @@ The form contains:
 
 | Field | Control | Requirement and UI behavior |
 |---|---|---|
-| Requester | Read-only value from **Viewing as** | Required context; cannot be edited inside the form |
+| Ticket Number | Read-only output | Before creation show **Generated after creation**; after success show only the server-returned `ticket.ticketNumber` |
+| Ticket Date | Read-only output | Before creation show **Set after creation**; after success show a readable date/time derived only from the server-returned `ticket.createdAt` and retain its machine-readable value |
+| Requester | Read-only value from **Viewing as** | Required validated context; cannot be edited inside the form |
 | Category | Select populated from metadata | Required; initial option **Select a category**; only active metadata options appear |
 | Related System | Select populated from metadata | Required; initial option **Select a related system**; only active metadata options appear |
 | Summary | Single-line text input | Required; trim before validation; 5–120 Unicode characters; show `current / 120` counter |
+| Requested Priority | Select before creation; read-only output after success | Required; initial option **Select a requested priority**; API values are exactly `LOW`, `MEDIUM`, and `HIGH`, displayed as **Low**, **Medium**, and **High**; success uses `ticket.requestedPriority` |
 | Description | Multiline textarea | Required; trim before validation; 10–2,000 Unicode characters; show `current / 2000` counter; grows to a sensible maximum without hiding the page actions |
 
 Required validation messages are:
 
 - **Select a category.**
 - **Select a related system.**
+- **Select a requested priority.**
 - **Summary must be 5 to 120 characters.**
 - **Description must be 10 to 2,000 characters.**
 
-Category and Related System controls are disabled while metadata loads. A metadata failure shows an inline error with **Retry** and prevents submission.
+Category and Related System controls are disabled while metadata loads. If either active metadata array is empty, explain which required choices are unavailable, keep the affected control and **Create ticket** disabled, retain entered text, and do not confuse this state with an API failure. A metadata `500` or network failure shows **We couldn't load ticket options.** with **Retry**, retains safe entered values, and prevents submission.
 
 Attachment management begins after the ticket has been created because attachment endpoints require a ticket ID. The Create Ticket screen must state: **You can add up to 5 attachments after creating the ticket.**
 
 ### 6.2 Submission behavior
 
 - **Create ticket** is enabled when a requester exists, metadata is available, and no submission is running. Activating it runs client-side validation so untouched invalid fields receive actionable messages.
-- On activation, trim text values, disable repeat submission, preserve the button width, and show **Creating ticket…** with a spinner.
-- A `201` response navigates to Ticket Detail and shows **Ticket {ticketNumber} was created.** The generated ticket number and read-only **New** status must be prominent.
+- For each logical submission, the client generates one UUID `clientRequestId` before its first request. The request contains the selected `categoryId`, `relatedSystemId`, trimmed `summary`, `requestedPriority`, trimmed `description`, and that `clientRequestId`; requester ownership still comes only from the validated requester context.
+- On activation, trim text values, retain the logical submission's `clientRequestId`, disable repeat activation, preserve the button width, and show **Creating ticket…** with a spinner.
+- A first-create `201` response and an idempotent-replay `200` response are both success. For `201`, announce **Ticket {ticketNumber} was created.** For a response with `replayed: true`, announce **Ticket {ticketNumber} was already created. Showing the original ticket.** Both success states show the actual `ticket.ticketNumber`, Ticket Date from `ticket.createdAt`, read-only **New** status, and a **View ticket** action; replay must not be presented as a second creation.
 - A `400` response maps known validation issues to their fields and places unknown validation issues in the form error summary.
-- Other failures retain entered values and show **We couldn't create your ticket. Try again.**
+- A `409` idempotency conflict shows a safe blocking explanation and must not automatically retry or claim that a ticket was created.
+- After a timeout, lost response, network failure, or retryable `500`, retain the entered values and the same `clientRequestId`. **Retry** must resend the same normalized logical submission with that ID so a server-side success whose response was lost resolves to the existing ticket rather than creating another one. Do not silently generate a replacement ID while the outcome is uncertain.
+- Other failures retain entered values and show **We couldn't create your ticket. Try again.** without exposing server internals.
 - **Cancel** returns to My Tickets. If the user changed a field, request confirmation before discarding the draft.
 
-The ticket number must not be predicted or rendered before the server returns it.
+Ticket Number and Ticket Date are server-controlled. Before success the UI must show only their read-only placeholders; it must not predict, client-generate, or submit either value. After success, the visible values must come from the response's `ticket.ticketNumber` and `ticket.createdAt`. Dates use a consistent readable format and semantic `<time datetime="{createdAt}">` markup where available.
 
 ## 7. My Tickets Screen
 
@@ -186,6 +213,7 @@ The query toolbar contains:
 | Search | Label **Search tickets**; trimmed, case-insensitive substring search over ticket number and summary; submit with Enter or **Search**; separate **Clear search** control |
 | Category filter | Default **All categories**; option values are category IDs |
 | Related System filter | Default **All systems**; option values are related-system IDs |
+| Requested Priority filter | Default **All priorities**; values are `LOW`, `MEDIUM`, and `HIGH`, displayed as **Low**, **Medium**, and **High** |
 | Status filter | Default **All statuses**; **New** is the only sprint status |
 | Sort | Default **Newest first**; additionally expose **Oldest first**, **Ticket number A–Z**, **Ticket number Z–A**, **Summary A–Z**, and **Summary Z–A** |
 | Page size | Label **Tickets per page**; default 10; options 10, 20, and 50 |
@@ -193,7 +221,7 @@ The query toolbar contains:
 
 Submitting search, changing any filter or sort, changing requester, or changing page size resets to page 1. Query state should be represented in the URL so refresh and Back/Forward retain the view. The requester ID must never be placed in the URL; it remains in the request header.
 
-The UI maps its controls to the exact API query parameters `search`, `status`, `categoryId`, `relatedSystemId`, `sortBy`, `sortOrder`, `page`, and `pageSize`. The default request is `sortBy=createdAt&sortOrder=desc&page=1&pageSize=10` with search and filters omitted. Valid sort fields are `createdAt`, `ticketNumber`, and `summary`; sort order is `asc` or `desc`. Category and system IDs are positive integers, and page size must not exceed 50.
+The UI maps its controls to the exact API query parameters `search`, `status`, `categoryId`, `relatedSystemId`, `requestedPriority`, `sortBy`, `sortOrder`, `page`, and `pageSize`. The default request is `sortBy=createdAt&sortOrder=desc&page=1&pageSize=10` with search and filters omitted. Valid sort fields are `createdAt`, `ticketNumber`, and `summary`; sort order is `asc` or `desc`. Category and system IDs are positive integers, Requested Priority is `LOW`, `MEDIUM`, or `HIGH`, and page size must be 10, 20, or 50.
 
 ### 7.2 Desktop and tablet results table
 
@@ -203,9 +231,10 @@ The semantic table has the accessible caption **Tickets owned by {requesterName}
 2. Summary
 3. Category
 4. Related System
-5. Status
-6. Created
-7. Action (**View details** with accessible name including the ticket number)
+5. Requested Priority
+6. Status
+7. Created
+8. Action (**View details** with accessible name including the ticket number)
 
 Column headings associated with sortable fields expose the current sort direction. On tablet, wrap the table in a focusable region labelled **Ticket results — scroll horizontally for more columns**.
 
@@ -216,6 +245,7 @@ At widths below 768 px, render the same result data as cards rather than squeezi
 - linked ticket number;
 - summary as the card heading;
 - labelled Category and Related System values;
+- labelled Requested Priority value using visible **Low**, **Medium**, or **High** text;
 - a text **New** badge;
 - created date/time; and
 - a full-width **View details** action.
@@ -225,8 +255,8 @@ Card order must match the active sort and pagination exactly. Table and cards ar
 ### 7.4 Result and pagination states
 
 - During a fetch, hide old requester-owned rows/cards and show a results loading state.
-- With no tickets and default query controls, show **No tickets yet** plus **Create your first ticket**.
-- With no matches after search/filtering, show **No tickets match your search or filters** plus **Reset filters**.
+- **Empty** and **No results** are distinct states. Empty means the selected requester owns no tickets; show **No tickets yet** plus **Create your first ticket**. No results means the requester owns tickets but the active search/filter combination matches none; show **No tickets match your search or filters** plus **Reset filters**.
+- When a restricted query returns zero items, make one unrestricted probe for page 1 with the documented default `pageSize=10` under the same validated requester context. An unrestricted `totalItems` of `0` selects Empty; a value greater than `0` selects No results. If that probe fails, show the list Failure state rather than guessing or rendering stale data.
 - Above the results, show a summary such as **Showing 11–20 of 37 tickets**.
 - Pagination contains **Previous**, numbered page controls, and **Next**. The current page uses `aria-current="page"`; boundary controls are disabled.
 - If a requested page becomes empty after a query change, request the nearest valid page, normally page 1.
@@ -238,9 +268,11 @@ Card order must match the active sort and pagination exactly. Table and cards ar
 
 Ticket detail is requested using the selected requester's header before any ticket content is rendered.
 
+- On malformed route/request context or another documented `400`, show a safe request error and no ticket metadata.
 - On `403`, render no ticket metadata or filenames. Show **You don't have permission to view this ticket.** with a **Back to My Tickets** action.
 - On `404`, show **Ticket not found.** with a **Back to My Tickets** action.
-- The two states may share layout but must preserve the API contract's status-specific user message.
+- On `500` or a network failure, render no stale detail, show **We couldn't load this ticket.**, and provide **Retry**.
+- These states may share layout but must preserve the API contract's status-specific user message. A `403` necessarily communicates that the selected requester cannot access an existing ticket, while a `404` communicates that the route resource is missing; neither state may render protected ticket fields, attachment metadata, filenames, or owner identity.
 - Switching requester immediately leaves the detail screen as described in Section 2.2.
 
 ### 8.2 Owned ticket content
@@ -251,8 +283,10 @@ The detail screen includes:
 2. Ticket number as the page title.
 3. Visible **New** status badge.
 4. Summary and full description.
-5. Read-only metadata: requester, category, related system, created date/time, and last-updated date/time when supplied.
+5. Read-only metadata: requester, category, related system, Requested Priority displayed as **Low**, **Medium**, or **High**, created/Ticket Date, and last-updated date/time when supplied.
 6. Attachment management section.
+
+`GET /api/tickets/:id` is the UI's retrieval capability for attachment metadata. Its owned Ticket Detail response supplies both active and soft-removed attachment metadata for rendering this screen; download and soft-remove routes are separate capabilities and must not be used as metadata lookup substitutes. Loading detail therefore loads attachment metadata without downloading file bytes.
 
 Description whitespace and line breaks are preserved safely as text; user-entered content must not be interpreted as HTML. Immutable values use read-only shaded presentation rather than disabled input controls.
 
@@ -262,22 +296,23 @@ On desktop, long-form description is the main column and metadata/attachments ma
 
 The attachment panel shows **Attachments ({activeCount}/5)** and a visible rule summary:
 
-**JPG, PNG, WEBP, or PDF; maximum 5 MiB each; up to 5 active attachments.**
+**JPG, PNG, WEBP, or PDF; maximum 5 MB (5,242,880 bytes) each; up to 5 active attachments.**
 
 Upload behavior:
 
 - Provide a native file chooser labelled **Choose attachment** and an **Upload attachment** button. Drag-and-drop may supplement, but must not replace, the keyboard-accessible chooser.
 - Accepted extensions/MIME pairs are `.jpg`/`.jpeg` with `image/jpeg`, `.png` with `image/png`, `.webp` with `image/webp`, and `.pdf` with `application/pdf`.
-- Maximum size is **5 MiB (5,242,880 bytes)** per file.
+- Maximum size is **5 MB (5,242,880 bytes)** per file.
 - No more than **5 active attachments** may exist for a ticket.
 - Client validation occurs before upload, but server validation remains authoritative.
 - Invalid files stay unsubmitted and receive a message immediately below the chooser:
   - **Choose a JPG, PNG, WEBP, or PDF file.**
-  - **File must be 5 MiB or smaller.**
+  - **File must be 5 MB (5,242,880 bytes) or smaller.**
   - **This ticket already has 5 active attachments. Remove one before uploading another.**
 - While uploading, disable the chooser and button, show filename plus **Uploading…**, and prevent duplicate submission.
-- On success, announce **{filename} uploaded**, clear the chooser, increment the active count, and add the item to the active list.
-- On failure, preserve the selected filename where the browser permits and show a retryable error.
+- On success, announce **{filename} uploaded**, clear the chooser, and reload `GET /api/tickets/:id` before presenting the settled attachment count/list and Last Updated value. The refresh reconciles both the returned attachment metadata and the parent ticket's server-controlled `updatedAt`.
+- On `400`, associate a documented file validation/limit problem with the chooser. On `403` or `404`, reveal no foreign ticket data and leave the protected detail screen as appropriate. On an active-count conflict, refresh Ticket Detail metadata before allowing another attempt.
+- On `500`, timeout, or network failure, preserve the selected filename where the browser permits and show a safe error. Because an upload response can be lost after persistence, show a warning that the outcome is being checked, refresh Ticket Detail attachment metadata, and only then explain whether the upload exists or offer a manual retry. Never automatically repeat the file upload.
 
 The upload controls are disabled when the active count is 5, but the rule and existing attachment list remain readable.
 
@@ -292,7 +327,7 @@ Each active attachment row/card shows:
 - **Download** action with an accessible name containing the filename; and
 - **Remove** action with an accessible name containing the filename.
 
-Filenames must wrap or truncate visually with the full value available to assistive technology; they must never overflow the layout. A download action requests the owned active attachment using the requester header. While the download begins, expose a busy state without disabling unrelated rows. If the API returns `404` because the attachment was removed or no longer exists, refresh the attachment list and show **This attachment is no longer available for download.**
+Filenames must wrap or truncate visually with the full value available to assistive technology; they must never overflow the layout. A download action requests the owned active attachment using the requester header. While the download begins, expose a busy state without disabling unrelated rows. If the API returns `404` because the attachment was removed or no longer exists, refresh the attachment list and show **This attachment is no longer available for download.** A `403` must reveal no filename or file bytes; a `500` or network failure shows a safe retryable download error without changing attachment metadata.
 
 ### 8.5 Soft-removal dialog and removed attachments
 
@@ -309,13 +344,13 @@ After a successful soft-removal:
 
 - close the dialog and return focus to the attachment section heading;
 - announce **{filename} was removed**;
-- decrement the active count;
-- move the record to a collapsed **Removed attachments** subsection; and
+- reload `GET /api/tickets/:id` so the active count, removed record, and parent Last Updated value come from the committed server state;
+- move the refreshed record to a collapsed **Removed attachments** subsection; and
 - remove all download and repeated remove controls for that record.
 
 A removed record retains and displays the original filename, MIME/type, size, original upload timestamp, removed timestamp, and removal reason. It is visibly labelled **Removed**. No link, URL, or control may permit its file content to be downloaded.
 
-If removal fails, keep the dialog open, retain the reason, and show the error inside the dialog.
+If removal validation returns `400`, keep the dialog open, retain the reason, and associate the error with the field. On `403` or `404`, disclose no foreign metadata, close or replace stale controls, and refresh/leave the detail view as appropriate. On `500`, timeout, or network failure, keep the safe reason while mounted, show a warning that the outcome is being checked, and refresh Ticket Detail metadata before another mutation so a lost success response is not presented as still active. The refreshed state determines whether the dialog can safely offer another removal attempt.
 
 ## 9. Accessibility Requirements
 
@@ -323,16 +358,18 @@ The target is WCAG 2.1 Level AA for all in-scope screens.
 
 - Use semantic landmarks: header, navigation, main, forms, sections, and footer where present. Include a **Skip to main content** link.
 - Every control has a programmatic name. Visible labels are preferred; placeholders are hints only.
+- Development Requester Selection is a semantic form: the dropdown has a persistent visible label, **Continue** is reachable in logical order, loading/error changes are announced, and focus moves to the error or Retry action after a failed load.
 - Keyboard focus follows visual order and is never trapped except intentionally within an open modal.
-- All functionality is operable by keyboard, including navigation, filters, pagination, upload, download, dialog confirmation, and dismissal.
+- All functionality is operable by keyboard, including requester selection/change, navigation, filters, pagination, upload, download, dialog confirmation, and dismissal.
 - Screen changes, success messages, and asynchronous errors use a polite live region; validation summaries and blocking request failures use an assertive alert only when immediate attention is required.
-- Status, selection, validation, and removal are communicated with text in addition to color.
+- Status, Requested Priority, warning/ambiguous outcome, selection, validation, and removal are communicated with text or an understandable icon in addition to color.
 - Icons that repeat adjacent text are decorative; icon-only buttons need a specific accessible name.
 - Tables use a caption, column headers, and correct header associations. Mobile cards use headings and labelled definition-style metadata.
 - Dates use a consistent readable display and a machine-readable `datetime` value where semantic time markup is used.
 - Dialogs have an accessible name and description, trap focus while open, close with Escape/Cancel, and restore focus.
 - File rules and validation messages are associated with the file input. Drag-over visuals are not the only upload instruction.
 - Content remains readable in high-contrast/forced-colors mode; borders and focus indicators must not depend solely on background colors.
+- At 320 px viewport width and 200% browser zoom, selection, form, list, detail, dialog, and attachment content remains operable without page-level horizontal scrolling or hidden actions.
 - Motion is nonessential and respects `prefers-reduced-motion`.
 
 Automated UI tests should query by role, accessible name, label, and visible text. Add test IDs only where no stable semantic locator exists.
@@ -342,8 +379,9 @@ Automated UI tests should query by role, accessible name, label, and visible tex
 ### 10.1 Global checklist
 
 - [ ] All required Zen Green tokens match their exact hex values.
+- [ ] Warning states use `--color-warning: #8A5500` and `--color-warning-bg: #FFF4D6` with text/icon meaning in addition to color.
 - [ ] Page background is `#F5F7F6`; primary surfaces are distinct and readable.
-- [ ] Requester selector, demo-context notice, and selected requester are visible.
+- [ ] Development Requester Selection shows the demo-context notice; the application shell shows the committed requester read-only with **Change Requester**.
 - [ ] Header navigation clearly indicates the active screen without color-only communication.
 - [ ] Required asterisks and the **`* Required`** legend are present.
 - [ ] Read-only fields use `#F0F4F1`.
@@ -354,29 +392,43 @@ Automated UI tests should query by role, accessible name, label, and visible tex
 - [ ] Mobile interactive targets are at least 44 × 44 px.
 - [ ] Text remains usable at 200% zoom.
 
-### 10.2 Create Ticket checklist
+### 10.2 Development Requester Selection checklist
+
+- [ ] The selection screen gates every requester-facing screen and no protected content flashes before context validation.
+- [ ] The labelled dropdown, **Continue**, loading, ready, empty, error, and **Retry** states are distinct and accessible.
+- [ ] **Continue** stays disabled until an active requester is selected and selection alone does not commit context.
+- [ ] Only the positive integer requester ID is stored in browser-tab `sessionStorage`; malformed, unknown, or inactive stored IDs are cleared before protected requests run.
+- [ ] **Change Requester** clears requester-specific state and cancels/disregards stale responses before returning to selection.
+- [ ] The selection screen and shell requester controls remain usable at desktop, tablet, mobile down to 320 px, and 200% zoom.
+
+### 10.3 Create Ticket checklist
 
 - [ ] Desktop uses a multi-column field grid with full-width Summary and Description.
 - [ ] Tablet uses two columns for Category and Related System.
 - [ ] Mobile stacks all fields and renders full-width actions.
-- [ ] Requester is shown as read-only context.
+- [ ] Ticket Number and Ticket Date show read-only pre-create placeholders and only server-returned `ticketNumber`/`createdAt` after success.
+- [ ] Requester is shown as read-only context; Requested Priority is a required `LOW`/`MEDIUM`/`HIGH` selection.
 - [ ] Summary and Description counters and exact limits are visible.
 - [ ] Attachment-after-creation guidance is visible.
-- [ ] Success navigation exposes the server-generated ticket number and **New** status.
+- [ ] Pending activation is disabled and an ambiguous-response retry reuses the same logical `clientRequestId`.
+- [ ] First-create and replay success expose the same server-generated ticket number, Ticket Date, and **New** status without implying two tickets.
+- [ ] Validation, idempotency-conflict, safe `500`/network failure, and recoverable retry states retain only appropriate safe state.
 
-### 10.3 My Tickets checklist
+### 10.4 My Tickets checklist
 
 - [ ] Desktop renders the complete semantic table and query controls without clipping.
 - [ ] Tablet confines horizontal table scrolling to a labelled region.
 - [ ] Mobile replaces the table with complete, ordered ticket cards.
-- [ ] Search, category/system/status filters, sort, page size, reset, result count, and pagination are present.
-- [ ] Loading, no-tickets, no-match, API-error, and populated states are visually distinct.
+- [ ] Search, category/system/Requested Priority/status filters, sort, page size, reset, result count, and pagination are present.
+- [ ] Requested Priority visible text appears in both the desktop table and mobile cards.
+- [ ] Loading, Empty, No results, API-error, and populated states are visually distinct; the unrestricted probe uses `pageSize=10` and never leaks another requester's data.
 - [ ] Long summaries and ticket numbers do not break layout.
 
-### 10.4 Ticket Detail checklist
+### 10.5 Ticket Detail checklist
 
-- [ ] Ticket number, **New** status, summary, metadata, and description have clear hierarchy.
+- [ ] Ticket number, Ticket Date, **New** status, Requested Priority, summary, metadata, and description have clear hierarchy.
 - [ ] Desktop, tablet, and mobile content orders match Section 8.
+- [ ] `GET /api/tickets/:id` supplies active and removed attachment metadata without downloading bytes.
 - [ ] Active count and attachment constraints are visible.
 - [ ] Upload, download, removal dialog, removed metadata, and error states are represented.
 - [ ] Removed attachments expose metadata and reason but no download control.
@@ -389,15 +441,17 @@ Capture evidence only after the UI is implemented and seeded with deterministic,
 
 | Screen | Desktop | Tablet | Mobile |
 |---|---|---|---|
+| Development Requester Selection | `docs/lab-02/evidence/requester-selection-desktop.png` | `docs/lab-02/evidence/requester-selection-tablet.png` | `docs/lab-02/evidence/requester-selection-mobile.png` |
 | Create Ticket | `docs/lab-02/evidence/create-ticket-desktop.png` | `docs/lab-02/evidence/create-ticket-tablet.png` | `docs/lab-02/evidence/create-ticket-mobile.png` |
 | My Tickets | `docs/lab-02/evidence/my-tickets-desktop.png` | `docs/lab-02/evidence/my-tickets-tablet.png` | `docs/lab-02/evidence/my-tickets-mobile.png` |
 | Ticket Detail | `docs/lab-02/evidence/ticket-detail-desktop.png` | `docs/lab-02/evidence/ticket-detail-tablet.png` | `docs/lab-02/evidence/ticket-detail-mobile.png` |
 
 For baseline screenshots, use:
 
+- Development Requester Selection in its ready state with deterministic active requester choices and no committed context;
 - a valid requester selected;
 - Create Ticket in its clean editable state;
 - My Tickets with enough records to show pagination;
 - Ticket Detail with at least one active and one removed attachment.
 
-Validation, empty, `403`, and busy-state screenshots may be added to the same evidence directory with descriptive suffixes, but they do not replace the nine required responsive captures above.
+Requester loading/empty/error, validation, Empty/No results, `403`, ambiguous-outcome warning, conflict, safe `500`, and busy-state screenshots may be added to the same evidence directory with descriptive suffixes, but they do not replace the twelve required responsive captures above.
