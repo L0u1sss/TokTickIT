@@ -1,7 +1,7 @@
 # Lab 2 — Peer Review Record
 
-**Author:** พลัฏฐ์ อมาตย์ชยาภา — 67070507212 — GitHub: @L0u1sss
-**Peer reviewer:** Tanaboon — GitHub: [@Tanaboonnnnn](https://github.com/Tanaboonnnnn)
+**Author:** พลัฏฐ์ อมาตย์ชยาภา - 67070507212 - GitHub: [@L0u1sss](https://github.com/L0u1sss)
+**Peer reviewer:** แทนบุญ เตียวสวัสดิ์ - 67070507211 - GitHub: [@Tanaboonnnnn](https://github.com/Tanaboonnnnn)
 
 ## Pull Requests I authored (reviewed by my partner)
 | PR | Branch | Reviewer verdict |
