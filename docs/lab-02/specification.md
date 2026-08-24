@@ -104,7 +104,7 @@ The client shall generate one UUID `clientRequestId` for each logical ticket sub
 
 ### BR-01 — Ticket number
 
-The backend shall allocate a database-safe unique ticket number in the exact form `TKT-YYYY-XXXXXX`, matching `^TKT-\d{4}-\d{6}$`. `YYYY` is the ticket creation year in UTC and `XXXXXX` is a zero-padded six-digit sequence allocated for that year. A unique database constraint and atomic allocation/retry behavior shall prevent duplicates under concurrent requests.
+The backend shall allocate a database-safe unique ticket number in the exact form `TKT-YYYY-XXXXXX`, matching `^TKT-\d{4}-\d{6}$`. `YYYY` is the ticket creation year in UTC and `XXXXXX` is a zero-padded six-digit sequence allocated for that year. A unique database constraint is authoritative; concurrency stress behavior is implementation hardening outside the Lab 2 acceptance scope.
 
 ### BR-02 — Initial status
 
@@ -132,15 +132,15 @@ Description is required. After trimming leading and trailing whitespace, it must
 
 ### BR-08 — Attachment type
 
-Only these extension and media-type pairs are accepted: `.jpg` or `.jpeg` with `image/jpeg`, `.png` with `image/png`, `.webp` with `image/webp`, and `.pdf` with `application/pdf`. Comparison is case-insensitive for the extension. Both the sanitized filename extension and detected/validated media type must agree; changing an extension alone does not make a file valid.
+Only these extension and declared media-type pairs are accepted: `.jpg` or `.jpeg` with `image/jpeg`, `.png` with `image/png`, `.webp` with `image/webp`, and `.pdf` with `application/pdf`. Comparison is case-insensitive for the extension. The sanitized filename extension and multipart media type must agree. File-signature inspection and malware scanning are production hardening outside this sprint.
 
 ### BR-09 — Attachment size
 
-Each attachment must contain at least 1 byte and may contain at most 5 MB, defined for this Lab 2 contract as exactly 5,242,880 bytes. The boundary value is valid; 5,242,881 bytes is invalid.
+The labsheet states a maximum of “5 MB” but does not define its byte conversion. As an explicit team decision for deterministic implementation and boundary tests, this specification interprets that label as the binary limit 5 MiB, exactly 5,242,880 bytes. Each attachment must contain at least 1 byte; 5,242,880 bytes is valid and 5,242,881 bytes is invalid. This interpretation must be changed consistently if the instructor confirms a decimal 5,000,000-byte limit.
 
 ### BR-10 — Attachment count
 
-A ticket may have no more than five active attachments. The count and insert shall be enforced atomically to prevent concurrent uploads from exceeding five. Soft-removed attachments remain in the audit history but do not count toward the limit.
+A ticket may have no more than five active attachments. The server checks the active count and rejects a sixth attachment. Soft-removed attachments remain in the audit history but do not count toward the limit. Concurrent-upload stress handling is not an acceptance requirement for this sprint.
 
 ### BR-11 — Attachment soft-removal
 
@@ -158,17 +158,17 @@ A ticket belongs to exactly one requester. Only that owner may list or view it o
 
 Every logical ticket submission has one required client-generated UUID `clientRequestId`, stored under a database unique constraint. Duplicate comparison uses the validated requester and normalized `categoryId`, `relatedSystemId`, trimmed `summary`, `requestedPriority`, and trimmed `description`; attachment selection is excluded because attachments upload only after ticket creation.
 
-The first successful creation returns `201` with `replayed: false`. Repeating the same normalized logical request with the same `clientRequestId` returns the original ticket with `200` and `replayed: true`, without changing its `updatedAt`. Reusing that ID with different normalized content or a different requester returns `409 DUPLICATE_REQUEST_CONFLICT` and creates nothing. Concurrent requests that race on the unique key shall reread the winning row and apply the same replay-or-conflict decision instead of exposing a database error.
+The first successful creation returns `201` with `replayed: false`. Repeating the same normalized logical request with the same `clientRequestId`, including a retry after a lost response, returns the original ticket with `200` and `replayed: true`, without changing its `updatedAt`. Reusing that ID with different normalized content or a different requester returns `409 DUPLICATE_REQUEST_CONFLICT` and creates nothing. A unique database constraint remains required, but concurrency stress behavior is not part of the Lab 2 acceptance suite.
 
 ### BR-15 — Safe unexpected failures
 
-An unexpected failure on a JSON endpoint returns `500 INTERNAL_ERROR` using the common error envelope and a stable endpoint-appropriate message. It shall not expose stack traces, SQL, ORM or database details, credentials, storage keys, or filesystem paths. Transactional operations shall return no success response and leave no partial ticket, attachment metadata, or requester-visible file. If a download stream fails after headers have been sent, the server shall terminate the stream safely rather than attempt to append a JSON error.
+An unexpected failure on a JSON endpoint returns `500 INTERNAL_ERROR` using the common error envelope and a stable endpoint-appropriate message. It shall not expose stack traces, SQL, ORM or database details, credentials, storage keys, or filesystem paths. Transactional operations shall return no success response and leave no partial ticket, attachment metadata, or requester-visible file. For downloads, this JSON error contract applies only before response streaming begins; mid-stream transport failure handling is outside the Lab 2 acceptance scope.
 
 ## 6. UI Specification Summary
 
 The UI follows the Zen Green token system: Primary Green `#006B3C`, Secondary Green `#0B7A46`, Pale Green `#EAF6EF`, Page Background `#F5F7F6`, Text Charcoal `#1A2E22`, Error `#D32F2F`, Warning `#8A5500`, and Warning Background `#FFF4D6`. Editable and read-only controls, required indicators, validation placement, focus treatment, busy states, semantically distinct empty/no-results/failure states, attachment states, and screenshot evidence are defined in [ui-spec.md](./ui-spec.md). Status, priority, warning, success, error, and removal meaning must never rely on color alone.
 
-Responsive targets are desktop at `>=992px` with multi-column forms and ticket tables, tablet at `768–991px` with two-column forms and horizontally scrollable tables, and mobile at `<768px` with a vertical form, ticket cards, and full-width controls with touch targets at least `44px` high. Development Requester Selection and every ticket screen must remain usable without page-level horizontal overflow at `320px` CSS width and at `200%` browser zoom. Functionality and information must remain equivalent at every target size.
+Responsive targets are desktop at `>=992px` with multi-column forms and ticket tables, tablet at `768–991px` with two-column forms and horizontally scrollable tables, and mobile at `<768px` with a vertical form, ticket cards, and full-width controls with touch targets at least `44px` high. The acceptance viewports are 1440×900, 834×1112, and 390×844 respectively. Functionality and information must remain equivalent at every target size.
 
 ## 7. Data Changes
 
@@ -181,10 +181,10 @@ The existing PostgreSQL/Prisma schema is extended through a migration. Entity fi
 | `RequesterUser` | `id` positive integer primary key; `displayName` varchar(120); `email` normalized varchar(254), unique; `isActive` boolean default `true`; `createdAt`; `updatedAt` | Owns many tickets. May be recorded as attachment uploader/remover. Records are deactivated, not deleted, when history exists. |
 | `Category` | Existing `id` integer primary key and unique `name`; add `isActive` boolean default `true` and `updatedAt`; retain `createdAt` | Referenced by many tickets. Inactive rows remain attached to historical tickets and are omitted from new-ticket metadata. |
 | `RelatedSystem` | `id` positive integer primary key; unique `name` varchar(120); optional `description` varchar(500); `isActive` boolean default `true`; `createdAt`; `updatedAt` | Referenced by many tickets. Lifecycle matches `Category`. |
-| `Ticket` | `id` positive integer primary key; `ticketNumber` varchar(15), unique and server-generated; `clientRequestId` UUID, unique; `requesterId`, `categoryId`, `relatedSystemId` foreign keys; `summary` varchar(120); `description` varchar(2000); `requestedPriority` enum `LOW`/`MEDIUM`/`HIGH`; `status` constrained to `New` in this sprint; `createdAt`; `updatedAt` | Belongs to one requester, category, and related system; has many attachments. Requester-editable and business fields, including requested priority, are immutable after creation; the system-controlled `updatedAt` advances after committed attachment mutations. Referenced rows use restrictive deletion so audit history cannot be orphaned. |
+| `Ticket` | `id` positive integer primary key; `ticketNumber` varchar(15), unique and server-generated; `clientRequestId` UUID, unique; `requesterId`, `categoryId`, `relatedSystemId` foreign keys; `summary` varchar(120); `description` varchar(2000); `requestedPriority` enum `LOW`/`MEDIUM`/`HIGH`; `status` constrained to `New` in this sprint; `createdAt`; `updatedAt` | Belongs to one requester, category, and related system; has many attachments. Requester-editable and business fields, including requested priority, are immutable after creation. Attachment operations do not define additional parent-ticket timestamp behavior in this sprint. Referenced rows use restrictive deletion so audit history cannot be orphaned. |
 | `Attachment` | `id` positive integer primary key; `ticketId` foreign key; `originalName` varchar(255); unique opaque `storageKey`; `mimeType` varchar(100); `sizeBytes` integer; `uploadedByRequesterId`; `createdAt`; nullable `removedAt`, `removalReason` varchar(500), and `removedByRequesterId` | Belongs to one ticket. Uploader/remover reference `RequesterUser`. No hard-delete path is exposed in this sprint. Active means `removedAt IS NULL`. |
 
-Ticket numbers require an atomic, database-backed per-year counter or an equivalent transactionally safe allocation mechanism. This implementation detail may use a small counter table, but the externally testable rules are the format, UTC year, and uniqueness in BR-01.
+Ticket numbers may use a database-backed per-year counter or another implementation compatible with the unique constraint. The externally testable Lab 2 rules are the format, UTC year, and uniqueness in BR-01; concurrency stress behavior is not part of this issue.
 
 ### 7.2 Relationships
 
@@ -274,7 +274,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 **Given** requester A owns a ticket with fewer than five active attachments,
 
-**When** A uploads a permitted JPG, PNG, WEBP, or PDF containing 1 byte through the Lab 2 maximum of 5 MB (`5,242,880` bytes),
+**When** A uploads a permitted JPG, PNG, WEBP, or PDF containing 1 byte through the team's Lab 2 interpretation of 5 MB: 5 MiB (`5,242,880` bytes),
 
 **Then** the API returns `201` and lists its metadata; and **when** the type/extension is invalid, size is outside the range, or a sixth active attachment is attempted, **then** it returns `400` and persists no new attachment.
 
@@ -314,7 +314,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 **Given** a ticket was successfully created for a requester using a `clientRequestId`,
 
-**When** the same normalized logical request is repeated sequentially or concurrently with that ID,
+**When** the same normalized logical request is repeated with that ID after a lost response or explicit retry,
 
 **Then** no second ticket is created and the replay returns the original ticket with `200` and `replayed: true`; reusing the ID with different normalized content or a different requester returns `409 DUPLICATE_REQUEST_CONFLICT`; and a client retry after an outcome-unknown response reuses the original ID.
 
@@ -324,15 +324,15 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 **When** each state occurs,
 
-**Then** the UI distinguishes initial loading, no available data, no results for active criteria, and safe retryable failure; exposes the appropriate Retry, clear-criteria, or recovery action; preserves eligible user input; refreshes attachment metadata after an ambiguous upload or removal outcome; and never displays stale or cross-requester data.
+**Then** the UI distinguishes initial loading, no available data, no results for active search/filter criteria, and safe retryable failure; exposes the appropriate Retry, clear-criteria, or recovery action; preserves eligible user input where required; and never displays stale or cross-requester data.
 
 ### AC-13 — Responsive behavior
 
-**Given** Development Requester Selection, Create Ticket, My Tickets, and Ticket Detail at the documented desktop, tablet, and mobile targets,
+**Given** Development Requester Selection, Create Ticket, My Tickets, and Ticket Detail at the documented 1440×900 desktop, 834×1112 tablet, and 390×844 mobile targets,
 
-**When** they are exercised at `320px` CSS width and at `200%` browser zoom as well as the screenshot viewports,
+**When** the primary states and workflows are exercised at those three acceptance viewports,
 
-**Then** equivalent information and actions remain usable, controls reflow without overlap or page-level horizontal overflow, mobile targets are at least `44px` high, and any table overflow is confined to its intended local container.
+**Then** equivalent information and actions remain usable, controls reflow without overlap or page-level horizontal overflow, mobile targets are at least `44px` high, and any tablet table overflow is confined to its intended local container.
 
 ### AC-14 — Accessibility
 
@@ -348,7 +348,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 **When** a JSON endpoint handles it before committing or before a download stream begins,
 
-**Then** it returns the documented `500 INTERNAL_ERROR` envelope and safe message, exposes no implementation detail, commits no partial requester-visible state, and leaves retry or reconciliation behavior consistent with BR-15.
+**Then** it returns the documented `500 INTERNAL_ERROR` envelope and safe message, exposes no implementation detail, and commits no partial requester-visible state.
 
 ## 10. Definition of Done
 
@@ -356,7 +356,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 - [ ] The reviewed Prisma migration, deterministic seed data, Express routes/services, and React views implement all included FRs and BRs without implementing excluded workflows.
 - [ ] Backend validation is authoritative and consistent with the client messages and API contract.
-- [ ] Ticket-number allocation, `clientRequestId` replay/conflict handling, and the five-active-attachment rule are safe under concurrent requests.
+- [ ] Ticket-number uniqueness, `clientRequestId` first-create/replay/conflict behavior, and the five-active-attachment rule satisfy the documented Lab 2 cases.
 - [ ] Attachment bytes are stored outside the public static path under opaque names and are served only through the authorized download route.
 - [ ] Client and server production builds complete without TypeScript errors.
 
@@ -371,7 +371,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 ### Responsive UI and accessibility
 
-- [ ] Development Requester Selection, Create Ticket, My Tickets, and Ticket Detail pass the desktop, tablet, mobile, `320px`, and `200%` zoom checklist in [ui-spec.md](./ui-spec.md).
+- [ ] Development Requester Selection, Create Ticket, My Tickets, and Ticket Detail pass the desktop, tablet, and mobile acceptance viewports in [ui-spec.md](./ui-spec.md).
 - [ ] Required inputs have visible labels, programmatic error associations, keyboard-visible focus, and no color-only meaning.
 - [ ] Interactive targets are at least `44px` high on mobile and no page has unintended horizontal overflow.
 
@@ -388,16 +388,15 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 - **Positive integer identifiers:** Public entity IDs and `x-requester-id` are positive base-10 integers because the existing Prisma `Category` model uses integer IDs. The header remains a string on the wire and is parsed strictly.
 - **Required creation fields:** Category, related system, Summary, Requested Priority, and Description are mandatory so every submitted ticket has sufficient routing context. Inactive lookup values remain visible on historical details but cannot be selected for new tickets. Requested Priority uses only `LOW`, `MEDIUM`, and `HIGH` and is immutable in this sprint.
 - **Development context persistence:** The client stores only a validated requester integer ID in browser-tab `sessionStorage`. It revalidates the value before protected data loads and clears it on Change Requester or when the value is malformed, unknown, or inactive.
-- **Idempotent creation:** A client-generated UUID `clientRequestId` identifies one logical ticket submission. First create, exact replay, conflicting reuse, and concurrent uniqueness-race behavior follow BR-14; a timeout retry reuses the same ID.
+- **Idempotent creation:** A client-generated UUID `clientRequestId` identifies one logical ticket submission. First create, exact replay, conflicting reuse, and lost-response retry follow BR-14. Concurrency stress testing is deferred beyond Lab 2.
 - **UTC owns time-derived behavior:** Ticket-number year and API timestamps use UTC. Timestamps are returned as ISO 8601 strings ending in `Z`.
 - **Server-side list operations:** Search, filter, sort, and pagination are performed before serialization in the database query; the UI does not fetch all tickets and filter locally. Default paging is page 1, 10 items per page, sorted by `createdAt desc`; permitted page sizes are 10, 20, and 50.
 - **Search surface:** The MVP search matches ticket number and summary case-insensitively. Description search is excluded to keep query behavior predictable and indexable.
 - **File storage:** The MVP may use server-managed local storage outside the web root with randomized storage keys. Original names are metadata only. A storage adapter boundary should allow later cloud storage without changing the REST contract.
-- **Attachment limit terminology:** The Lab 2 phrase “5 MB” is defined by the assignment boundary used here as exactly `5,242,880` bytes; every document and test uses that same numeric boundary.
-- **Create-then-upload flow:** Ticket creation is JSON and attachment upload is a separate request after a ticket ID exists. If a UI stages files during creation, it creates the ticket first and uploads each file afterward; an upload failure does not roll back the valid ticket and must be reported clearly. After an unknown upload outcome, the client reloads attachment metadata before offering a manual retry and never retries the upload automatically.
+- **Attachment-limit interpretation:** The labsheet says “5 MB” without an exact byte definition. The team chose the binary interpretation 5 MiB (`5,242,880` bytes) so the API and tests have one deterministic boundary. This is a documented team decision, not a byte count quoted from the labsheet.
+- **Create-then-upload flow:** Ticket creation is JSON and attachment upload is a separate request after a ticket ID exists. Attachment-level retry/idempotency, staged multi-file upload, and compensation workflows are outside this sprint.
 - **Attachment metadata retrieval:** `GET /api/tickets/:id` returns `TicketDetail.attachments` and is the required Retrieve Attachment Metadata capability; no separate list endpoint is needed for this sprint.
-- **Attachment activity timestamp:** A committed upload or soft-removal updates the parent ticket’s `updatedAt`; failed or replayed operations do not.
-- **Removed-file retention:** Soft-removal preserves the database row and stored object for this lab so audit behavior is testable. Production retention, quarantine, and purge policies are deferred.
+- **Removed-file retention:** Soft-removal preserves the attachment metadata row and audit fields. Physical-byte retention, quarantine, and garbage collection remain internal storage policy and are not acceptance-tested in Lab 2.
 - **Error consistency:** All JSON errors, including safe `500 INTERNAL_ERROR`, follow the envelope defined in [api-spec.md](./api-spec.md); UI messages may be friendlier but must preserve field attribution and must not expose stack traces or storage paths.
 - **Stable pagination:** Every sort includes `id` as a deterministic tie-breaker. Out-of-range pages return `200` with an empty `items` array and accurate totals rather than `404`.
 - **Specification precedence:** If implementation comments or older Lab 1 behavior conflict with these Lab 2 documents, these four Lab 2 specifications govern Issue 1. Contract changes require a documentation and test-plan update before implementation changes.

@@ -22,6 +22,19 @@ How I responded:
 - Standardized the assignment wording as 5 MB with the exact `5,242,880`-byte boundary, defined safe `500 INTERNAL_ERROR`, added Zen Green warning tokens, and specified read-only Ticket Number/Ticket Date placeholders and server values.
 - Corrected related cross-document inconsistencies in nested-attachment status handling, trace-matrix membership, filename/storage wording, and reviewer evidence.
 
+Follow-up reviewer comment:
+
+The reviewer confirmed that the previously missing Lab 2 requirements were now covered, then asked for two final scope clarifications. First, `5,242,880` bytes is technically 5 MiB, so the documents must identify it as the team's interpretation of the labsheet's undefined “5 MB” label rather than imply that the labsheet supplied that byte count. Second, production-hardening details such as concurrency stress behavior, file-signature inspection, storage compensation, 320 px/200% zoom checks, and mid-stream download failure would become mandatory implementation work if left in the normative contract.
+
+How I responded to the follow-up:
+
+- Documented that the labsheet supplies the “5 MB” label but not an exact byte conversion, and that using 5 MiB (`5,242,880` bytes) is an explicit, revisable team decision.
+- Kept the required `clientRequestId` first-create/replay/conflict and lost-response behavior, but deferred concurrency stress testing.
+- Reduced attachment validation to the required extension/declared-MIME pairing and size/count rules; file-signature inspection, staged compensation, attachment-level idempotency, and physical-byte retention policy are outside the Lab 2 acceptance scope.
+- Kept safe pre-response `500` behavior while removing a dedicated mid-stream download-failure obligation.
+- Kept the three documented responsive viewports and core keyboard/label/focus/live-region accessibility checks while removing extra 320 px, 200% zoom, forced-colors, and reduced-motion acceptance gates.
+- Simplified Empty versus No Results to depend on whether search/filter criteria are active instead of requiring an additional unrestricted API probe.
+
 Status: documentation changes are prepared for a follow-up commit; reviewer re-review and approval are still pending.
 
 ## Pull Requests I reviewed for my partner

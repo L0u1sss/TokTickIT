@@ -423,10 +423,9 @@ The server derives ownership from `x-requester-id`, generates the ticket number,
 The normalized duplicate-comparison payload consists of the validated requester context, `categoryId`, `relatedSystemId`, trimmed `summary`, trimmed `description`, and `requestedPriority`:
 
 1. The server validates requester context, JSON object shape, known fields, UUID, scalar types, text boundaries, IDs, and priority values, then looks up `clientRequestId`.
-2. An existing key with the same requester and normalized payload returns the original ticket with `200 OK` and `replayed: true`. Replay does not depend on the historical category or related system still being active and does not change `updatedAt`.
+2. A sequential retry after the first creation has committed, including a retry after the first response was lost, returns the original ticket with `200 OK` and `replayed: true` when the key, requester, and normalized payload match. Replay does not depend on the historical category or related system still being active and does not change `updatedAt`.
 3. An existing key with a different requester or different normalized payload returns `409 DUPLICATE_REQUEST_CONFLICT` and creates or changes nothing.
 4. A new key is accepted only after category and related-system references are also verified as active. It creates exactly one ticket and stores the key and normalized payload atomically.
-5. Concurrent requests using the same key are serialized by the unique constraint. A losing request rereads the winner and applies the same replay-or-conflict rules; it must not expose a raw database error or create a second ticket.
 
 #### `201 Created` — first creation
 
@@ -643,16 +642,15 @@ The multipart form must contain exactly one file part named `file`. No JSON meta
 |---|---|
 | Display filename | Discard path components; reject NUL, CR/LF, and control characters; the resulting basename must be 1-255 Unicode characters and retain a permitted extension |
 | Filename extension/MIME pairs | `.jpg` or `.jpeg` with `image/jpeg`; `.png` with `image/png`; `.webp` with `image/webp`; `.pdf` with `application/pdf` |
-| Content validation | Declared MIME type, extension, and detected file signature must agree |
-| File size | 1 through 5,242,880 bytes (5 MB) |
+| Content validation | The sanitized filename extension and declared MIME type must match one permitted pair above |
+| File size | 1 through 5,242,880 bytes. The labsheet says `5 MB` without defining a byte convention; the team interprets that limit as binary 5 MiB (`5,242,880` bytes), while the UI label remains `5 MB` |
 | Active limit | At most 5 non-removed attachments per ticket |
-| Limit concurrency | Count check and insert are atomic; concurrent uploads cannot create a sixth active attachment |
 
-Soft-removed records do not count toward the active limit, so a replacement can be uploaded after removal. The safe display filename derived from the original filename is stored as metadata, but it is never treated as a server path.
+The server-side active count is authoritative: when the ticket already has 5 non-removed attachments, the server rejects another upload. Soft-removed records do not count toward the active limit, so a replacement can be uploaded after removal. The safe display filename derived from the original filename is stored as metadata, but it is never treated as a server path.
 
 #### `201 Created`
 
-Response schema: the created `Attachment` in its active state. Creating the attachment and advancing the parent ticket's `updatedAt` to the successful mutation time occur in the same successful database operation.
+Response schema: the created `Attachment` in its active state.
 
 ```json
 {
@@ -676,16 +674,14 @@ Response schema: the created `Attachment` in its active state. Creating the atta
 | `400` | `INVALID_PATH_PARAMETER` | `:id` is not a positive decimal integer |
 | `400` | `INVALID_MULTIPART` | Missing/incorrect multipart body, missing `file`, multiple files, or unexpected parts |
 | `400` | `ATTACHMENT_FILENAME_INVALID` | Display filename is empty, longer than 255 characters, contains unsafe control characters, or has no permitted extension |
-| `400` | `ATTACHMENT_TYPE_NOT_ALLOWED` | Extension, MIME type, or signature is unsupported or inconsistent |
-| `400` | `ATTACHMENT_SIZE_INVALID` | Empty file or file larger than 5,242,880 bytes |
+| `400` | `ATTACHMENT_TYPE_NOT_ALLOWED` | Sanitized filename extension or declared MIME type is unsupported, or they are not a permitted pair |
+| `400` | `ATTACHMENT_SIZE_INVALID` | Empty file or file larger than 5,242,880 bytes; this is the team's binary 5 MiB interpretation of the labsheet's byte-undefined `5 MB` limit |
 | `400` | `ATTACHMENT_LIMIT_REACHED` | Ticket already has 5 active attachments |
 | `403` | `TICKET_FORBIDDEN` | Ticket exists but is owned by another requester |
 | `404` | `TICKET_NOT_FOUND` | No ticket has that ID |
-| `500` | `INTERNAL_ERROR` | Unexpected storage or database failure; no valid API-addressable attachment is left behind |
+| `500` | `INTERNAL_ERROR` | Unexpected storage or database failure; no attachment metadata is committed |
 
-Ticket existence and ownership are checked before a file is made durable. Upload processing uses staging plus cleanup/compensation: a failed request leaves no attachment row or API-addressable file and does not advance the parent ticket's `updatedAt`; request-created temporary or unreferenced bytes are removed where possible and are never exposed by the API.
-
-Attachment upload is not automatically retried and has no attachment-level idempotency key in Lab 2. If the response is lost or otherwise ambiguous, the client first reloads `GET /api/tickets/:id` to retrieve current attachment metadata before offering an explicit manual retry. It must not blindly repeat the multipart request.
+Ticket existence and ownership are checked as part of upload processing. A failed upload does not commit an attachment metadata row.
 
 ---
 
@@ -730,7 +726,7 @@ Error bodies still use the JSON error envelope and `Content-Type: application/js
 | `404` | `ATTACHMENT_NOT_AVAILABLE` | Attachment is soft-removed; its bytes must not be returned |
 | `500` | `INTERNAL_ERROR` | Unexpected lookup/storage failure before streaming, including active metadata whose bytes are unavailable |
 
-The API must never redirect to or reveal a storage path. Authorization and file availability are checked before any stream begins. A pre-stream failure returns the safe JSON `500` envelope; if an I/O failure occurs after response headers have already been sent, the server terminates the stream and records a safe operational event because it can no longer replace the response with JSON. Downloads do not change the parent ticket's `updatedAt`.
+The API must never redirect to or reveal a storage path. Authorization and file availability are checked before any stream begins. An unexpected pre-stream failure returns the safe JSON `500` envelope.
 
 ---
 
@@ -760,7 +756,7 @@ This endpoint changes attachment state only. It does not delete the database rec
 
 #### `200 OK`
 
-Response schema: the updated `Attachment`, with `isRemoved: true`, a non-null `removedAt`, the trimmed `removalReason`, and `downloadable: false`. The removal fields and the parent ticket's `updatedAt` are updated atomically using the successful mutation time.
+Response schema: the updated `Attachment`, with `isRemoved: true`, a non-null `removedAt`, the trimmed `removalReason`, and `downloadable: false`.
 
 ```json
 {
@@ -776,7 +772,7 @@ Response schema: the updated `Attachment`, with `isRemoved: true`, a non-null `r
 }
 ```
 
-After success, the record remains visible in owned ticket detail, but both its download endpoint and any repeated removal attempt return `404 ATTACHMENT_NOT_AVAILABLE`. For Lab 2, the attachment row and stored object are retained for audit verification; production retention, quarantine, and garbage-collection policy is deferred. Retained bytes remain unreachable through the API and must never restore download access. A repeated removal never overwrites the original `removedAt` or `removalReason` audit values.
+After success, the metadata row remains visible in owned ticket detail, but both its download endpoint and any repeated removal attempt return `404 ATTACHMENT_NOT_AVAILABLE`. The metadata row and its original `removedAt` and `removalReason` audit values are retained. Physical stored-object retention or garbage collection is an internal storage policy, not a Lab 2 acceptance requirement; regardless of that policy, removed bytes remain unreachable through the API and must never regain download access.
 
 #### Error outcomes
 
@@ -790,9 +786,9 @@ After success, the record remains visible in owned ticket detail, but both its d
 | `404` | `TICKET_NOT_FOUND` | No ticket has `:id` |
 | `404` | `ATTACHMENT_NOT_FOUND` | Attachment does not exist within that ticket |
 | `404` | `ATTACHMENT_NOT_AVAILABLE` | Attachment is already soft-removed; its original audit fields are unchanged |
-| `500` | `INTERNAL_ERROR` | Unexpected removal failure; attachment state, audit fields, and parent `updatedAt` remain unchanged |
+| `500` | `INTERNAL_ERROR` | Unexpected removal failure; attachment state and audit fields remain unchanged |
 
-The state update is atomic: `isRemoved`, `removedAt`, `removalReason`, and the parent ticket's `updatedAt` become effective together.
+The attachment state update is atomic: `isRemoved`, `removedAt`, and `removalReason` become effective together.
 
 ## 4. Exact Status-Code Matrix
 
@@ -811,14 +807,13 @@ The state update is atomic: `isRemoved`, `removedAt`, `removalReason`, and the p
 
 ## 5. Cross-Cutting Implementation Requirements
 
-- Ticket creation, `clientRequestId` replay/conflict handling, unique number allocation, attachment active-count enforcement, and soft removal must be transaction-safe.
+- Ticket creation, `clientRequestId` replay/conflict handling, unique number allocation, and soft removal must be transaction-safe.
 - `ticketNumber`, requester ownership, upload metadata, removal timestamp, and removal reason are server-controlled fields.
 - `requestedPriority` is required client input on creation and is validated against `LOW`, `MEDIUM`, and `HIGH`; it is never confused with a future IT-assigned priority.
 - List count and list items must use the same requester scope and filters, including `requestedPriority`.
 - Database indexes should support unique `ticketNumber`, unique `clientRequestId`, requester-scoped `createdAt` listing, requester/status/requested-priority filtering, category/system filters, and attachment lookup by ticket and removal state.
-- Successful attachment upload and soft removal advance the parent ticket's `updatedAt` atomically; reads and downloads do not.
 - Logs and errors must not expose file contents, storage paths, stack traces, database connection details, or tickets belonging to another requester.
 - No endpoint in this document changes a ticket beyond initial `New`, publishes comments, or provides IT Staff actions.
 - Clients must still render server validation errors even when matching client-side validation exists; client validation is not an API security boundary.
-- Ticket-create contract tests cover first creation (`201`, `replayed: false`), sequential and concurrent identical replay (`200`, `replayed: true`), changed-payload and changed-requester conflict (`409`), one persisted logical ticket, and unchanged replay timestamps.
-- Contract tests must force representative unexpected reference-data, create/list/detail, attachment-storage, and removal failures. They assert the exact `500 INTERNAL_ERROR` envelope and JSON content type, absence of internal details, and absence of unintended database/file mutations; download tests cover both the safe pre-stream `500` case and safe termination of an injected mid-stream failure.
+- Ticket-create contract tests cover first creation (`201`, `replayed: false`), an exact sequential or lost-response replay (`200`, `replayed: true`), changed-payload and changed-requester conflict (`409`), one persisted logical ticket, and unchanged replay timestamps.
+- Contract tests must force representative unexpected reference-data, create/list/detail, attachment-storage, and removal failures. They assert the exact `500 INTERNAL_ERROR` envelope and JSON content type, absence of internal details, no committed attachment metadata after a failed upload, and the safe pre-stream `500` download case.
