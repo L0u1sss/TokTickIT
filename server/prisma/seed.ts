@@ -21,27 +21,27 @@ export const relatedSystems = [
 
 export const requesters = [
   {
-    name: "Jennifer Anderson",
+    displayName: "Jennifer Anderson",
     email: "jennifer.a@example.com",
     isActive: true,
   },
   {
-    name: "Michael Brown",
+    displayName: "Michael Brown",
     email: "michael.b@example.com",
     isActive: true,
   },
   {
-    name: "Sarah Johnson",
+    displayName: "Sarah Johnson",
     email: "sarah.j@example.com",
     isActive: true,
   },
   {
-    name: "David Lee",
+    displayName: "David Lee",
     email: "david.l@example.com",
     isActive: true,
   },
   {
-    name: "Inactive User",
+    displayName: "Inactive User",
     email: "inactive.user@example.com",
     isActive: false,
   },

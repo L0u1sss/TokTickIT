@@ -3,10 +3,15 @@
 **Author:** พลัฏฐ์ อมาตย์ชยาภา - 67070507212 - GitHub: [@L0u1sss](https://github.com/L0u1sss)
 **Peer reviewer:** แทนบุญ เตียวสวัสดิ์ - 67070507211 - GitHub: [@Tanaboonnnnn](https://github.com/Tanaboonnnnn)
 
-## Pull Requests I authored (reviewed by my partner)
+## Pull Requests I authored (partner review status)
 | PR | Branch | Reviewer verdict |
 |----|--------|------------------|
-| [L0u1sss/TokTickIT#20](https://github.com/L0u1sss/TokTickIT/pull/20) | `docs/lab-02-spec-and-tests` | Changes requested on reviewed commit `ebf4182` |
+| [L0u1sss/TokTickIT#20](https://github.com/L0u1sss/TokTickIT/pull/20) | `docs/lab-02-spec-and-tests` | Changes requested on `ebf4182`; revised documentation later merged as `a4065f9` |
+| [L0u1sss/TokTickIT#21](https://github.com/L0u1sss/TokTickIT/pull/21) | `feat/db-schema-and-seeds` | Peer review pending; local corrective changes are not pushed yet |
+
+As of 2026-08-25, PR #21 still points to remote head `3a6291d`; the corrective schema/migration/test changes and `DB-01` evidence recorded in this branch must be committed and pushed before the peer can review them on GitHub.
+
+Before requesting PR #21 re-review, update its description as well: remove the stale `CRITICAL` and post-`NEW` status claims, replace old `currentStatus`/attachment field wording with the canonical Section 7 names, list corrective migration `20260825000000_align_lab02_contract`, classify `DB-01` as Database / Integration rather than Unit, replace placeholder `AC-XX` rows with the three Issue #13 deliverables, and attach the final 11/11 plus regression/build evidence from the pushed commit.
 
 Reviewer comment I received:
 
@@ -35,7 +40,7 @@ How I responded to the follow-up:
 - Kept the three documented responsive viewports and core keyboard/label/focus/live-region accessibility checks while removing extra 320 px, 200% zoom, forced-colors, and reduced-motion acceptance gates.
 - Simplified Empty versus No Results to depend on whether search/filter criteria are active instead of requiring an additional unrestricted API probe.
 
-Status: documentation changes are prepared for a follow-up commit; reviewer re-review and approval are still pending.
+Status: the PR #20 documentation revisions are merged into `lab2-staging`. The PR #21 database correction is verified locally but still requires a final commit, push, and peer re-review.
 
 ## Pull Requests I reviewed for my partner
 

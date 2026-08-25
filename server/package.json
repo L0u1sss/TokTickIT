@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:db": "vitest run --project database tests/lab-02/db-schema.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

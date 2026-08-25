@@ -2,8 +2,31 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    environment: "node",
-    include: ["tests/**/*.test.ts"],
-    setupFiles: ["./tests/setup.ts"],
+    projects: [
+      {
+        test: {
+          name: "unit",
+          environment: "node",
+          include: ["tests/**/*.test.ts"],
+          exclude: [
+            "tests/lab-01/categories.test.ts",
+            "tests/lab-02/db-schema.test.ts",
+          ],
+        },
+      },
+      {
+        test: {
+          name: "database",
+          environment: "node",
+          include: [
+            "tests/lab-01/categories.test.ts",
+            "tests/lab-02/db-schema.test.ts",
+          ],
+          setupFiles: ["./tests/db-setup.ts"],
+          fileParallelism: false,
+          maxWorkers: 1,
+        },
+      },
+    ],
   },
 });
