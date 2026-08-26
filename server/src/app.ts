@@ -38,4 +38,32 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Issue 14 — Active requester list
+// GET /api/requesters
+//   -> only active requesters are selectable
+//   -> expose the public requester shape expected by the client
+//   -> keep ordering deterministic when requesters share the same name
+// ---------------------------------------------------------------------------
+app.get("/api/requesters", async (_req: Request, res: Response) => {
+  try {
+    const requesters = await getPrisma().requesterUser.findMany({
+      where: { isActive: true },
+      select: { id: true, displayName: true, email: true },
+      orderBy: [{ displayName: "asc" }, { id: "asc" }],
+    });
+
+    res.status(200).json(requesters);
+  } catch {
+    // Keep database errors out of logs returned by shared/dev environments.
+    console.error("Failed to fetch requesters");
+    res.status(500).json({
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "The request could not be completed.",
+      },
+    });
+  }
+});
+
 export default app;

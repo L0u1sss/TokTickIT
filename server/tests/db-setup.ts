@@ -84,7 +84,9 @@ if (developmentDatabaseUrl) {
       throw error;
     }
 
-    throw new Error("DATABASE_URL must be a valid PostgreSQL URL when set.");
+    throw new Error("DATABASE_URL must be a valid PostgreSQL URL when set.", {
+      cause: error,
+    });
   }
 }
 
