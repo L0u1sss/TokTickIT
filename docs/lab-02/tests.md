@@ -1,10 +1,10 @@
 # Lab 2 — Test Plan and Verification Evidence
 
-**Document status:** Planned for Issue 1 (specification only; no Lab 2 application or test implementation is claimed here)
+**Document status:** Mixed implementation — the Issue #13 database foundation and `DB-01` are implemented; every row still marked `Not run` remains planned work.
 
 **Related documents:** [Engineering Specification](./specification.md) · [API Specification](./api-spec.md) · [UI Specification](./ui-spec.md)
 
-The purpose of this plan is to turn FR-01–FR-12, BR-01–BR-15, and AC-01–AC-15 into executable checks before application implementation begins. Every `Not run` entry is intentionally a TDD placeholder, not evidence of a pass.
+The purpose of this plan is to turn FR-01–FR-12, BR-01–BR-15, AC-01–AC-15, and the Issue #13 database foundation into executable checks. Every `Not run` entry is intentionally a TDD placeholder, not evidence of a pass; only an entry with recorded execution evidence may claim a pass.
 
 ## 1. Test Strategy
 
@@ -29,7 +29,7 @@ A feature is not complete when only a happy-path UI demonstration passes. Its un
 | Responsive / Visual | Browser automation at fixed viewports plus human screenshot review | Verify actual CSS layout, breakpoints, overflow, card/table switching, Zen Green/warning tokens, selector layout, and 44 px touch targets | Deterministic seed data and fixed desktop/tablet/mobile viewports |
 | End-to-End | Planned Playwright browser suite against running client/server and a disposable seeded database | Verify requester selection, context restoration/switching, ticket and attachment lifecycle, idempotent lost-response recovery, state recovery, keyboard operation, and ownership isolation | Fresh database state per run; two active requesters and one inactive requester |
 
-The repository currently has Vitest configured for `server/tests/**/*.test.ts` and `client/tests/**/*.test.tsx`. Supertest and React Testing Library are already installed. No Playwright/Cypress dependency, configuration, or `test:e2e` script exists yet; those are planned test infrastructure for an implementation issue and are not silently assumed to be runnable in Issue 1.
+The server Vitest configuration separates a DB-free `unit` project from a sequential `database` project. The implemented `DB-01` suite belongs to the latter and requires an explicitly isolated `TEST_DATABASE_URL`; it cannot fall back to development data. Client tests continue to use `client/tests/**/*.test.tsx`. Supertest and React Testing Library are already installed. No Playwright/Cypress dependency, configuration, or `test:e2e` script exists yet, so browser rows remain planned rather than silently assumed runnable.
 
 ### 1.3 Fixtures, controls, and test oracles
 
@@ -53,7 +53,7 @@ The repository currently has Vitest configured for `server/tests/**/*.test.ts` a
 
 ## 2. Planned Tests
 
-All paths below are repository-relative planned locations. Test files will be added during later TDD implementation work; this Issue 1 document does not create them.
+All paths below are repository-relative. `DB-01` is implemented for Issue #13; all other rows remain planned locations for later TDD implementation work unless their status is changed with evidence.
 
 | Test ID | Type | Requirement / AC | What It Tests | Expected Result | Automated Test File Path | Final Status |
 |---|---|---|---|---|---|---|
@@ -64,6 +64,7 @@ All paths below are repository-relative planned locations. Test files will be ad
 | UT-05 | Unit | FR-10; AC-08; BR-11 | Removal-reason validation and transition from active to removed | Reason of 5–500 trimmed characters succeeds; invalid reason fails; success records removed flag/time/reason, retains metadata/storage reference, and makes the attachment non-downloadable | `server/tests/lab-02/attachment-removal.test.ts` | Not run |
 | UT-06 | Unit | FR-12; AC-11; BR-14 | UUID validation, normalized logical-request fingerprinting, and idempotency outcome selection | The same requester/key/content resolves as replay; changed requester or normalized content resolves as conflict; invalid keys fail validation; attachment selection is excluded from the ticket fingerprint | `server/tests/lab-02/ticket-idempotency.test.ts` | Not run |
 | UT-07 | Unit | FR-11; AC-03; AC-05–AC-08; BR-12 | Ticket ownership predicate and nested-attachment lookup outcome selection | Owned parents proceed; an existing foreign parent resolves to `403` before child lookup; missing parents and missing/wrong-ticket children resolve to the documented `404`; no helper returns protected data with a denied outcome | `server/tests/lab-02/ownership.test.ts` | Not run |
+| DB-01 | Database / Integration | Specification §7.1–§7.3 and §7.4 persistence state; Definition of Done; Issue #13 | Against a disposable PostgreSQL schema already prepared by `prisma migrate deploy`, verify the applied migration records, five models, canonical columns, enums, defaults, unique/check/FK constraints, relation actions, required composite/FK indexes, attachment audit-state consistency, and repeated deterministic seed | The separately recorded clean migration preparation succeeds; DB-01 confirms its records; invalid writes are rejected by PostgreSQL; exact required indexes and relations exist; two additional seed runs preserve IDs and leave 4 categories, 6 related systems, and 4 active + 1 inactive requester without duplicates | `server/tests/lab-02/db-schema.test.ts` | Local pass — 11/11 on disposable schema (2026-08-25 ICT); final commit/CI evidence pending |
 | API-01 | API / Integration | FR-01; AC-10; AC-12; BR-03–BR-04 | Development Requester data, deterministic active-only ordering, successful empty response, and public-route header behavior | Returns `200`; only active requesters appear in deterministic order, inactive requester C is absent, an empty source returns `[]`, no header is required, and a supplied development-requester header is ignored | `server/tests/lab-02/requesters.test.ts` | Not run |
 | API-02 | API / Integration | FR-02; AC-12; BR-07 | Selectable reference-data contract, active-only ordering, independent empty Category/System arrays, and public-route header behavior | Returns `200` with documented arrays and no inactive options; either required list may be empty without changing shape; no requester header is required or used | `server/tests/lab-02/metadata.test.ts` | Not run |
 | API-03 | API / Integration | FR-01; FR-11; AC-10; BR-03–BR-04; BR-12 | Development-requester-header validation on every protected endpoint | Missing, blank, malformed, repeated, unknown, or inactive context returns the documented non-success code/envelope; no scoped read or mutation occurs | `server/tests/lab-02/requester-context.test.ts` | Not run |
@@ -129,7 +130,17 @@ All paths below are repository-relative planned locations. Test files will be ad
 | AC-14 | Programmatic labels/relationships, keyboard operation, focus behavior, live announcements, modal behavior, and non-color meaning are verified automatically | UI-12, E2E-06 |
 | AC-15 | Unexpected database/storage failures return a safe `500` envelope, leak no internals, and leave no partial state | API-20, API-21, UI-13 |
 
-No acceptance criterion relies solely on a manual visual check. Server-observable criteria have API/integration evidence; responsive and accessibility criteria have automated real-browser evidence, and component/E2E checks cover the user-facing contract.
+The planned matrix assigns every acceptance criterion to automated evidence rather than relying solely on manual visual review. Server-observable criteria are assigned to API/integration checks; responsive and accessibility criteria will require automated real-browser evidence; and component/E2E rows are assigned to the user-facing contract. Rows remain unverified until their individual status changes from `Not run` with recorded evidence.
+
+### 3.1 Issue #13 database-foundation traceability
+
+| Issue #13 Deliverable | Verification |
+|---|---|
+| Five models and the canonical Section 7 fields/relationships | DB-01 schema-catalog and enum assertions |
+| Clean migration chain, unique/check/FK constraints, restrictive deletes, cascading key updates, and required query/FK indexes | Clean `prisma migrate deploy` result in Section 6; DB-01 applied-record, invalid-write, relation-action, and index-signature assertions |
+| Deterministic seed with 4 categories, at least 6 related systems, at least 4 active requesters and 1 inactive requester; safe repeated execution | DB-01 exact fixture, stable-ID/value, active-state, and repeated-upsert assertions |
+
+`DB-01` is foundation evidence only. It does not claim that the planned HTTP, UI, responsive, accessibility, or end-to-end behavior has been implemented.
 
 ## 4. Responsive and Visual Checklist
 
@@ -175,15 +186,27 @@ Run commands from the repository root (`toktickit/`) unless stated otherwise.
 ```powershell
 npm --prefix server ci
 npm --prefix client ci
-npm --prefix server run prisma:migrate
+
+# Supply a disposable database or a test-marked isolated schema explicitly.
+$env:TEST_DATABASE_URL = "postgresql://<user>:<password>@<host>:5432/toktickit_test?schema=public"
+$developmentDatabaseUrl = $env:DATABASE_URL
+$env:DATABASE_URL = $env:TEST_DATABASE_URL
+& server/node_modules/.bin/prisma.cmd migrate deploy --schema server/prisma/schema.prisma
 npm --prefix server run prisma:seed
+$env:DATABASE_URL = $developmentDatabaseUrl
 ```
 
-Before the Prisma commands, set `server/.env` to a dedicated, disposable PostgreSQL test database. Do not reset or clean a shared development/production database. Lab 2 migrations and seed fixtures will be added during implementation.
+`TEST_DATABASE_URL` must target a different database/schema from `DATABASE_URL`, use PostgreSQL, and include a delimited `test`, `testing`, `ci`, or `spec` segment in the database/schema name (for example, `toktickit_test` or `pr21_test_run`). The Vitest setup rejects any other target. Do not reset or clean a shared development/production database.
 
 ### 5.2 Run automated tests
 
 ```powershell
+# DB-free server unit project
+npm --prefix server run test:unit
+
+# Implemented Issue #13 database integration suite
+npm --prefix server run test:db
+
 # Lab 2 server unit/API tests only
 npm --prefix server test -- tests/lab-02
 
@@ -212,7 +235,7 @@ The following is the planned command after an implementation issue adds `@playwr
 npm --prefix client run test:e2e
 ```
 
-It is **not runnable in the current Issue 1 repository** and must not be reported as passed until that configuration is committed. Until then, start the two development processes in separate terminals for manual responsive review:
+It is **not runnable in the current repository** and must not be reported as passed until that configuration is committed. Until then, start the two development processes in separate terminals for manual responsive review:
 
 ```powershell
 npm --prefix server run dev
@@ -222,49 +245,55 @@ npm --prefix server run dev
 npm --prefix client run dev
 ```
 
-## 6. Final Results (Complete After Implementation)
+## 6. Current Verification Results
 
-**Overall result:** `NOT EXECUTED — ISSUE 1 DOCUMENTATION ONLY`
+**Overall result:** `PARTIAL PASS — ISSUE #13 DATABASE FOUNDATION VERIFIED; REMAINING LAB 2 ROWS RETAIN THEIR INDIVIDUAL NOT RUN STATUS`
 
 | Item | Result |
 |---|---|
-| Commit SHA tested | `<commit-sha>` |
-| Date/time and timezone | `<YYYY-MM-DD HH:mm TZ>` |
-| Tester | `<name>` |
-| OS / Node.js / npm / PostgreSQL versions | `<versions>` |
-| Browser and version | `<browser/version>` |
-| Server tests | `<passed> passed / <failed> failed / <skipped> skipped` |
-| Client tests | `<passed> passed / <failed> failed / <skipped> skipped` |
-| E2E/responsive tests | `<passed> passed / <failed> failed / <skipped> skipped` |
-| Server build | `<PASS/FAIL>` |
-| Client build | `<PASS/FAIL>` |
-| Final release recommendation | `<PASS / FAIL / PASS WITH APPROVED LIMITATIONS>` |
+| Commit SHA tested | `c09c6549833aac114e40fc5ecfa8c6a1308277ec` plus the current uncommitted corrective working-tree changes; replace with the final commit SHA after commit |
+| Date/time and timezone | `2026-08-25 16:45 ICT (UTC+7)` |
+| Tester | OpenAI Codex local verification; author and peer sign-off remain pending |
+| OS / Node.js / npm / PostgreSQL versions | Windows `10.0.19045`; Node.js `v24.14.0`; npm `11.9.0`; local PostgreSQL server (server version not captured because `psql` is unavailable) |
+| Browser and version | Not applicable to Issue #13 database verification; browser suites remain `Not run` |
+| Database integration (`DB-01`) | `11 passed / 0 failed / 0 skipped` on a disposable PostgreSQL schema |
+| Server tests | `14 passed / 0 failed / 0 skipped` across 3 files on a disposable PostgreSQL schema |
+| Client tests | `5 passed / 0 failed / 0 skipped` across 1 file |
+| E2E/responsive tests | Not run; infrastructure is still planned |
+| Server build | PASS (`tsc`) |
+| Client build | PASS (`tsc && vite build`) |
+| Final release recommendation | PASS for the local Issue #13 database scope after commit/push and peer re-review; this result does not promote any other planned Lab 2 row to Pass |
 
 | Command / Review | Timestamp | Result and Counts | Evidence Path or PR Link |
 |---|---|---|---|
-| `npm --prefix server test` | `<timestamp>` | `<result>` | `<terminal log or CI URL>` |
-| `npm --prefix client test` | `<timestamp>` | `<result>` | `<terminal log or CI URL>` |
-| `npm --prefix server run build` | `<timestamp>` | `<result>` | `<terminal log or CI URL>` |
-| `npm --prefix client run build` | `<timestamp>` | `<result>` | `<terminal log or CI URL>` |
-| `npm --prefix client run test:e2e` | `<timestamp>` | `<result>` | `<HTML report or CI URL>` |
-| Responsive/visual review | `<timestamp>` | `<result>` | `docs/lab-02/evidence/` |
+| Clean `prisma migrate deploy` + deterministic seed | `2026-08-25 16:45 ICT` | PASS — all 3 migrations applied from empty schema; seed reported 4 categories, 6 related systems, 5 requesters | Local terminal on disposable schema; repeat in PR CI |
+| Corrective migration over supported legacy Ticket/Attachment rows | `2026-08-25 16:31 ICT` | PASS — canonical renames, synthetic UUID, uploader/remover audit backfills, active/removed state, and row contents preserved | Local SQL assertions on disposable schema; schema removed after run |
+| `npm --prefix server run test:unit` without `TEST_DATABASE_URL` | `2026-08-25 16:42 ICT` | PASS — 2/2; proves DB-free tests do not require PostgreSQL setup | Local terminal |
+| `npm --prefix server run test:db` | `2026-08-25 16:45 ICT` | PASS — 11/11 | `server/tests/lab-02/db-schema.test.ts`; local terminal |
+| `npm --prefix server test` | `2026-08-25 16:45 ICT` | PASS — 14/14 across 3 files and both Vitest projects | Local terminal on disposable schema; repeat in PR CI |
+| `npm --prefix client test` | `2026-08-25 16:29 ICT` | PASS — 5/5 across 1 file | Local terminal; repeat in PR CI |
+| `npm --prefix server run build` | `2026-08-25 16:45 ICT` | PASS | Local terminal |
+| `npm --prefix client run build` | `2026-08-25 16:29 ICT` | PASS | Local terminal |
+| `npm --prefix client run test:e2e` | Not run | Planned infrastructure is absent | Add Playwright/configuration in the relevant implementation issue |
+| Responsive/visual review | Not run | Outside Issue #13 database scope | `docs/lab-02/evidence/` remains pending |
 
 **Failures, flakes, deviations, and linked defects:**
 
-- `<None yet — record test ID, observed result, expected result, defect/PR link, owner, and disposition.>`
+- The first local `DB-01` attempt passed 10/11 and exposed an incorrect test oracle for an oversized `varchar(500)`: PostgreSQL rejected the type length before the named trim check. The test was split by enforcement layer and the clean-schema rerun passed 11/11.
+- No failure was observed in the final automated run; flakiness was not assessed by repeated-run analysis. PR CI evidence, the final commit SHA, and peer re-review are still required before merging PR #21.
 
 **Verification sign-off:**
 
-- Implementer: `<name / date>`
-- Peer reviewer: `<name / date>`
-- Evidence reviewed: `<yes/no>`
+- Implementer: `<author review / date pending>`
+- Peer reviewer: `<peer re-review / date pending>`
+- Evidence reviewed: Local automated output recorded above; hosted PR evidence pending
 
 ## 7. Known Limitations and Deferred Tests
 
-- **Authentication and login security are intentionally excluded.** Tests verify only the simulated requester context carried by `x-requester-id`; they do not cover passwords, sessions, tokens, identity-provider integration, CSRF, or account recovery.
+- **Authentication and login security are intentionally excluded.** Planned requester-context tests cover only the simulated context carried by `x-requester-id`; they do not cover passwords, sessions, tokens, identity-provider integration, CSRF, or account recovery.
 - **IT Staff workflows are intentionally excluded.** Assignment, staff queues, prioritization, status transitions beyond initial `New`, internal notes, and staff authorization are deferred.
 - **Public comments and status progression beyond `New` are out of Lab 2 scope.** No tests should imply those features exist.
-- **Browser automation is planned but not installed in Issue 1.** `RV-*` and `E2E-*` remain `Not run` until the Playwright dependency, configuration, browser binaries, and package script are reviewed and added.
+- **Browser automation is planned but not installed in the current repository.** `RV-*` and `E2E-*` remain `Not run` until the Playwright dependency, configuration, browser binaries, and package script are reviewed and added.
 - **Visual comparison is environment-sensitive.** Fixed viewport screenshots and checklist review are required initially; pixel-diff thresholds/baselines may be added after the UI stabilizes.
-- **Load, stress, penetration, malware-scanning, and object-storage failover tests are deferred.** Functional tests still enforce documented file type, size, count, ownership, removal, and download behavior.
+- **Load, stress, penetration, malware-scanning, and object-storage failover tests are deferred.** Planned functional tests will still need to enforce documented file type, size, count, ownership, removal, and download behavior.
 - **Compatibility beyond the browser selected in final evidence is not claimed.** Add Chromium/Firefox/WebKit coverage if the course or product support matrix later requires it.

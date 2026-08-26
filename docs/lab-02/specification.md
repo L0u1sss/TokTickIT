@@ -184,6 +184,8 @@ The existing PostgreSQL/Prisma schema is extended through a migration. Entity fi
 | `Ticket` | `id` positive integer primary key; `ticketNumber` varchar(15), unique and server-generated; `clientRequestId` UUID, unique; `requesterId`, `categoryId`, `relatedSystemId` foreign keys; `summary` varchar(120); `description` varchar(2000); `requestedPriority` enum `LOW`/`MEDIUM`/`HIGH`; `status` constrained to `New` in this sprint; `createdAt`; `updatedAt` | Belongs to one requester, category, and related system; has many attachments. Requester-editable and business fields, including requested priority, are immutable after creation. Attachment operations do not define additional parent-ticket timestamp behavior in this sprint. Referenced rows use restrictive deletion so audit history cannot be orphaned. |
 | `Attachment` | `id` positive integer primary key; `ticketId` foreign key; `originalName` varchar(255); unique opaque `storageKey`; `mimeType` varchar(100); `sizeBytes` integer; `uploadedByRequesterId`; `createdAt`; nullable `removedAt`, `removalReason` varchar(500), and `removedByRequesterId` | Belongs to one ticket. Uploader/remover reference `RequesterUser`. No hard-delete path is exposed in this sprint. Active means `removedAt IS NULL`. |
 
+Persistence stores the sole Lab 2 status token as `NEW` and maps it to the public value `New`; no other status token is permitted in this sprint.
+
 Ticket numbers may use a database-backed per-year counter or another implementation compatible with the unique constraint. The externally testable Lab 2 rules are the format, UTC year, and uniqueness in BR-01; concurrency stress behavior is not part of this issue.
 
 ### 7.2 Relationships
@@ -368,6 +370,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 - [ ] Automated accessibility checks exercise keyboard flow, focus behavior, labels/associations, live announcements, and dialog semantics; manual inspection supplements rather than replaces these assertions.
 - [ ] E2E tests prove requester selection, the primary creation/replay flow, state clearing on requester switching, cross-requester isolation, and failure recovery, and all automated tests pass from a clean database.
 - [ ] AC-01 through AC-15 are linked to passing test IDs in [tests.md](./tests.md).
+- [ ] Section 7 schema, migration, constraint/index, and deterministic-seed requirements are linked to `DB-01` in [tests.md](./tests.md); local 11/11 evidence exists, but the final commit SHA and hosted PR/CI evidence are still pending.
 
 ### Responsive UI and accessibility
 
@@ -386,6 +389,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 - **Existing stack retained:** React 18, TypeScript, Vite, and Bootstrap remain the client stack; Express, TypeScript, Prisma, and PostgreSQL remain the server stack; Vitest, React Testing Library, and Supertest remain the automated-test stack. This minimizes unrelated change.
 - **Positive integer identifiers:** Public entity IDs and `x-requester-id` are positive base-10 integers because the existing Prisma `Category` model uses integer IDs. The header remains a string on the wire and is parsed strictly.
+- **`RequesterUser` naming:** This model intentionally follows the labsheet's `RequesterUser` name for the selectable Development Requester record. It is not an authentication/session model and remains distinct from any future Lab 3 `User` or auth-domain model.
 - **Required creation fields:** Category, related system, Summary, Requested Priority, and Description are mandatory so every submitted ticket has sufficient routing context. Inactive lookup values remain visible on historical details but cannot be selected for new tickets. Requested Priority uses only `LOW`, `MEDIUM`, and `HIGH` and is immutable in this sprint.
 - **Development context persistence:** The client stores only a validated requester integer ID in browser-tab `sessionStorage`. It revalidates the value before protected data loads and clears it on Change Requester or when the value is malformed, unknown, or inactive.
 - **Idempotent creation:** A client-generated UUID `clientRequestId` identifies one logical ticket submission. First create, exact replay, conflicting reuse, and lost-response retry follow BR-14. Concurrency stress testing is deferred beyond Lab 2.

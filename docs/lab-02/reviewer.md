@@ -3,14 +3,16 @@
 **Author:** พลัฏฐ์ อมาตย์ชยาภา - 67070507212 - GitHub: [@L0u1sss](https://github.com/L0u1sss)
 **Peer reviewer:** แทนบุญ เตียวสวัสดิ์ - 67070507211 - GitHub: [@Tanaboonnnnn](https://github.com/Tanaboonnnnn)
 
-## Pull Requests I authored (reviewed by my partner)
+## Pull Requests I authored (partner review status)
 | PR | Branch | Reviewer verdict |
 |----|--------|------------------|
-| [L0u1sss/TokTickIT#20](https://github.com/L0u1sss/TokTickIT/pull/20) | `docs/lab-02-spec-and-tests` | Changes requested on reviewed commit `ebf4182` |
+| [L0u1sss/TokTickIT#20](https://github.com/L0u1sss/TokTickIT/pull/20) | `docs/lab-02-spec-and-tests` | Changes requested on `ebf4182`; revised documentation later merged as `a4065f9` |
+| [L0u1sss/TokTickIT#21](https://github.com/L0u1sss/TokTickIT/pull/21) | `feat/db-schema-and-seeds` | Implementation accepted; reviewer requested one final PR-description correction before approval |
 
-Reviewer comment I received:
+As of 2026-08-27, the reviewer confirmed that PR #21 targets `lab2-staging`, closes Issue #13, and that its schema, corrective migration, and evidence align with the current Lab 2 contract. The remaining review action is metadata-only: update the GitHub PR description so it no longer describes superseded enum values.
 
-The reviewer found the ownership, attachment, API-error, responsive-UI, and core test planning detailed, but requested changes before merge because the contract omitted or did not trace several Lab 2 requirements. Blocking topics were Requested Priority, the dedicated Development Requester Selection flow, explicit attachment-metadata capability wording, requester/state/responsive/accessibility Acceptance Criteria, retry-safe duplicate-submission prevention, the assignment's 5 MB terminology, safe `500` behavior, warning/amber tokens, and clear Ticket Number/Ticket Date presentation on Create Ticket. See the [full GitHub review](https://github.com/L0u1sss/TokTickIT/pull/20#pullrequestreview-5002758180).
+The corrected PR description must state that Requested Priority accepts exactly `LOW`, `MEDIUM`, and `HIGH`, and that Ticket Status is constrained to `NEW` for Lab 2. It must not claim support for `CRITICAL`, `OPEN`, `IN_PROGRESS`, `RESOLVED`, or `CLOSED`. It should also identify `20260825000000_align_lab02_contract` as the corrective migration that safely narrows the original enum definitions while preserving supported existing data and failing explicitly when incompatible rows exist.
+
 
 How I responded:
 
@@ -35,7 +37,7 @@ How I responded to the follow-up:
 - Kept the three documented responsive viewports and core keyboard/label/focus/live-region accessibility checks while removing extra 320 px, 200% zoom, forced-colors, and reduced-motion acceptance gates.
 - Simplified Empty versus No Results to depend on whether search/filter criteria are active instead of requiring an additional unrestricted API probe.
 
-Status: documentation changes are prepared for a follow-up commit; reviewer re-review and approval are still pending.
+Status: the PR #20 documentation revisions are merged into `lab2-staging`. The PR #21 database implementation has been accepted by the peer reviewer; only the GitHub PR-description enum summary must be corrected before final approval.
 
 ## Pull Requests I reviewed for my partner
 
