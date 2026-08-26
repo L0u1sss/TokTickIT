@@ -251,8 +251,8 @@ npm --prefix client run dev
 
 | Item | Result |
 |---|---|
-| Commit SHA tested | Issue #13 evidence: `c09c6549833aac114e40fc5ecfa8c6a1308277ec` plus its recorded corrective changes. Issue #14 evidence: the current feature tree based on `814cf89`; record the hosted feature SHA after the reviewed history is pushed |
-| Date/time and timezone | Issue #13: `2026-08-25 16:45 ICT`; Issue #14: `2026-08-26 19:00 ICT` (UTC+7) |
+| Commit SHA tested | Issue #13 evidence: `c09c6549833aac114e40fc5ecfa8c6a1308277ec` plus its recorded corrective changes. Issue #14 fresh verification used the local feature tree after merge commit `eef296c683f2448d48d3e63085462409fe9c074e`; record the final hosted feature SHA after these evidence updates are committed and pushed |
+| Date/time and timezone | Issue #13: `2026-08-25 16:45 ICT`; Issue #14: `2026-08-27 01:30 ICT` (UTC+7) |
 | Tester | OpenAI Codex local verification; author and peer sign-off remain pending |
 | OS / Node.js / npm / PostgreSQL versions | Windows `10.0.19045`; Node.js `v24.14.0`; npm `11.9.0`; local PostgreSQL server (server version not captured because `psql` is unavailable) |
 | Browser and version | Google Chrome `151.0.7922.174` headless for the Issue #14 selection screenshots; full browser E2E remains `Not run` |
@@ -263,7 +263,7 @@ npm --prefix client run dev
 | Server build | PASS (`tsc`) |
 | Client build | PASS (`tsc && vite build`) |
 | Lint | PASS for both server and client with zero warnings |
-| Final release recommendation | PASS for the local automated Issue #13 and Issue #14 scopes, including the committed three-viewport visual evidence. PR #21 integration, final push, hosted CI, full browser E2E, and peer re-review remain required before merge |
+| Final release recommendation | PASS for the local automated Issue #14 requester scope and the previously recorded Issue #13 database evidence. PR #21 is integrated through `lab2-staging`; final commit/push, hosted CI, a fresh database-suite rerun with valid isolated PostgreSQL credentials, full browser E2E, and peer re-review remain required before merge |
 
 | Command / Review | Timestamp | Result and Counts | Evidence Path or PR Link |
 |---|---|---|---|
@@ -280,13 +280,16 @@ npm --prefix client run dev
 | `npm --prefix server run build` and `npm --prefix client run build` | `2026-08-26 18:39 ICT` | PASS | Local terminal |
 | `npm --prefix server run lint` and `npm --prefix client run lint` | `2026-08-26 18:39 ICT` | PASS — zero warnings | Local terminal |
 | Chrome responsive capture and visual review | `2026-08-26 18:50 ICT` | PASS — exact viewport metrics had `scrollWidth === innerWidth`; selection captures show a valid pending option before commit, while shell captures show stored requester `1`, read-only current requester, and visible Change Requester at all three widths | `docs/lab-02/evidence/requester-selection-*.png`<br>`docs/lab-02/evidence/requester-shell-*.png` |
+| Post-merge Issue #14 regression (`npm --prefix client test`; `npm --prefix server run test:unit`) | `2026-08-27 01:30 ICT` | PASS — client 29/29 across 4 files; DB-free server 7/7 across 2 files | Local tree after merging `origin/lab2-staging` at `eef296c` |
+| Post-merge builds, lint, Prisma validation, and diff check | `2026-08-27 01:30 ICT` | PASS — client/server builds, client/server lint with zero warnings, `prisma validate`, and `git diff --check` | Local terminal |
+| Post-merge full server suite | `2026-08-27 01:30 ICT` | ENVIRONMENT BLOCKED — requester/health unit tests passed 7/7, but DB-01 and the Lab 1 Category integration could not connect because PostgreSQL rejected the configured local credentials (`P1000`); this run is not recorded as a product-test failure or a full-suite pass | Configure valid isolated `DATABASE_URL`/`TEST_DATABASE_URL`, then rerun before final approval |
 | `npm --prefix client run test:e2e` | Not run | Planned infrastructure is absent | Add Playwright/configuration in the relevant implementation issue |
 | Responsive/visual review | Selection and application shell passed locally; committed browser automation remains pending | Chrome headless at 1440×900, 834×1112, and 390×844 with deterministic requester fixtures | `docs/lab-02/evidence/requester-selection-*.png` and `requester-shell-*.png` |
 
 **Failures, flakes, deviations, and linked defects:**
 
 - The first local `DB-01` attempt passed 10/11 and exposed an incorrect test oracle for an oversized `varchar(500)`: PostgreSQL rejected the type length before the named trim check. The test was split by enforcement layer and the clean-schema rerun passed 11/11.
-- No failure was observed in the final Issue #14 automated run; flakiness was not assessed by repeated-run analysis. Hosted CI, the final hosted commit SHA, PR #21 integration, automated browser evidence, and peer re-review are still required before merging PR #22.
+- No Issue #14 requester assertion failed in the post-merge regression. The fresh full server run was environment-blocked by PostgreSQL credential error `P1000`, so the previously recorded DB-01 result remains historical evidence rather than a fresh post-merge pass. Hosted CI, the final hosted commit SHA, a successful isolated database-suite rerun, automated browser evidence, and peer re-review are still required before merging PR #22.
 
 **Verification sign-off:**
 
@@ -297,6 +300,7 @@ npm --prefix client run dev
 ## 7. Known Limitations and Deferred Tests
 
 - **Authentication and login security are intentionally excluded.** Planned requester-context tests cover only the simulated context carried by `x-requester-id`; they do not cover passwords, sessions, tokens, identity-provider integration, CSRF, or account recovery.
+- **Ticket navigation is deferred beyond Issue #14, not beyond Lab 2.** This requester-context increment intentionally renders only the TokTickIT identity, read-only current Requester, and **Change Requester** in the application header. The labsheet-required **Create Ticket**, **My Tickets**, active-page indication, and responsive navigation must be implemented and tested with the later Ticket-screen increments before Lab 2 can be declared complete; PR #22 must not claim that final application navigation is already delivered.
 - **IT Staff workflows are intentionally excluded.** Assignment, staff queues, prioritization, status transitions beyond initial `New`, internal notes, and staff authorization are deferred.
 - **Public comments and status progression beyond `New` are out of Lab 2 scope.** No tests should imply those features exist.
 - **Browser automation is planned but not installed in the current repository.** `RV-01`–`RV-03` and every `E2E-*` row remain `Not run`. `RV-04` has local screenshot/checklist evidence only; its automated Playwright run remains pending until the dependency, configuration, browser binaries, and package script are reviewed and added.
