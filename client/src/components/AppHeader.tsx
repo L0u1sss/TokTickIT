@@ -18,6 +18,15 @@ export default function AppHeader() {
             TokTickIT <strong>IT Service Desk</strong>
           </span>
         </div>
+        <nav className="app-navigation" aria-label="Ticket navigation">
+          <a
+            className="app-navigation-link active"
+            href="/tickets/new"
+            aria-current="page"
+          >
+            Create Ticket
+          </a>
+        </nav>
         <div className="requester-menu">
           <span className="context-disclaimer">Demo context</span>
           <span className="current-requester">

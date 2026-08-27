@@ -8,6 +8,48 @@ export interface Category {
   name: string;
 }
 
+export interface RelatedSystem {
+  id: number;
+  name: string;
+}
+
+export interface TicketMetadata {
+  categories: Category[];
+  relatedSystems: RelatedSystem[];
+}
+
+export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH";
+
+export interface TicketCreateInput {
+  clientRequestId: string;
+  categoryId: number;
+  relatedSystemId: number;
+  summary: string;
+  requestedPriority: RequestedPriority;
+  description: string;
+}
+
+export interface TicketDetail {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  requestedPriority: RequestedPriority;
+  status: "New";
+  requester: Requester;
+  category: Category;
+  relatedSystem: RelatedSystem;
+  activeAttachmentCount: number;
+  attachments: unknown[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketCreateResult {
+  ticket: TicketDetail;
+  replayed: boolean;
+}
+
 export interface SystemStatus {
   online: boolean;
   categories: Category[];
@@ -19,10 +61,36 @@ export interface Requester {
   email: string;
 }
 
+export interface ApiErrorDetail {
+  field: string;
+  issue: string;
+}
+
 interface ApiErrorEnvelope {
   error?: {
     code?: unknown;
+    message?: unknown;
+    details?: unknown;
   };
+}
+
+export class ApiResponseError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly details: ApiErrorDetail[];
+
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details: ApiErrorDetail[] = [],
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
 }
 
 export class InvalidRequesterContextError extends Error {
@@ -122,5 +190,65 @@ export async function getRequesters(): Promise<Requester[]> {
   }
 
   return (await response.json()) as Requester[];
+}
+
+function isApiErrorDetail(value: unknown): value is ApiErrorDetail {
+  if (!value || typeof value !== "object") return false;
+  const detail = value as Record<string, unknown>;
+  return typeof detail.field === "string" && typeof detail.issue === "string";
+}
+
+async function apiResponseError(response: Response): Promise<ApiResponseError> {
+  try {
+    const envelope = (await response.json()) as ApiErrorEnvelope;
+    const code =
+      typeof envelope.error?.code === "string"
+        ? envelope.error.code
+        : "UNKNOWN_ERROR";
+    const message =
+      typeof envelope.error?.message === "string"
+        ? envelope.error.message
+        : "The request could not be completed.";
+    const details = Array.isArray(envelope.error?.details)
+      ? envelope.error.details.filter(isApiErrorDetail)
+      : [];
+    return new ApiResponseError(response.status, code, message, details);
+  } catch {
+    return new ApiResponseError(
+      response.status,
+      "UNKNOWN_ERROR",
+      "The request could not be completed.",
+    );
+  }
+}
+
+export async function getTicketMetadata(signal?: AbortSignal): Promise<TicketMetadata> {
+  const response = await fetch(`${API_URL}/api/metadata`, { signal });
+  if (!response.ok) {
+    throw await apiResponseError(response);
+  }
+  return (await response.json()) as TicketMetadata;
+}
+
+export type RequestAsCurrentRequester = (
+  input: string | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
+export async function createTicket(
+  requestAsCurrentRequester: RequestAsCurrentRequester,
+  input: TicketCreateInput,
+): Promise<TicketCreateResult> {
+  const response = await requestAsCurrentRequester("/api/tickets", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw await apiResponseError(response);
+  }
+
+  return (await response.json()) as TicketCreateResult;
 }
 
