@@ -85,9 +85,10 @@ function displayPriority(value: RequestedPriority): string {
 
 interface CreateTicketPageProps {
   onCancel?: () => void;
+  onViewTicket: (ticketId: number) => void;
 }
 
-export default function CreateTicketPage({ onCancel }: CreateTicketPageProps) {
+export default function CreateTicketPage({ onCancel, onViewTicket }: CreateTicketPageProps) {
   const { currentRequester, requestAsCurrentRequester } = useRequester();
   const [values, setValues] = useState<FormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -342,12 +343,14 @@ export default function CreateTicketPage({ onCancel }: CreateTicketPageProps) {
               <dd>{displayPriority(ticket.requestedPriority)}</dd>
             </div>
           </dl>
-          <button className="zen-button" type="button" onClick={createAnotherTicket}>
-            Create another Ticket
-          </button>
-          <p className="scope-note">
-            Ticket Detail will be available when its Lab 2 increment is added.
-          </p>
+          <div className="form-actions">
+            <button className="zen-button" type="button" onClick={() => onViewTicket(ticket.id)}>
+              View ticket
+            </button>
+            <button className="secondary-button" type="button" onClick={createAnotherTicket}>
+              Create another Ticket
+            </button>
+          </div>
         </section>
       </main>
     );

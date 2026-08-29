@@ -40,9 +40,21 @@ export interface TicketDetail {
   category: Category;
   relatedSystem: RelatedSystem;
   activeAttachmentCount: number;
-  attachments: unknown[];
+  attachments: Attachment[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Attachment {
+  id: number;
+  fileName: string;
+  mediaType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  isRemoved: boolean;
+  removedAt: string | null;
+  removalReason: string | null;
+  downloadable: boolean;
 }
 
 export interface TicketSummary {
@@ -324,5 +336,74 @@ export async function getTickets(
   );
   if (!response.ok) throw await apiResponseError(response);
   return (await response.json()) as TicketListResponse;
+}
+
+export async function getTicketDetail(
+  requestAsCurrentRequester: RequestAsCurrentRequester,
+  ticketId: number,
+  signal?: AbortSignal,
+): Promise<TicketDetail> {
+  const response = await requestAsCurrentRequester(`/api/tickets/${ticketId}`, { signal });
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as TicketDetail;
+}
+
+export async function uploadAttachment(
+  requestAsCurrentRequester: RequestAsCurrentRequester,
+  ticketId: number,
+  file: File,
+): Promise<Attachment> {
+  const body = new FormData();
+  body.append("file", file);
+  const response = await requestAsCurrentRequester(`/api/tickets/${ticketId}/attachments`, {
+    method: "POST",
+    body,
+  });
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as Attachment;
+}
+
+function responseFileName(response: Response): string | null {
+  const value = response.headers.get("content-disposition");
+  if (!value) return null;
+  const encoded = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return null;
+    }
+  }
+  return value.match(/filename="([^"]*)"/i)?.[1] ?? null;
+}
+
+export async function downloadAttachment(
+  requestAsCurrentRequester: RequestAsCurrentRequester,
+  ticketId: number,
+  attachmentId: number,
+): Promise<{ blob: Blob; fileName: string | null }> {
+  const response = await requestAsCurrentRequester(
+    `/api/tickets/${ticketId}/attachments/${attachmentId}/download`,
+  );
+  if (!response.ok) throw await apiResponseError(response);
+  return { blob: await response.blob(), fileName: responseFileName(response) };
+}
+
+export async function removeAttachment(
+  requestAsCurrentRequester: RequestAsCurrentRequester,
+  ticketId: number,
+  attachmentId: number,
+  reason: string,
+): Promise<Attachment> {
+  const response = await requestAsCurrentRequester(
+    `/api/tickets/${ticketId}/attachments/${attachmentId}/remove`,
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason }),
+    },
+  );
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as Attachment;
 }
 

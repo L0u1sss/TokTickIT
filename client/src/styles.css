@@ -827,6 +827,321 @@ a:focus-visible {
   background: #edf1ee;
 }
 
+.ticket-detail-page {
+  width: min(100% - 2rem, 72rem);
+  min-width: 0;
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.detail-back-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--zen-primary);
+  font-weight: 750;
+}
+
+.ticket-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.ticket-detail-heading h1,
+.detail-surface h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-detail-heading h1 {
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  letter-spacing: -0.035em;
+}
+
+.status-badge,
+.removed-badge {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.status-badge {
+  color: #fff;
+  background: var(--zen-primary);
+}
+
+.ticket-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  grid-template-areas:
+    "summary metadata"
+    "description metadata"
+    "attachments metadata";
+  align-items: start;
+  gap: 1rem;
+}
+
+.detail-surface {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #cee3d5;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1rem 3rem rgb(25 75 51 / 6%);
+}
+
+.ticket-detail-summary {
+  grid-area: summary;
+}
+
+.ticket-detail-description {
+  grid-area: description;
+}
+
+.ticket-detail-metadata {
+  grid-area: metadata;
+}
+
+.attachment-section {
+  grid-area: attachments;
+}
+
+.ticket-detail-description h2,
+.ticket-detail-metadata h2,
+.attachment-section h2 {
+  margin-bottom: 0.85rem;
+  font-size: 1.25rem;
+}
+
+.ticket-description {
+  margin: 0;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.ticket-detail-metadata dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.ticket-detail-metadata dl > div {
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #e0ebe4;
+}
+
+.ticket-detail-metadata dl > div:last-child {
+  border-bottom: 0;
+}
+
+.ticket-detail-metadata dt {
+  margin-bottom: 0.2rem;
+  color: #60776c;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ticket-detail-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-detail-state {
+  display: grid;
+  min-height: 16rem;
+  place-items: center;
+  align-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: var(--zen-pale);
+  text-align: center;
+}
+
+.detail-state-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.attachment-upload {
+  display: grid;
+  min-width: 0;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  background: var(--zen-pale);
+}
+
+.attachment-upload label {
+  font-weight: 750;
+}
+
+.attachment-upload input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.attachment-upload .zen-button {
+  justify-self: start;
+}
+
+.warning-callout,
+.attachment-notice {
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.7rem;
+}
+
+.warning-callout {
+  border: 1px solid #e2c37d;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.attachment-notice {
+  color: #285b40;
+  background: var(--zen-pale);
+}
+
+.attachment-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attachment-list li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem;
+  border: 1px solid #d8e7de;
+  border-radius: 0.8rem;
+}
+
+.attachment-list li > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.attachment-list strong,
+.attachment-list span {
+  overflow-wrap: anywhere;
+}
+
+.attachment-list li > div:first-child > span {
+  color: #60776c;
+  font-size: 0.84rem;
+}
+
+.attachment-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+.attachment-actions .secondary-button,
+.attachment-retry,
+.removal-dialog .secondary-button {
+  width: auto;
+  margin-left: 0;
+}
+
+.destructive-button {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid #a52525;
+  border-radius: 999px;
+  color: #fff;
+  background: #a52525;
+  font-weight: 750;
+}
+
+.destructive-button:disabled {
+  border-color: #c5ceca;
+  color: #53655b;
+  background: #dfe7e2;
+}
+
+.removed-attachments {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #d8e7de;
+}
+
+.removed-attachments summary {
+  min-height: 44px;
+  color: #49685a;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.removed-badge {
+  color: #5c625f;
+  background: #e8ecea;
+}
+
+.removal-dialog-backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(16 35 25 / 55%);
+}
+
+.removal-dialog {
+  width: min(100%, 34rem);
+  max-height: calc(100vh - 2rem);
+  padding: 1.5rem;
+  overflow-y: auto;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(16 35 25 / 28%);
+}
+
+.removal-dialog h2 {
+  margin: 0;
+}
+
+.removal-dialog form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.removal-dialog label {
+  font-weight: 750;
+}
+
+.removal-dialog textarea {
+  width: 100%;
+  min-height: 8rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #aacbb6;
+  border-radius: 0.7rem;
+  resize: vertical;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -838,6 +1153,22 @@ a:focus-visible {
     animation: none;
   }
 
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  .ticket-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "summary"
+      "metadata"
+      "description"
+      "attachments";
+  }
+
+  .ticket-detail-metadata dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.25rem;
+  }
 }
 
 @media (max-width: 767px) {
@@ -897,6 +1228,44 @@ a:focus-visible {
   .my-tickets-page {
     width: min(100% - 1.5rem, 72rem);
     padding-top: 1.5rem;
+  }
+
+  .ticket-detail-page {
+    width: min(100% - 1.5rem, 72rem);
+    padding-top: 1.25rem;
+  }
+
+  .ticket-detail-heading,
+  .detail-state-actions,
+  .attachment-list li,
+  .attachment-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ticket-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "summary"
+      "metadata"
+      "description"
+      "attachments";
+  }
+
+  .detail-surface {
+    padding: 1rem;
+  }
+
+  .attachment-upload .zen-button,
+  .attachment-actions button,
+  .attachment-retry,
+  .detail-state-actions .zen-button,
+  .detail-state-actions a {
+    width: 100%;
+  }
+
+  .removal-dialog .form-actions {
+    flex-direction: column;
   }
 
   .my-tickets-heading,

@@ -197,7 +197,7 @@ Attachment management begins after the ticket has been created because attachmen
 - Other failures retain entered values and show **We couldn't create your ticket. Try again.** without exposing server internals.
 - **Cancel** returns to My Tickets. If the user changed a field, request confirmation before discarding the draft.
 
-Delivery sequencing does not change those final requirements: Issue #15 intentionally leaves **Cancel** and **View ticket** unrendered because their real destinations are introduced by Issue #16 (`/tickets`) and Issue #17 (`/tickets/:id`). This avoids dead or misleading controls. Both actions remain `Planned` and must not be reported as passed until the corresponding routes and discard-confirmation behavior exist.
+Delivery sequencing does not change those final requirements: Issue #15 intentionally left **Cancel** and **View ticket** unrendered until their real destinations existed. Issue #16 delivered **Cancel** with `/tickets` and dirty-draft confirmation; Issue #17 now delivers **View ticket** with the protected `/tickets/:id` destination. Hosted CI, peer approval, and browser evidence are tracked separately in `tests.md` and must not be inferred from implementation status alone.
 
 Ticket Number and Ticket Date are server-controlled. Before success the UI must show only their read-only placeholders; it must not predict, client-generate, or submit either value. After success, the visible values must come from the response's `ticket.ticketNumber` and `ticket.createdAt`. Dates use a consistent readable format and semantic `<time datetime="{createdAt}">` markup where available.
 
