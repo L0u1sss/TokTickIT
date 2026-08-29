@@ -1,6 +1,11 @@
 import { useRequester } from "../context/RequesterContext.js";
 
-export default function AppHeader() {
+interface AppHeaderProps {
+  activePath: "/tickets" | "/tickets/new";
+  onNavigate: (path: "/tickets" | "/tickets/new") => void;
+}
+
+export default function AppHeader({ activePath, onNavigate }: AppHeaderProps) {
   const { currentRequester, changeRequester } = useRequester();
 
   if (!currentRequester) {
@@ -20,11 +25,26 @@ export default function AppHeader() {
         </div>
         <nav className="app-navigation" aria-label="Ticket navigation">
           <a
-            className="app-navigation-link active"
+            className={`app-navigation-link${activePath === "/tickets/new" ? " active" : ""}`}
             href="/tickets/new"
-            aria-current="page"
+            aria-current={activePath === "/tickets/new" ? "page" : undefined}
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("/tickets/new");
+            }}
           >
             Create Ticket
+          </a>
+          <a
+            className={`app-navigation-link${activePath === "/tickets" ? " active" : ""}`}
+            href="/tickets"
+            aria-current={activePath === "/tickets" ? "page" : undefined}
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("/tickets");
+            }}
+          >
+            My Tickets
           </a>
         </nav>
         <div className="requester-menu">

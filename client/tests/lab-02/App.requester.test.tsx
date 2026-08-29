@@ -112,4 +112,41 @@ describe("requester application flow", () => {
     expect(screen.getByRole("textbox", { name: "Summary" })).toHaveValue("");
     expect(screen.queryByDisplayValue("Private draft")).not.toBeInTheDocument();
   });
+
+  it("offers Create Ticket and My Tickets navigation with one active destination", async () => {
+    window.sessionStorage.setItem("toktickit.requesterId", "1");
+    window.history.replaceState({}, "", "/tickets");
+    vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
+    vi.spyOn(api, "getTicketMetadata").mockResolvedValue(metadata);
+    vi.spyOn(api, "getTickets").mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+      sort: { by: "createdAt", order: "desc" },
+      filters: {
+        search: null,
+        status: null,
+        requestedPriority: null,
+        categoryId: null,
+        relatedSystemId: null,
+      },
+    });
+    const user = userEvent.setup();
+    render(
+      <RequesterProvider>
+        <App />
+      </RequesterProvider>,
+    );
+
+    const header = await screen.findByRole("banner");
+    expect(within(header).getByRole("link", { name: "My Tickets" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      within(header).getByRole("link", { name: "Create Ticket" }),
+    ).not.toHaveAttribute("aria-current");
+    await user.click(within(header).getByRole("link", { name: "Create Ticket" }));
+    expect(window.location.pathname).toBe("/tickets/new");
+    expect(await screen.findByRole("heading", { name: "Create Ticket" })).toBeInTheDocument();
+  });
 });

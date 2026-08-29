@@ -45,6 +45,52 @@ export interface TicketDetail {
   updatedAt: string;
 }
 
+export interface TicketSummary {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: RequestedPriority;
+  status: "New";
+  category: Category;
+  relatedSystem: RelatedSystem;
+  activeAttachmentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TicketSortField = "createdAt" | "ticketNumber" | "summary";
+export type TicketSortOrder = "asc" | "desc";
+
+export interface TicketListQuery {
+  search?: string;
+  status?: "New";
+  requestedPriority?: RequestedPriority;
+  categoryId?: number;
+  relatedSystemId?: number;
+  sortBy: TicketSortField;
+  sortOrder: TicketSortOrder;
+  page: number;
+  pageSize: 10 | 20 | 50;
+}
+
+export interface TicketListResponse {
+  items: TicketSummary[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+  sort: { by: TicketSortField; order: TicketSortOrder };
+  filters: {
+    search: string | null;
+    status: "New" | null;
+    requestedPriority: RequestedPriority | null;
+    categoryId: number | null;
+    relatedSystemId: number | null;
+  };
+}
+
 export interface TicketCreateResult {
   ticket: TicketDetail;
   replayed: boolean;
@@ -250,5 +296,33 @@ export async function createTicket(
   }
 
   return (await response.json()) as TicketCreateResult;
+}
+
+export async function getTickets(
+  requestAsCurrentRequester: RequestAsCurrentRequester,
+  query: TicketListQuery,
+  signal?: AbortSignal,
+): Promise<TicketListResponse> {
+  const parameters = new URLSearchParams();
+  if (query.search) parameters.set("search", query.search);
+  if (query.status) parameters.set("status", query.status);
+  if (query.requestedPriority) {
+    parameters.set("requestedPriority", query.requestedPriority);
+  }
+  if (query.categoryId) parameters.set("categoryId", String(query.categoryId));
+  if (query.relatedSystemId) {
+    parameters.set("relatedSystemId", String(query.relatedSystemId));
+  }
+  parameters.set("sortBy", query.sortBy);
+  parameters.set("sortOrder", query.sortOrder);
+  parameters.set("page", String(query.page));
+  parameters.set("pageSize", String(query.pageSize));
+
+  const response = await requestAsCurrentRequester(
+    `/api/tickets?${parameters.toString()}`,
+    { signal },
+  );
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as TicketListResponse;
 }
 

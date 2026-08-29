@@ -83,7 +83,11 @@ function displayPriority(value: RequestedPriority): string {
   return value.charAt(0) + value.slice(1).toLowerCase();
 }
 
-export default function CreateTicketPage() {
+interface CreateTicketPageProps {
+  onCancel?: () => void;
+}
+
+export default function CreateTicketPage({ onCancel }: CreateTicketPageProps) {
   const { currentRequester, requestAsCurrentRequester } = useRequester();
   const [values, setValues] = useState<FormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -294,12 +298,18 @@ export default function CreateTicketPage() {
     setResult(null);
   }
 
+  function cancelDraft() {
+    const hasDraft = Object.values(values).some((value) => value.trim().length > 0);
+    if (hasDraft && !window.confirm("Discard this ticket draft?")) return;
+    onCancel?.();
+  }
+
   if (!currentRequester) return null;
 
   if (result) {
     const { ticket, replayed } = result;
     return (
-      <main className="ticket-page">
+      <main className="ticket-page" id="main-content" tabIndex={-1}>
         <section className="ticket-success" aria-labelledby="ticket-success-title">
           <p className="eyebrow">Create Ticket</p>
           <h1 id="ticket-success-title">
@@ -344,7 +354,7 @@ export default function CreateTicketPage() {
   }
 
   return (
-    <main className="ticket-page">
+    <main className="ticket-page" id="main-content" tabIndex={-1}>
       <div className="ticket-page-heading">
         <p className="eyebrow">Requester workspace</p>
         <h1>Create Ticket</h1>
@@ -574,6 +584,14 @@ export default function CreateTicketPage() {
         </p>
 
         <div className="form-actions">
+          <button
+            className="secondary-button cancel-ticket-button"
+            type="button"
+            disabled={submissionState === "submitting"}
+            onClick={cancelDraft}
+          >
+            Cancel
+          </button>
           {submissionState === "retryable" ? (
             <button
               className="zen-button"

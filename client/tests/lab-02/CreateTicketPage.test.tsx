@@ -353,4 +353,57 @@ describe("Create Ticket page", () => {
     expect(screen.getByRole("textbox", { name: "Summary" })).toHaveValue("");
     expect(globalThis.crypto.randomUUID).toHaveBeenCalledTimes(1);
   });
+
+  it("cancels a clean form to My Tickets without a confirmation", async () => {
+    vi.spyOn(api, "getTickets").mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+      sort: { by: "createdAt", order: "desc" },
+      filters: {
+        search: null,
+        status: null,
+        requestedPriority: null,
+        categoryId: null,
+        relatedSystemId: null,
+      },
+    });
+    const confirmSpy = vi.spyOn(window, "confirm");
+    const user = await renderCreateTicket();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/tickets");
+    expect(await screen.findByRole("heading", { name: "My Tickets" })).toBeInTheDocument();
+  });
+
+  it("keeps or discards a dirty draft according to the Cancel confirmation", async () => {
+    vi.spyOn(api, "getTickets").mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+      sort: { by: "createdAt", order: "desc" },
+      filters: {
+        search: null,
+        status: null,
+        requestedPriority: null,
+        categoryId: null,
+        relatedSystemId: null,
+      },
+    });
+    const confirmSpy = vi
+      .spyOn(window, "confirm")
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    const user = await renderCreateTicket();
+    await user.type(screen.getByRole("textbox", { name: "Summary" }), "Keep this draft");
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(window.location.pathname).toBe("/tickets/new");
+    expect(screen.getByRole("textbox", { name: "Summary" })).toHaveValue("Keep this draft");
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(confirmSpy).toHaveBeenCalledTimes(2);
+    expect(window.location.pathname).toBe("/tickets");
+    expect(await screen.findByRole("heading", { name: "My Tickets" })).toBeInTheDocument();
+  });
 });

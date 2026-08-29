@@ -1,6 +1,7 @@
 export type ApiErrorCode =
   | "INVALID_JSON"
   | "INVALID_REQUESTER_CONTEXT"
+  | "INVALID_QUERY"
   | "VALIDATION_ERROR"
   | "INVALID_REFERENCE"
   | "DUPLICATE_REQUEST_CONFLICT"
@@ -35,6 +36,15 @@ export function validationError(details: ErrorDetail[]): ApiError {
     400,
     "VALIDATION_ERROR",
     "The request contains invalid fields.",
+    details,
+  );
+}
+
+export function invalidQueryError(details: ErrorDetail[]): ApiError {
+  return new ApiError(
+    400,
+    "INVALID_QUERY",
+    "The ticket list query is invalid.",
     details,
   );
 }
