@@ -435,6 +435,17 @@ a:focus-visible {
   font-weight: 650;
 }
 
+.required-legend {
+  margin: 0 0 1rem;
+  color: #4f665a;
+  font-size: 0.9rem;
+}
+
+.required-legend span {
+  color: var(--zen-error);
+  font-weight: 750;
+}
+
 .form-state,
 .form-error-summary,
 .attachment-guidance {
@@ -465,6 +476,16 @@ a:focus-visible {
 
 .form-error-summary ul {
   margin: 0.4rem 0 0;
+}
+
+.form-error-summary a {
+  color: inherit;
+  font-weight: 650;
+}
+
+.form-error-summary:focus {
+  outline: 3px solid var(--zen-primary);
+  outline-offset: 3px;
 }
 
 .secondary-button {

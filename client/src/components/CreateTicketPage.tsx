@@ -1,5 +1,6 @@
 import {
   ChangeEvent,
+  FocusEvent,
   FormEvent,
   ReactNode,
   useCallback,
@@ -86,6 +87,7 @@ export default function CreateTicketPage() {
   const { currentRequester, requestAsCurrentRequester } = useRequester();
   const [values, setValues] = useState<FormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [showErrorSummary, setShowErrorSummary] = useState(false);
   const [metadata, setMetadata] = useState<TicketMetadata>(emptyMetadata);
   const [metadataState, setMetadataState] = useState<MetadataState>("loading");
   const [submissionState, setSubmissionState] =
@@ -96,6 +98,9 @@ export default function CreateTicketPage() {
   const metadataRequest = useRef<AbortController | null>(null);
   const submitting = useRef(false);
   const retryButton = useRef<HTMLButtonElement>(null);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
+  const focusErrorSummaryAfterRender = useRef(false);
+  const touchedFields = useRef<Set<EditableField>>(new Set());
 
   const loadMetadata = useCallback(async () => {
     metadataRequest.current?.abort();
@@ -142,20 +147,65 @@ export default function CreateTicketPage() {
     submissionState !== "conflict";
 
   const errorSummary = useMemo(
-    () => Object.values(fieldErrors).filter(Boolean),
+    () =>
+      (Object.entries(fieldErrors) as [EditableField, string | undefined][]).filter(
+        (entry): entry is [EditableField, string] => Boolean(entry[1]),
+      ),
     [fieldErrors],
   );
+
+  useEffect(() => {
+    if (
+      focusErrorSummaryAfterRender.current &&
+      showErrorSummary &&
+      errorSummary.length > 0
+    ) {
+      errorSummaryRef.current?.focus();
+      focusErrorSummaryAfterRender.current = false;
+    }
+  }, [errorSummary, showErrorSummary]);
+
+  function updateFieldError(field: EditableField, nextValues: FormValues) {
+    const nextError = validateCreateTicket(nextValues)[field];
+    const nextErrors = { ...fieldErrors, [field]: nextError };
+    const hasErrors = Object.values(nextErrors).some(Boolean);
+    setFieldErrors(nextErrors);
+    if (
+      !hasErrors &&
+      submissionMessage === "Check the highlighted fields and try again."
+    ) {
+      setSubmissionMessage("");
+    }
+    if (!hasErrors) {
+      setShowErrorSummary(false);
+    }
+  }
 
   function handleChange(
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) {
     const field = event.target.name as EditableField;
-    setValues((current) => ({ ...current, [field]: event.target.value }));
-    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    const nextValues = { ...values, [field]: event.target.value };
+    setValues(nextValues);
+    if (touchedFields.current.has(field) || fieldErrors[field]) {
+      updateFieldError(field, nextValues);
+    }
     if (submissionState === "conflict") {
       setSubmissionState("idle");
       setSubmissionMessage("");
     }
+  }
+
+  function handleBlur(
+    event: FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+  ) {
+    const field = event.currentTarget.name as EditableField;
+    touchedFields.current.add(field);
+    updateFieldError(field, { ...values, [field]: event.currentTarget.value });
+  }
+
+  function focusField(field: EditableField) {
+    document.getElementById(field)?.focus();
   }
 
   async function performSubmission() {
@@ -185,6 +235,8 @@ export default function CreateTicketPage() {
             serverErrors[detail.field as EditableField] = detail.issue;
           }
         }
+        focusErrorSummaryAfterRender.current = Object.keys(serverErrors).length > 0;
+        setShowErrorSummary(Object.keys(serverErrors).length > 0);
         setFieldErrors(serverErrors);
         setSubmissionState("idle");
         setSubmissionMessage(
@@ -215,6 +267,8 @@ export default function CreateTicketPage() {
     if (!canSubmit) return;
 
     const validationErrors = validateCreateTicket(values);
+    focusErrorSummaryAfterRender.current = Object.keys(validationErrors).length > 0;
+    setShowErrorSummary(Object.keys(validationErrors).length > 0);
     setFieldErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
       setSubmissionMessage("Check the highlighted fields and try again.");
@@ -233,6 +287,8 @@ export default function CreateTicketPage() {
     attemptId.current = null;
     setValues(initialValues);
     setFieldErrors({});
+    setShowErrorSummary(false);
+    touchedFields.current.clear();
     setSubmissionState("idle");
     setSubmissionMessage("");
     setResult(null);
@@ -348,18 +404,34 @@ export default function CreateTicketPage() {
           </div>
         )}
 
-        {errorSummary.length > 0 && (
-          <div className="form-error-summary" role="alert">
-            <strong>Check the form:</strong>
+        {showErrorSummary && errorSummary.length > 0 && (
+          <div
+            ref={errorSummaryRef}
+            className="form-error-summary"
+            role="alert"
+            tabIndex={-1}
+            aria-labelledby="create-ticket-error-title"
+          >
+            <strong id="create-ticket-error-title">Check the form:</strong>
             <ul>
-              {errorSummary.map((message) => (
-                <li key={message}>{message}</li>
+              {errorSummary.map(([field, message]) => (
+                <li key={field}>
+                  <a
+                    href={`#${field}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      focusField(field);
+                    }}
+                  >
+                    {message}
+                  </a>
+                </li>
               ))}
             </ul>
           </div>
         )}
 
-        {submissionMessage && metadataState !== "error" && (
+        {submissionMessage && metadataState !== "error" && errorSummary.length === 0 && (
           <div
             className={`form-state ${submissionState === "conflict" ? "form-state-warning" : "form-state-error"}`}
             role="alert"
@@ -367,6 +439,10 @@ export default function CreateTicketPage() {
             {submissionMessage}
           </div>
         )}
+
+        <p className="required-legend">
+          <span aria-hidden="true">*</span> Required
+        </p>
 
         <div className="create-ticket-grid">
           <FormField id="categoryId" label="Category" error={fieldErrors.categoryId}>
@@ -376,9 +452,11 @@ export default function CreateTicketPage() {
               value={values.categoryId}
               disabled={metadataState !== "ready" || !hasCategories || formDisabled}
               required
+              aria-required="true"
               aria-invalid={Boolean(fieldErrors.categoryId)}
               aria-describedby={fieldErrors.categoryId ? "categoryId-error" : undefined}
               onChange={handleChange}
+              onBlur={handleBlur}
             >
               <option value="">Select a category</option>
               {metadata.categories.map((category) => (
@@ -402,11 +480,13 @@ export default function CreateTicketPage() {
                 metadataState !== "ready" || !hasRelatedSystems || formDisabled
               }
               required
+              aria-required="true"
               aria-invalid={Boolean(fieldErrors.relatedSystemId)}
               aria-describedby={
                 fieldErrors.relatedSystemId ? "relatedSystemId-error" : undefined
               }
               onChange={handleChange}
+              onBlur={handleBlur}
             >
               <option value="">Select a related system</option>
               {metadata.relatedSystems.map((system) => (
@@ -423,12 +503,13 @@ export default function CreateTicketPage() {
               name="summary"
               type="text"
               value={values.summary}
-              maxLength={120}
               disabled={formDisabled}
               required
+              aria-required="true"
               aria-invalid={Boolean(fieldErrors.summary)}
               aria-describedby={`summary-counter${fieldErrors.summary ? " summary-error" : ""}`}
               onChange={handleChange}
+              onBlur={handleBlur}
             />
             <span id="summary-counter" className="character-count">
               {codePointLength(values.summary)} / 120
@@ -446,6 +527,7 @@ export default function CreateTicketPage() {
               value={values.requestedPriority}
               disabled={formDisabled}
               required
+              aria-required="true"
               aria-invalid={Boolean(fieldErrors.requestedPriority)}
               aria-describedby={
                 fieldErrors.requestedPriority
@@ -453,6 +535,7 @@ export default function CreateTicketPage() {
                   : undefined
               }
               onChange={handleChange}
+              onBlur={handleBlur}
             >
               <option value="">Select a requested priority</option>
               <option value="LOW">Low</option>
@@ -471,13 +554,14 @@ export default function CreateTicketPage() {
               id="description"
               name="description"
               value={values.description}
-              maxLength={2000}
               rows={7}
               disabled={formDisabled}
               required
+              aria-required="true"
               aria-invalid={Boolean(fieldErrors.description)}
               aria-describedby={`description-counter${fieldErrors.description ? " description-error" : ""}`}
               onChange={handleChange}
+              onBlur={handleBlur}
             />
             <span id="description-counter" className="character-count">
               {codePointLength(values.description)} / 2000

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App.js";
@@ -159,6 +159,11 @@ describe("Create Ticket page", () => {
   it("shows field-associated errors for untouched invalid fields", async () => {
     const user = await renderCreateTicket();
     await screen.findByRole("option", { name: "Hardware" });
+    expect(screen.getByText("Required")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Summary" })).toHaveAttribute(
+      "aria-required",
+      "true",
+    );
     await user.click(screen.getByRole("button", { name: "Create ticket" }));
     expect(screen.getAllByText("Select a category.")).toHaveLength(2);
     expect(screen.getAllByText("Select a related system.")).toHaveLength(2);
@@ -168,6 +173,80 @@ describe("Create Ticket page", () => {
     expect(screen.getByRole("textbox", { name: "Summary" })).toHaveAttribute(
       "aria-invalid",
       "true",
+    );
+    const errorSummary = screen.getByRole("alert", { name: "Check the form:" });
+    await waitFor(() => expect(errorSummary).toHaveFocus());
+    await user.click(
+      screen.getByRole("link", { name: "Summary must be 5 to 120 characters." }),
+    );
+    expect(screen.getByRole("textbox", { name: "Summary" })).toHaveFocus();
+  });
+
+  it("validates a field on blur and clears its message only after correction", async () => {
+    const user = await renderCreateTicket();
+    await screen.findByRole("option", { name: "Hardware" });
+    const summary = screen.getByRole("textbox", { name: "Summary" });
+
+    await user.click(summary);
+    await user.tab();
+    expect(screen.getAllByText("Summary must be 5 to 120 characters.")).toHaveLength(1);
+
+    await user.type(summary, "abc");
+    expect(screen.getAllByText("Summary must be 5 to 120 characters.")).toHaveLength(1);
+    await user.type(summary, "de");
+    expect(screen.queryAllByText("Summary must be 5 to 120 characters.")).toHaveLength(0);
+  });
+
+  it("uses Unicode character boundaries without native UTF-16 truncation", async () => {
+    const createResult = deferred<api.TicketCreateResult>();
+    const createSpy = vi.spyOn(api, "createTicket").mockReturnValue(createResult.promise);
+    const user = await renderCreateTicket();
+    await screen.findByRole("option", { name: "Hardware" });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Category" }), "2");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Related System" }),
+      "5",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Requested Priority" }),
+      "HIGH",
+    );
+
+    const summary = screen.getByRole("textbox", { name: "Summary" });
+    const description = screen.getByRole("textbox", { name: "Description" });
+    const validSummary = "😀".repeat(120);
+    const validDescription = "𠮷".repeat(2000);
+
+    expect(summary).not.toHaveAttribute("maxlength");
+    expect(description).not.toHaveAttribute("maxlength");
+
+    fireEvent.change(summary, { target: { value: `${validSummary}😀` } });
+    fireEvent.blur(summary);
+    expect(screen.getByText("121 / 120")).toBeInTheDocument();
+    expect(screen.getAllByText("Summary must be 5 to 120 characters.")).toHaveLength(1);
+    fireEvent.change(summary, { target: { value: validSummary } });
+    expect(screen.getByText("120 / 120")).toBeInTheDocument();
+    expect(screen.queryAllByText("Summary must be 5 to 120 characters.")).toHaveLength(0);
+
+    fireEvent.change(description, { target: { value: `${validDescription}𠮷` } });
+    fireEvent.blur(description);
+    expect(screen.getByText("2001 / 2000")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Description must be 10 to 2,000 characters."),
+    ).toHaveLength(1);
+    fireEvent.change(description, { target: { value: validDescription } });
+    expect(screen.getByText("2000 / 2000")).toBeInTheDocument();
+    expect(
+      screen.queryAllByText("Description must be 10 to 2,000 characters."),
+    ).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Create ticket" }));
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({
+        summary: validSummary,
+        description: validDescription,
+      }),
     );
   });
 
