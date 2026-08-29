@@ -212,6 +212,22 @@ a:focus-visible {
   gap: 1.5rem;
 }
 
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.5rem;
+  color: #fff;
+  background: var(--zen-primary);
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 .app-navigation {
   display: flex;
   align-self: stretch;
@@ -507,8 +523,14 @@ a:focus-visible {
 
 .form-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.75rem;
   margin-top: 1.25rem;
+}
+
+.cancel-ticket-button {
+  margin-left: 0;
 }
 
 .create-ticket-button {
@@ -527,6 +549,282 @@ a:focus-visible {
 
 .scope-note {
   font-size: 0.82rem;
+}
+
+.my-tickets-page {
+  width: min(100% - 2rem, 72rem);
+  min-width: 0;
+  margin: 0 auto;
+  padding: 2.5rem 0 4rem;
+}
+
+.my-tickets-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.my-tickets-heading h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  letter-spacing: -0.035em;
+}
+
+.my-tickets-heading p:last-child {
+  margin: 0.4rem 0 0;
+  color: #557064;
+}
+
+.ticket-query-panel,
+.ticket-results {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #cee3d5;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1rem 3rem rgb(25 75 51 / 6%);
+}
+
+.ticket-search {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ticket-search > label,
+.ticket-filter label {
+  font-weight: 750;
+}
+
+.ticket-search > div {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.ticket-search input,
+.ticket-filter select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #aacbb6;
+  border-radius: 0.7rem;
+  color: var(--zen-text);
+  background: #fff;
+}
+
+.ticket-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ticket-metadata-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.7rem;
+  color: #49685a;
+  background: var(--zen-pale);
+}
+
+.ticket-metadata-state p {
+  margin: 0;
+}
+
+.ticket-metadata-state .secondary-button {
+  margin-left: auto;
+}
+
+.ticket-metadata-warning {
+  border: 1px solid #e2c37d;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.ticket-filter {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.reset-filters {
+  margin: 1rem 0 0;
+}
+
+.ticket-results {
+  margin-top: 1.25rem;
+}
+
+.ticket-list-state {
+  display: grid;
+  min-height: 13rem;
+  place-items: center;
+  align-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  color: #49685a;
+  background: var(--zen-pale);
+  text-align: center;
+}
+
+.ticket-list-state h2,
+.ticket-list-state p {
+  margin: 0;
+}
+
+.ticket-list-error {
+  color: var(--zen-error);
+  background: #fff4f1;
+}
+
+.ticket-result-summary {
+  margin: 0 0 0.8rem;
+  color: #557064;
+}
+
+.ticket-table-region {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid #d8e7de;
+  border-radius: 0.8rem;
+}
+
+.ticket-table-region table {
+  width: 100%;
+  min-width: 64rem;
+  border-collapse: collapse;
+}
+
+.ticket-table-region caption {
+  padding: 0.8rem;
+  color: var(--zen-text);
+  font-weight: 750;
+  text-align: left;
+}
+
+.ticket-table-region th,
+.ticket-table-region td {
+  padding: 0.8rem;
+  border-top: 1px solid #d8e7de;
+  vertical-align: top;
+  text-align: left;
+}
+
+.ticket-table-region th {
+  color: #3e6551;
+  background: var(--zen-pale);
+  white-space: nowrap;
+}
+
+.ticket-table-region tbody tr:hover {
+  background: #f7fbf8;
+}
+
+.ticket-table-region a,
+.ticket-card a:not(.zen-button) {
+  color: var(--zen-primary);
+  font-weight: 700;
+}
+
+.priority-badge,
+.status-badge {
+  display: inline-flex;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid #a8ceb6;
+  border-radius: 999px;
+  color: #285c40;
+  background: var(--zen-pale);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.priority-high {
+  border-color: #e2c37d;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.ticket-card-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.ticket-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #cee3d5;
+  border-radius: 0.9rem;
+  background: #fff;
+}
+
+.ticket-card h2 {
+  margin: 0.45rem 0 1rem;
+  overflow-wrap: anywhere;
+  font-size: 1.2rem;
+}
+
+.ticket-card dl {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0 0 1rem;
+}
+
+.ticket-card dl > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.45fr) minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.ticket-card dt {
+  color: #60776c;
+  font-weight: 750;
+}
+
+.ticket-card dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.ticket-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.ticket-pagination button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--zen-primary);
+  border-radius: 0.55rem;
+  color: var(--zen-primary);
+  background: #fff;
+  font-weight: 700;
+}
+
+.ticket-pagination button[aria-current="page"] {
+  color: #fff;
+  background: var(--zen-primary);
+}
+
+.ticket-pagination button:disabled {
+  border-color: #c4cec8;
+  color: #6b7b72;
+  background: #edf1ee;
 }
 
 @keyframes spin {
@@ -573,7 +871,7 @@ a:focus-visible {
   }
 
   .app-navigation-link {
-    width: 100%;
+    flex: 1;
     justify-content: center;
   }
 
@@ -596,6 +894,29 @@ a:focus-visible {
     padding-top: 1.5rem;
   }
 
+  .my-tickets-page {
+    width: min(100% - 1.5rem, 72rem);
+    padding-top: 1.5rem;
+  }
+
+  .my-tickets-heading,
+  .ticket-search > div,
+  .ticket-metadata-state {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .my-tickets-heading > .zen-button,
+  .ticket-search button,
+  .reset-filters,
+  .ticket-card-action {
+    width: 100%;
+  }
+
+  .ticket-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .ticket-context,
   .ticket-result-grid,
   .create-ticket-grid {
@@ -610,6 +931,10 @@ a:focus-visible {
   .form-actions .zen-button,
   .ticket-success > .zen-button {
     width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
   }
 
   .form-state {

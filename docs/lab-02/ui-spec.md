@@ -224,6 +224,10 @@ Submitting search, changing any filter or sort, changing requester, or changing 
 
 The UI maps its controls to the exact API query parameters `search`, `status`, `categoryId`, `relatedSystemId`, `requestedPriority`, `sortBy`, `sortOrder`, `page`, and `pageSize`. The default request is `sortBy=createdAt&sortOrder=desc&page=1&pageSize=10` with search and filters omitted. Valid sort fields are `createdAt`, `ticketNumber`, and `summary`; sort order is `asc` or `desc`. Category and system IDs are positive integers, Requested Priority is `LOW`, `MEDIUM`, or `HIGH`, and page size must be 10, 20, or 50.
 
+URL validation is strict and mirrors the API domain. An unknown parameter, repeated parameter, overlong search, or unsupported/malformed filter, sort, page, or page-size value must not be silently normalized into a valid request. Show a safe **The ticket list URL contains invalid query values.** alert with **Reset filters**, and do not request the requester-owned list until the URL is repaired. Reset restores `/tickets` and the canonical defaults.
+
+Category and Related System options have their own loading and failure states, separate from ticket-list results. While options load, disable those two selects and show **Loading filter options…**. If the metadata request fails, keep the ticket list and other query controls usable, show **We couldn't load filter options.** with **Retry**, keep the two metadata selects disabled, and never present the failure as empty option data or expose raw server details. A successful retry repopulates and enables them.
+
 ### 7.2 Desktop and tablet results table
 
 The semantic table has the accessible caption **Tickets owned by {requesterName}** and these columns:

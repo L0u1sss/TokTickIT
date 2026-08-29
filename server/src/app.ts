@@ -8,6 +8,8 @@ import {
 } from "./requester-context.js";
 import { parseTicketCreateBody } from "./ticket-contract.js";
 import { createTicket } from "./ticket-service.js";
+import { parseTicketListQuery } from "./ticket-query.js";
+import { listTickets } from "./ticket-list-service.js";
 
 // The Express app is exported separately from app.listen() (see index.ts) so
 // Supertest can import `app` without opening a port. Do not merge these files.
@@ -123,6 +125,27 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
   } catch (error) {
     if (!(error instanceof ApiError)) {
       console.error("Failed to create ticket");
+    }
+    const response = toErrorResponse(error);
+    res.status(response.status).json(response.body);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Issue 16 — Requester-scoped My Tickets list
+// ---------------------------------------------------------------------------
+app.get("/api/tickets", async (req: Request, res: Response) => {
+  try {
+    const requester = await resolveRequesterContext(
+      getPrisma(),
+      req.get(REQUESTER_HEADER_NAME),
+    );
+    const query = parseTicketListQuery(req.query);
+    const result = await listTickets(getPrisma(), requester, query);
+    res.status(200).json(result);
+  } catch (error) {
+    if (!(error instanceof ApiError)) {
+      console.error("Failed to list tickets");
     }
     const response = toErrorResponse(error);
     res.status(response.status).json(response.body);
