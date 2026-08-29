@@ -42,6 +42,13 @@ How I responded to the follow-up:
 
 Status: PRs #20–#23 are merged into `lab2-staging`. PR #24 remains open; the requested code, contract, and local-evidence follow-up is complete, while hosted CI and peer approval on the new final SHA remain pending.
 
+CI follow-up on 2026-08-29:
+
+- Review-follow-up SHA `3ba340025fe8f6b8ca4c4624ac02c2c0f39ba3a8` failed [GitHub Actions job 99131165844](https://github.com/L0u1sss/TokTickIT/actions/runs/33264182574/job/99131165844) in the client suite. Server tests had already passed; lint and builds were skipped after the client failure.
+- The failing My Tickets test checked the `getTickets` spy immediately even though the component queues the request in a microtask. On the hosted Linux runner the loading state rendered before the spy call, producing `Number of calls: 0`.
+- The test now uses `waitFor` for that asynchronous call. This changes test synchronization only, not production code.
+- Local verification after the fix passed My Tickets 17/17 five consecutive times, full client 66/66, full server 103/103, both lint/build commands, and Prisma validation. A new commit and hosted CI rerun remain required.
+
 ## PR #24 review follow-up
 
 Reviewer feedback:

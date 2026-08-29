@@ -109,15 +109,17 @@ describe("My Tickets page", () => {
     await screen.findByRole("heading", { name: "My Tickets" });
     expect(screen.getByText("Loading tickets…")).toBeInTheDocument();
     expect(screen.queryByText(ticket.ticketNumber)).not.toBeInTheDocument();
-    expect(listSpy).toHaveBeenCalledWith(
-      expect.any(Function),
-      expect.objectContaining({
-        sortBy: "createdAt",
-        sortOrder: "desc",
-        page: 1,
-        pageSize: 10,
-      }),
-      expect.any(AbortSignal),
+    await waitFor(() =>
+      expect(listSpy).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({
+          sortBy: "createdAt",
+          sortOrder: "desc",
+          page: 1,
+          pageSize: 10,
+        }),
+        expect.any(AbortSignal),
+      ),
     );
 
     pending.resolve(response());

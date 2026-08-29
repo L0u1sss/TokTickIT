@@ -251,8 +251,8 @@ npm --prefix client run dev
 
 | Item | Result |
 |---|---|
-| Commit SHA tested | Issue #13 evidence: `c09c6549833aac114e40fc5ecfa8c6a1308277ec`. Issue #14 hosted baseline: `8ef5a9c4b42fe1bf002ebed440f4109ac516ef59`. Issue #15 hosted baseline: `82a654011a353ac95e5b676509f3d62b0bda8d26`. Issue #16 hosted baseline: `36857e27d631e19777c94662c681bfb5d5dfa543`; PR #24 review follow-up is verified in the uncommitted local `feat/my-tickets-list` working tree based on that SHA, so its final SHA and hosted CI are pending |
-| Date/time and timezone | Issue #13: `2026-08-25 16:45 ICT`; Issue #14 hosted CI: `2026-08-27`; Issue #15 baseline CI checked `2026-08-29 ICT`; Issue #16 hosted baseline completed `2026-08-29 23:00 ICT`; review follow-up local rerun: `2026-08-29 23:33 ICT` (UTC+7) |
+| Commit SHA tested | Issue #13 evidence: `c09c6549833aac114e40fc5ecfa8c6a1308277ec`. Issue #14 hosted baseline: `8ef5a9c4b42fe1bf002ebed440f4109ac516ef59`. Issue #15 hosted baseline: `82a654011a353ac95e5b676509f3d62b0bda8d26`. Issue #16 hosted baseline: `36857e27d631e19777c94662c681bfb5d5dfa543`. Review-follow-up SHA `3ba340025fe8f6b8ca4c4624ac02c2c0f39ba3a8` exposed one client-test timing race in hosted CI; the deterministic-wait fix is verified in the uncommitted local working tree based on that SHA, so its new final SHA/CI are pending |
+| Date/time and timezone | Issue #13: `2026-08-25 16:45 ICT`; Issue #14 hosted CI: `2026-08-27`; Issue #15 baseline CI checked `2026-08-29 ICT`; Issue #16 hosted baseline completed `2026-08-29 23:00 ICT`; CI failure inspected and deterministic-wait fix locally rerun `2026-08-29 23:56–23:58 ICT` (UTC+7) |
 | Tester | OpenAI Codex local verification; author and peer sign-off remain pending |
 | OS / Node.js / npm / PostgreSQL versions | Windows `10.0.19045`; Node.js `v24.14.0`; npm `11.9.0`; PostgreSQL `18.4` |
 | Browser and version | Google Chrome `151.0.7922.174` headless for the Issue #14 selection screenshots; full browser E2E remains `Not run` |
@@ -263,7 +263,7 @@ npm --prefix client run dev
 | Server build | PASS (`tsc`) |
 | Client build | PASS (`tsc && vite build`) |
 | Lint | PASS for both server and client with zero warnings |
-| Final release recommendation | PASS for the implemented Issue #16 backend and component scope in the local working tree. The prior PR head passed hosted CI; after committing this review follow-up, the new final SHA must pass hosted CI and peer review, and RV-02 must receive the agreed real-browser responsive evidence. Ticket Detail/**View ticket** behavior remains Issue #17 and is not claimed as passed |
+| Final release recommendation | PASS for the implemented Issue #16 backend and component scope after the local CI-race fix. SHA `3ba3400` must not be treated as a green final head: commit the deterministic-wait fix and require the resulting new SHA to pass hosted CI and peer review. RV-02 still needs the agreed real-browser responsive evidence; Ticket Detail/**View ticket** remains Issue #17 and is not claimed as passed |
 
 | Command / Review | Timestamp | Result and Counts | Evidence Path or PR Link |
 |---|---|---|---|
@@ -294,6 +294,8 @@ npm --prefix client run dev
 | Issue #16 My Tickets review-follow-up verification | `2026-08-29 23:30 ICT` | PASS — My Tickets 17/17, including every priority/sort/page-size option, six strict invalid URL-query cases, distinct metadata failure, safe copy, disabled metadata filters, and Retry recovery | Local `feat/my-tickets-list` working tree based on `36857e27d631e19777c94662c681bfb5d5dfa543`; jsdom card switching is component evidence, not RV-02 real-layout evidence |
 | Issue #16 full regression suites after review follow-up | `2026-08-29 23:33 ICT` | PASS — server 103/103 across 14 files; client 66/66 across 8 files; database project used isolated `TEST_DATABASE_URL` | Local terminal; follow-up commit SHA and hosted CI pending |
 | Issue #16 builds, lint, Prisma validation, and diff check | `2026-08-29 23:33 ICT` | PASS — server/client builds, server/client ESLint with zero warnings, `prisma validate`, and `git diff --check` | Local `feat/my-tickets-list` working tree based on `36857e27d631e19777c94662c681bfb5d5dfa543`; line-ending notices only, no whitespace errors |
+| Hosted CI — PR #24 review-follow-up SHA | `2026-08-29 23:53–23:54 ICT` | FAIL on `3ba340025fe8f6b8ca4c4624ac02c2c0f39ba3a8` — server tests passed; the first My Tickets component case asserted `getTickets` before its queued microtask ran on the Linux runner (`Number of calls: 0`), so later lint/build steps were skipped | [GitHub Actions run 33264182574](https://github.com/L0u1sss/TokTickIT/actions/runs/33264182574)<br>[Job 99131165844](https://github.com/L0u1sss/TokTickIT/actions/runs/33264182574/job/99131165844) |
+| Local deterministic-wait CI fix | `2026-08-29 23:56–23:58 ICT` | PASS — replaced the immediate spy assertion with `waitFor`; My Tickets passed 17/17 in five consecutive focused runs, full client passed 66/66, server passed 103/103, both lint/build commands passed, and Prisma validation passed | Uncommitted local `feat/my-tickets-list` working tree based on failing SHA `3ba340025fe8f6b8ca4c4624ac02c2c0f39ba3a8`; new commit and hosted rerun pending |
 | `npm --prefix client run test:e2e` | Not run | Planned infrastructure is absent | Add Playwright/configuration in the relevant implementation issue |
 | Responsive/visual review | Selection and application shell passed locally; committed browser automation remains pending | Chrome headless at 1440×900, 834×1112, and 390×844 with deterministic requester fixtures | `docs/lab-02/evidence/requester-selection-*.png` and `requester-shell-*.png` |
 
@@ -301,6 +303,7 @@ npm --prefix client run dev
 
 - The first local `DB-01` attempt passed 10/11 and exposed an incorrect test oracle for an oversized `varchar(500)`: PostgreSQL rejected the type length before the named trim check. The test was split by enforcement layer and the clean-schema rerun passed 11/11.
 - The initial local full-suite attempt was environment-blocked because the local `toktickit` test role credentials did not match `TEST_DATABASE_URL` (`P1000`). The isolated `toktickit_test` role/database was aligned without modifying development data, all migrations and deterministic seed completed, and the local rerun passed 19/19. Hosted CI then repeated isolated PostgreSQL preparation and all verification steps successfully on baseline `8ef5a9c4b42fe1bf002ebed440f4109ac516ef59`. No Issue #14 requester or database assertion failed; any evidence-only follow-up must pass CI, and peer review remains pending before merging PR #22.
+- PR #24 SHA `3ba340025fe8f6b8ca4c4624ac02c2c0f39ba3a8` failed one client test because the test made an immediate spy assertion while the component intentionally starts its request in a queued microtask. The loading UI was present but the spy still had zero calls on the hosted Linux runner. The test now awaits the same asynchronous call with `waitFor`; five consecutive focused runs and the full local CI-equivalent verification passed. No production behavior changed in this fix.
 
 **Verification sign-off:**
 
