@@ -107,7 +107,7 @@ describe("My Tickets page", () => {
     renderMyTickets();
 
     await screen.findByRole("heading", { name: "My Tickets" });
-    expect(screen.getByRole("status")).toHaveTextContent("Loading tickets");
+    expect(screen.getByText("Loading tickets…")).toBeInTheDocument();
     expect(screen.queryByText(ticket.ticketNumber)).not.toBeInTheDocument();
     expect(listSpy).toHaveBeenCalledWith(
       expect.any(Function),
@@ -190,6 +190,57 @@ describe("My Tickets page", () => {
     expect(await screen.findByText(ticket.ticketNumber)).toBeInTheDocument();
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(screen.queryByText(/Prisma|secret/)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    "/tickets?page=0",
+    "/tickets?requestedPriority=CRITICAL",
+    "/tickets?sortBy=updatedAt",
+    "/tickets?search=one&search=two",
+    "/tickets?unknown=value",
+    `/tickets?search=${encodeURIComponent("😀".repeat(121))}`,
+  ])("shows an explicit invalid-query state for %s instead of silently defaulting", async (url) => {
+    window.history.replaceState({}, "", url);
+    const listSpy = vi.spyOn(api, "getTickets").mockResolvedValue(response());
+    const user = userEvent.setup();
+    renderMyTickets();
+
+    const invalidQuery = await screen.findByRole("alert", {
+      name: "Invalid ticket list query",
+    });
+    expect(invalidQuery).toHaveTextContent(
+      "The ticket list URL contains invalid query values.",
+    );
+    expect(listSpy).not.toHaveBeenCalled();
+
+    await user.click(
+      within(invalidQuery).getByRole("button", { name: "Reset filters" }),
+    );
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/tickets"));
+    await waitFor(() => expect(listSpy).toHaveBeenCalledTimes(1));
+  });
+
+  it("distinguishes filter metadata failure and recovers through Retry", async () => {
+    vi.mocked(api.getTicketMetadata)
+      .mockRejectedValueOnce(new Error("Prisma metadata secret"))
+      .mockResolvedValueOnce(metadata);
+    vi.spyOn(api, "getTickets").mockResolvedValue(response());
+    const user = userEvent.setup();
+    renderMyTickets();
+
+    expect(await screen.findByText(ticket.ticketNumber)).toBeInTheDocument();
+    const metadataFailure = await screen.findByRole("alert", {
+      name: "Filter options unavailable",
+    });
+    expect(metadataFailure).toHaveTextContent("We couldn't load filter options.");
+    expect(metadataFailure).not.toHaveTextContent(/Prisma|secret/);
+    expect(screen.getByRole("combobox", { name: "Category" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Related System" })).toBeDisabled();
+
+    await user.click(within(metadataFailure).getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("option", { name: "Hardware" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Category" })).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: "Related System" })).toBeEnabled();
   });
 
   it("maps search, filters, sort, and page size to URL/API state and resets page", async () => {

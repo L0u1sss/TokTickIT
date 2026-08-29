@@ -519,7 +519,7 @@ Every result and the total count are scoped to the validated requester before se
 | `page` | integer | no | `1` | Minimum `1` |
 | `pageSize` | integer | no | `10` | One of `10`, `20`, or `50` |
 
-Each parameter may occur at most once. A supplied blank `search` is normalized to no search. All active filters use AND semantics. Metadata IDs that are well-formed but have no matching owned ticket produce an empty collection, not an error. Sorting uses `id` in the same direction as a deterministic tie-breaker so records do not move unpredictably between pages.
+Each parameter may occur at most once. A supplied blank `search` is normalized to no search. All active filters use AND semantics. Metadata IDs that are well-formed but have no matching owned ticket produce an empty collection, not an error. The canonical default sort is `createdAt desc`; omitting both sort parameters therefore has the same behavior as `sortBy=createdAt&sortOrder=desc`. Sorting uses `id` in the same direction as a deterministic tie-breaker so records do not move unpredictably between pages.
 
 #### `200 OK`
 

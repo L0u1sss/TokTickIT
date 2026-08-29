@@ -621,6 +621,31 @@ a:focus-visible {
   margin-top: 1rem;
 }
 
+.ticket-metadata-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.7rem;
+  color: #49685a;
+  background: var(--zen-pale);
+}
+
+.ticket-metadata-state p {
+  margin: 0;
+}
+
+.ticket-metadata-state .secondary-button {
+  margin-left: auto;
+}
+
+.ticket-metadata-warning {
+  border: 1px solid #e2c37d;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
 .ticket-filter {
   display: grid;
   min-width: 0;
@@ -875,7 +900,8 @@ a:focus-visible {
   }
 
   .my-tickets-heading,
-  .ticket-search > div {
+  .ticket-search > div,
+  .ticket-metadata-state {
     align-items: stretch;
     flex-direction: column;
   }

@@ -33,6 +33,22 @@ const defaultQuery: TicketListQuery = {
   pageSize: 10,
 };
 const emptyMetadata: TicketMetadata = { categories: [], relatedSystems: [] };
+const allowedQueryFields = new Set([
+  "search",
+  "status",
+  "requestedPriority",
+  "categoryId",
+  "relatedSystemId",
+  "sortBy",
+  "sortOrder",
+  "page",
+  "pageSize",
+]);
+
+interface LocationQueryResult {
+  query: TicketListQuery;
+  invalid: boolean;
+}
 
 function positiveInteger(value: string | null): number | undefined {
   if (!value || !/^[1-9]\d*$/.test(value)) return undefined;
@@ -40,32 +56,58 @@ function positiveInteger(value: string | null): number | undefined {
   return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
 
-function queryFromLocation(locationSearch = window.location.search): TicketListQuery {
+function queryFromLocation(locationSearch = window.location.search): LocationQueryResult {
   const parameters = new URLSearchParams(locationSearch);
+  let invalid = false;
+  for (const field of new Set(parameters.keys())) {
+    if (!allowedQueryFields.has(field) || parameters.getAll(field).length > 1) {
+      invalid = true;
+    }
+  }
+
   const priority = parameters.get("requestedPriority");
   const status = parameters.get("status");
   const sortBy = parameters.get("sortBy");
   const sortOrder = parameters.get("sortOrder");
-  const pageSize = Number(parameters.get("pageSize"));
+  const rawCategoryId = parameters.get("categoryId");
+  const rawRelatedSystemId = parameters.get("relatedSystemId");
+  const rawPage = parameters.get("page");
+  const rawPageSize = parameters.get("pageSize");
   const search = parameters.get("search")?.trim();
+  const categoryId = positiveInteger(rawCategoryId);
+  const relatedSystemId = positiveInteger(rawRelatedSystemId);
+  const page = positiveInteger(rawPage);
+  const pageSize = positiveInteger(rawPageSize);
+
+  if (search && Array.from(search).length > 120) invalid = true;
+  if (status !== null && status !== "New") invalid = true;
+  if (priority !== null && !["LOW", "MEDIUM", "HIGH"].includes(priority)) invalid = true;
+  if (rawCategoryId !== null && categoryId === undefined) invalid = true;
+  if (rawRelatedSystemId !== null && relatedSystemId === undefined) invalid = true;
+  if (sortBy !== null && !["createdAt", "ticketNumber", "summary"].includes(sortBy)) invalid = true;
+  if (sortOrder !== null && !["asc", "desc"].includes(sortOrder)) invalid = true;
+  if (rawPage !== null && page === undefined) invalid = true;
+  if (rawPageSize !== null && ![10, 20, 50].includes(pageSize ?? -1)) invalid = true;
+
   return {
-    ...(search ? { search } : {}),
-    ...(status === "New" ? { status: "New" as const } : {}),
-    ...(["LOW", "MEDIUM", "HIGH"].includes(priority ?? "")
-      ? { requestedPriority: priority as RequestedPriority }
-      : {}),
-    ...(positiveInteger(parameters.get("categoryId"))
-      ? { categoryId: positiveInteger(parameters.get("categoryId")) }
-      : {}),
-    ...(positiveInteger(parameters.get("relatedSystemId"))
-      ? { relatedSystemId: positiveInteger(parameters.get("relatedSystemId")) }
-      : {}),
-    sortBy: (["createdAt", "ticketNumber", "summary"].includes(sortBy ?? "")
-      ? sortBy
-      : "createdAt") as TicketSortField,
-    sortOrder: (sortOrder === "asc" ? "asc" : "desc") as TicketSortOrder,
-    page: positiveInteger(parameters.get("page")) ?? 1,
-    pageSize: ([10, 20, 50].includes(pageSize) ? pageSize : 10) as 10 | 20 | 50,
+    invalid,
+    query: {
+      ...(search && Array.from(search).length <= 120 ? { search } : {}),
+      ...(status === "New" ? { status: "New" as const } : {}),
+      ...(["LOW", "MEDIUM", "HIGH"].includes(priority ?? "")
+        ? { requestedPriority: priority as RequestedPriority }
+        : {}),
+      ...(categoryId ? { categoryId } : {}),
+      ...(relatedSystemId ? { relatedSystemId } : {}),
+      sortBy: (["createdAt", "ticketNumber", "summary"].includes(sortBy ?? "")
+        ? sortBy
+        : "createdAt") as TicketSortField,
+      sortOrder: (["asc", "desc"].includes(sortOrder ?? "")
+        ? sortOrder
+        : "desc") as TicketSortOrder,
+      page: page ?? 1,
+      pageSize: ([10, 20, 50].includes(pageSize ?? -1) ? pageSize : 10) as 10 | 20 | 50,
+    },
   };
 }
 
@@ -129,13 +171,23 @@ function useMobileResults() {
 
 export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: MyTicketsPageProps) {
   const { currentRequester, requestAsCurrentRequester } = useRequester();
-  const [query, setQuery] = useState(() => queryFromLocation(initialSearch));
+  const [initialLocationQuery] = useState(() => queryFromLocation(initialSearch));
+  const [query, setQuery] = useState(initialLocationQuery.query);
+  const [invalidLocationQuery, setInvalidLocationQuery] = useState(
+    initialLocationQuery.invalid,
+  );
   const [searchInput, setSearchInput] = useState(query.search ?? "");
   const [metadata, setMetadata] = useState<TicketMetadata>(emptyMetadata);
+  const [metadataState, setMetadataState] =
+    useState<"loading" | "ready" | "error">("loading");
   const [result, setResult] = useState<TicketListResponse | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "error">(
+    initialLocationQuery.invalid ? "ready" : "loading",
+  );
   const latestRequest = useRef(0);
   const activeController = useRef<AbortController | null>(null);
+  const latestMetadataRequest = useRef(0);
+  const metadataController = useRef<AbortController | null>(null);
   const isMobile = useMobileResults();
 
   const load = useCallback(async () => {
@@ -169,6 +221,11 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
   }, [query, requestAsCurrentRequester]);
 
   useEffect(() => {
+    if (invalidLocationQuery) {
+      activeController.current?.abort();
+      latestRequest.current += 1;
+      return;
+    }
     let active = true;
     queueMicrotask(() => {
       if (active) void load();
@@ -178,23 +235,58 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
       activeController.current?.abort();
       latestRequest.current += 1;
     };
-  }, [load]);
+  }, [invalidLocationQuery, load]);
+
+  const loadMetadata = useCallback(async () => {
+    const requestId = ++latestMetadataRequest.current;
+    metadataController.current?.abort();
+    const controller = new AbortController();
+    metadataController.current = controller;
+    try {
+      const nextMetadata = await getTicketMetadata(controller.signal);
+      if (requestId !== latestMetadataRequest.current) return;
+      setMetadata(nextMetadata);
+      setMetadataState("ready");
+    } catch (error) {
+      if (
+        requestId !== latestMetadataRequest.current ||
+        (error instanceof Error && error.name === "AbortError")
+      ) {
+        return;
+      }
+      setMetadata(emptyMetadata);
+      setMetadataState("error");
+    }
+  }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    void getTicketMetadata(controller.signal)
-      .then(setMetadata)
-      .catch(() => setMetadata(emptyMetadata));
-    return () => controller.abort();
-  }, []);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadMetadata();
+    });
+    return () => {
+      active = false;
+      metadataController.current?.abort();
+      latestMetadataRequest.current += 1;
+    };
+  }, [loadMetadata]);
+
+  function retryMetadata() {
+    setMetadata(emptyMetadata);
+    setMetadataState("loading");
+    void loadMetadata();
+  }
 
   useEffect(() => {
     const restore = () => {
       const restored = queryFromLocation();
-      setState("loading");
+      activeController.current?.abort();
+      latestRequest.current += 1;
+      setState(restored.invalid ? "ready" : "loading");
       setResult(null);
-      setQuery(restored);
-      setSearchInput(restored.search ?? "");
+      setInvalidLocationQuery(restored.invalid);
+      setQuery(restored.query);
+      setSearchInput(restored.query.search ?? "");
     };
     window.addEventListener("popstate", restore);
     return () => window.removeEventListener("popstate", restore);
@@ -203,6 +295,7 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
   function applyQuery(nextQuery: TicketListQuery, replace = false) {
     const nextLocation = queryLocation(nextQuery);
     window.history[replace ? "replaceState" : "pushState"]({}, "", nextLocation);
+    setInvalidLocationQuery(false);
     setState("loading");
     setResult(null);
     setQuery(nextQuery);
@@ -273,7 +366,11 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
         </button>
       </div>
 
-      <section className="ticket-query-panel" aria-label="Ticket search and filters">
+      <section
+        className="ticket-query-panel"
+        aria-label="Ticket search and filters"
+        aria-busy={metadataState === "loading"}
+      >
         <form className="ticket-search" role="search" onSubmit={submitSearch}>
           <label htmlFor="ticket-search">Search tickets</label>
           <div>
@@ -299,12 +396,31 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
           </div>
         </form>
 
+        {metadataState === "loading" && (
+          <div className="ticket-metadata-state" role="status">
+            <span className="requester-spinner" aria-hidden="true" />
+            Loading filter options…
+          </div>
+        )}
+        {metadataState === "error" && (
+          <div
+            className="ticket-metadata-state ticket-metadata-warning"
+            role="alert"
+            aria-label="Filter options unavailable"
+          >
+            <p>We couldn&apos;t load filter options.</p>
+            <button className="secondary-button" type="button" onClick={retryMetadata}>
+              Retry
+            </button>
+          </div>
+        )}
+
         <div className="ticket-filters">
-          <Filter label="Category" name="categoryId" value={String(query.categoryId ?? "")} onChange={updateFilter}>
+          <Filter label="Category" name="categoryId" value={String(query.categoryId ?? "")} disabled={metadataState !== "ready"} onChange={updateFilter}>
             <option value="">All categories</option>
             {metadata.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </Filter>
-          <Filter label="Related System" name="relatedSystemId" value={String(query.relatedSystemId ?? "")} onChange={updateFilter}>
+          <Filter label="Related System" name="relatedSystemId" value={String(query.relatedSystemId ?? "")} disabled={metadataState !== "ready"} onChange={updateFilter}>
             <option value="">All systems</option>
             {metadata.relatedSystems.map((system) => <option key={system.id} value={system.id}>{system.name}</option>)}
           </Filter>
@@ -327,12 +443,24 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
         <button className="secondary-button reset-filters" type="button" onClick={resetFilters}>Reset filters</button>
       </section>
 
-      <section className="ticket-results" aria-live="polite" aria-busy={state === "loading"}>
-        {state === "loading" && <div className="ticket-list-state" role="status"><span className="requester-spinner" aria-hidden="true" />Loading tickets…</div>}
-        {state === "error" && <div className="ticket-list-state ticket-list-error" role="alert"><p>We couldn&apos;t load your tickets.</p><button className="zen-button" type="button" onClick={retryTickets}>Retry</button></div>}
-        {state === "ready" && result?.pagination.totalItems === 0 && !hasCriteria && <EmptyState title="No tickets yet" action="Create your first ticket" onAction={onCreateTicket} />}
-        {state === "ready" && result?.pagination.totalItems === 0 && hasCriteria && <EmptyState title="No tickets match your search or filters" action="Reset filters" onAction={resetFilters} />}
-        {state === "ready" && result && result.items.length > 0 && (
+      <section className="ticket-results" aria-live="polite" aria-busy={!invalidLocationQuery && state === "loading"}>
+        {invalidLocationQuery && (
+          <div
+            className="ticket-list-state ticket-list-error"
+            role="alert"
+            aria-label="Invalid ticket list query"
+          >
+            <p>The ticket list URL contains invalid query values.</p>
+            <button className="zen-button" type="button" onClick={resetFilters}>
+              Reset filters
+            </button>
+          </div>
+        )}
+        {!invalidLocationQuery && state === "loading" && <div className="ticket-list-state" role="status"><span className="requester-spinner" aria-hidden="true" />Loading tickets…</div>}
+        {!invalidLocationQuery && state === "error" && <div className="ticket-list-state ticket-list-error" role="alert"><p>We couldn&apos;t load your tickets.</p><button className="zen-button" type="button" onClick={retryTickets}>Retry</button></div>}
+        {!invalidLocationQuery && state === "ready" && result?.pagination.totalItems === 0 && !hasCriteria && <EmptyState title="No tickets yet" action="Create your first ticket" onAction={onCreateTicket} />}
+        {!invalidLocationQuery && state === "ready" && result?.pagination.totalItems === 0 && hasCriteria && <EmptyState title="No tickets match your search or filters" action="Reset filters" onAction={resetFilters} />}
+        {!invalidLocationQuery && state === "ready" && result && result.items.length > 0 && (
           <>
             {range && <p className="ticket-result-summary">Showing {range.start}–{range.end} of {range.total} tickets</p>}
             {isMobile ? <TicketCards tickets={result.items} /> : <TicketTable requesterName={currentRequester.displayName} tickets={result.items} sortBy={query.sortBy} sortOrder={query.sortOrder} />}
@@ -344,9 +472,9 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
   );
 }
 
-function Filter({ label, name, value, onChange, children }: { label: string; name: string; value: string; onChange: (event: ChangeEvent<HTMLSelectElement>) => void; children: ReactNode }) {
+function Filter({ label, name, value, disabled = false, onChange, children }: { label: string; name: string; value: string; disabled?: boolean; onChange: (event: ChangeEvent<HTMLSelectElement>) => void; children: ReactNode }) {
   const id = `ticket-filter-${name}`;
-  return <div className="ticket-filter"><label htmlFor={id}>{label}</label><select id={id} name={name} value={value} onChange={onChange}>{children}</select></div>;
+  return <div className="ticket-filter"><label htmlFor={id}>{label}</label><select id={id} name={name} value={value} disabled={disabled} onChange={onChange}>{children}</select></div>;
 }
 
 function EmptyState({ title, action, onAction }: { title: string; action: string; onAction: () => void }) {

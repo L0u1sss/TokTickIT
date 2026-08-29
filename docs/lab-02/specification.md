@@ -74,7 +74,7 @@ The My Tickets view shall retrieve only tickets owned by the selected requester.
 
 ### FR-06 — Search, filter, sort, and paginate tickets
 
-The requester shall be able to search case-insensitively by ticket number or summary; filter by status, category, related system, and requested priority; sort by an allowed field and direction; and navigate server-side pages. Query controls shall combine with logical AND, reset to page 1 when search/filter/sort criteria change, and preserve ownership scoping. The response shall include page metadata so the UI can render navigation accurately.
+The requester shall be able to search case-insensitively by ticket number or summary; filter by status, category, related system, and requested priority; sort by an allowed field and direction; and navigate server-side pages. The allowed sort fields are `createdAt`, `ticketNumber`, and `summary`; the allowed directions are `asc` and `desc`; and the canonical default is `createdAt desc` (**Newest first**). Query controls shall combine with logical AND, reset to page 1 when search/filter/sort criteria change, and preserve ownership scoping. The response shall include page metadata so the UI can render navigation accurately. An invalid, repeated, or unknown URL query value shall not be silently replaced with a valid default: the UI shall show an explicit recoverable invalid-query state, while the API continues to return `400 INVALID_QUERY` for a direct invalid request.
 
 ### FR-07 — View an owned ticket
 
@@ -262,7 +262,7 @@ Requester-scoped endpoints require `x-requester-id`. Contract errors use `400` f
 
 **When** A combines a case-insensitive ticket-number/summary search with valid status, category, related-system, and requested-priority filters, a supported sort, and page parameters,
 
-**Then** the API returns only matching owned tickets in the requested stable order and returns correct `page`, `pageSize`, `totalItems`, and `totalPages` values.
+**Then** the API returns only matching owned tickets in the requested stable order and returns correct `page`, `pageSize`, `totalItems`, and `totalPages` values. Omitting sort values uses `createdAt desc`; an invalid, repeated, or unknown URL query renders the recoverable invalid-query state rather than silently becoming a valid default or sending an owned-list request.
 
 ### AC-05 — Ticket-detail ownership
 
