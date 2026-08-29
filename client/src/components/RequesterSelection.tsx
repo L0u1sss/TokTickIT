@@ -1,7 +1,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRequester } from "../context/RequesterContext.js";
 
-export default function RequesterSelection() {
+interface RequesterSelectionProps {
+  onContinue?: () => void;
+}
+
+export default function RequesterSelection({ onContinue }: RequesterSelectionProps) {
   const { requesters, loading, error, fetchRequesters, commitRequester } = useRequester();
   const [selectedRequesterId, setSelectedRequesterId] = useState("");
   const retryButtonRef = useRef<HTMLButtonElement>(null);
@@ -22,7 +26,8 @@ export default function RequesterSelection() {
   function handleContinue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (hasValidSelection) {
-      commitRequester(selectedId);
+      const committed = commitRequester(selectedId);
+      if (committed) onContinue?.();
     }
   }
 

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App.js";
@@ -17,9 +17,15 @@ const secondRequester: api.Requester = {
   email: "michael.b@example.com",
 };
 
+const metadata: api.TicketMetadata = {
+  categories: [{ id: 1, name: "Hardware" }],
+  relatedSystems: [{ id: 1, name: "Corporate Laptop" }],
+};
+
 describe("requester application flow", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
+    window.history.replaceState({}, "", "/");
   });
 
   afterEach(() => {
@@ -27,8 +33,25 @@ describe("requester application flow", () => {
     window.sessionStorage.clear();
   });
 
-  it("opens the dashboard only after Continue and returns to selection from the header", async () => {
+  it("gates a protected deep link at the requester-selection route", async () => {
+    vi.spyOn(api, "getRequesters").mockReturnValue(new Promise(() => {}));
+    window.history.replaceState({}, "", "/tickets/new");
+    render(
+      <RequesterProvider>
+        <App />
+      </RequesterProvider>,
+    );
+    expect(
+      screen.getByRole("heading", { name: "Select a Development Requester" }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe("/requester-selection");
+    });
+  });
+
+  it("opens Create Ticket only after Continue and returns to selection", async () => {
     vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
+    vi.spyOn(api, "getTicketMetadata").mockResolvedValue(metadata);
     const user = userEvent.setup();
 
     render(
@@ -38,32 +61,30 @@ describe("requester application flow", () => {
     );
 
     await screen.findByRole("option", { name: /Jennifer Anderson/i });
-    const select = screen.getByRole("combobox", { name: "Development Requester" });
-    await user.selectOptions(select, "1");
-    expect(screen.queryByRole("heading", { name: "Requester Dashboard" })).not.toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Development Requester" }),
+      "1",
+    );
+    expect(screen.queryByRole("heading", { name: "Create Ticket" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Continue" }));
 
-    expect(screen.getByRole("heading", { name: "Requester Dashboard" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Create Ticket" })).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/tickets/new");
     const header = screen.getByRole("banner");
     expect(within(header).getByText("Jennifer Anderson")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Check System" })).toBeInTheDocument();
+    expect(
+      within(header).getByRole("link", { name: "Create Ticket" }),
+    ).toHaveAttribute("aria-current", "page");
 
     await user.click(within(header).getByRole("button", { name: "Change Requester" }));
-
     expect(
       await screen.findByRole("heading", { name: "Select a Development Requester" }),
     ).toBeInTheDocument();
-    expect(
-      await screen.findByRole("combobox", { name: "Development Requester" }),
-    ).toBeInTheDocument();
   });
 
-  it("clears rendered dashboard state before committing another requester", async () => {
+  it("clears the previous requester's draft before committing another requester", async () => {
     vi.spyOn(api, "getRequesters").mockResolvedValue([requester, secondRequester]);
-    vi.spyOn(api, "checkSystem").mockResolvedValue({
-      online: true,
-      categories: [{ id: 1, name: "Hardware" }],
-    });
+    vi.spyOn(api, "getTicketMetadata").mockResolvedValue(metadata);
     const user = userEvent.setup();
 
     render(
@@ -78,17 +99,17 @@ describe("requester application flow", () => {
       "1",
     );
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    await user.click(screen.getByRole("button", { name: "Check System" }));
-    expect(await screen.findByText("System Status: Online")).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "Summary" }), "Private draft");
 
     await user.click(screen.getByRole("button", { name: "Change Requester" }));
-    await screen.findByRole("option", { name: /Michael Brown/i });
-    const nextSelect = screen.getByRole("combobox", { name: "Development Requester" });
+    const nextSelect = await screen.findByRole("combobox", {
+      name: "Development Requester",
+    });
     await user.selectOptions(nextSelect, "2");
     await user.click(screen.getByRole("button", { name: "Continue" }));
 
-    expect(screen.getByText(/Welcome, Michael Brown/)).toBeInTheDocument();
-    expect(screen.queryByText("System Status: Online")).not.toBeInTheDocument();
-    expect(screen.queryByText("1. Hardware")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Michael Brown")).toHaveLength(2);
+    expect(screen.getByRole("textbox", { name: "Summary" })).toHaveValue("");
+    expect(screen.queryByDisplayValue("Private draft")).not.toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ export default defineConfig({
           exclude: [
             "tests/lab-01/categories.test.ts",
             "tests/lab-02/db-schema.test.ts",
+            "tests/lab-02/tickets-create.db.test.ts",
           ],
         },
       },
@@ -21,6 +22,7 @@ export default defineConfig({
           include: [
             "tests/lab-01/categories.test.ts",
             "tests/lab-02/db-schema.test.ts",
+            "tests/lab-02/tickets-create.db.test.ts",
           ],
           setupFiles: ["./tests/db-setup.ts"],
           fileParallelism: false,
