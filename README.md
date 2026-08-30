@@ -1,8 +1,8 @@
 
-# TokTickIT - IT Service Desk (Lab 1)
+# TokTickIT - IT Service Desk (Lab 1–2)
 
 ## Tech Stack
-* **Frontend:** React + TypeScript + Vite + Bootstrap
+* **Frontend:** React + TypeScript + Vite
 * **Backend:** Node.js + Express + TypeScript
 * **Database & ORM:** PostgreSQL + Prisma
 * **Testing:** Vitest และ Supertest
@@ -10,21 +10,34 @@
 ---
 
 ## Project Structure
+
+โครงสร้างหลักของไฟล์ที่ track อยู่ใน repository ปัจจุบัน:
+
 ```text
-toktickit/
+TokTickIT/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── client/
-├── server/
-│ ├── prisma/
-│ ├── src/
-│ └── tests/
-│ └── lab-01/
+│   ├── src/
+│   │   ├── components/
+│   │   └── context/
+│   └── tests/
+│       ├── lab-01/
+│       └── lab-02/
 ├── docs/
-│ └── lab-01/
-│ ├── ai_use.md
-│ └── reviewer.md
+│   ├── lab-01/
+│   └── lab-02/
+│       └── evidence/
+├── server/
+│   ├── prisma/
+│   │   └── migrations/
+│   ├── src/
+│   └── tests/
+│       ├── lab-01/
+│       └── lab-02/
 ├── .gitignore
 └── README.md
-
 ```
 
 ---
@@ -33,10 +46,9 @@ toktickit/
 
 ### 1. โคลน Repository
 
-```
-git clone [https://github.com/L0u1sss/TokTickIT](https://github.com/L0u1sss/TokTickIT)
-cd toktickit
-
+```bash
+git clone https://github.com/L0u1sss/TokTickIT.git
+cd TokTickIT
 ```
 
 ### 2. ตั้งค่าฐานข้อมูลและระบบหลังบ้าน (Backend)
