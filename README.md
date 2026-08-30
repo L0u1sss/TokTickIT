@@ -110,5 +110,58 @@ npm run dev
 วิธีรันชุดทดสอบอัตโนมัติที่ตั้งค่าไว้ในโปรเจกต์:
 
 * **ทดสอบฝั่ง Frontend:** ไปที่โฟลเดอร์ `client/` แล้วรัน `npm run test`
-* **ทดสอบฝั่ง Backend:** ไปที่โฟลเดอร์ `server/` แล้วรัน `npm run test`
+* **ทดสอบ Backend แบบไม่ใช้ฐานข้อมูล:** ไปที่โฟลเดอร์ `server/` แล้วรัน `npm run test:unit`
+* **ทดสอบ Backend ทั้งหมด:** ต้องเตรียม PostgreSQL test database แยกจากฐานข้อมูล development ตามขั้นตอนด้านล่าง แล้วจึงรัน `npm run test`
+
+### Dedicated PostgreSQL test database
+
+ชุดทดสอบ database/integration จะไม่ fallback ไปใช้ `DATABASE_URL` และต้องมี `TEST_DATABASE_URL` ที่ชี้ไปยังฐานข้อมูลหรือ schema สำหรับทดสอบโดยเฉพาะ ห้ามใช้ฐานข้อมูลเดียวกับ development หรือ production เพราะ test fixtures อาจสร้าง แก้ไข และลบข้อมูลระหว่างการทดสอบ
+
+1. สร้างฐานข้อมูล PostgreSQL สำหรับทดสอบแยกต่างหาก ตัวอย่างเมื่อใช้ PostgreSQL local:
+
+```powershell
+psql -U postgres -c "CREATE DATABASE toktickit_test;"
+```
+
+หากฐานข้อมูลมีอยู่แล้วและ PostgreSQL แจ้งว่า duplicate database สามารถข้ามขั้นตอนนี้ได้
+
+2. คัดลอก `server/.env.example` เป็น `server/.env` แล้วกำหนด URL สองค่าที่ชี้คนละฐานข้อมูล:
+
+```dotenv
+DATABASE_URL="postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public"
+TEST_DATABASE_URL="postgresql://toktickit:toktickit@localhost:5432/toktickit_test?schema=public"
+```
+
+ปรับ username, password, host และ port ให้ตรงกับ PostgreSQL ของเครื่อง Reviewer โดยชื่อ database/schema ใน `TEST_DATABASE_URL` ต้องมี segment `test`, `testing`, `ci` หรือ `spec` เช่น `toktickit_test` ระบบทดสอบจะปฏิเสธ URL ที่ไม่มี marker นี้หรือชี้ target เดียวกับ `DATABASE_URL`
+
+3. ติดตั้ง dependencies และเตรียม schema/seed บน test database จาก repository root ด้วย PowerShell:
+
+```powershell
+npm --prefix server ci
+npm --prefix client ci
+
+$env:TEST_DATABASE_URL = "postgresql://toktickit:toktickit@localhost:5432/toktickit_test?schema=public"
+$developmentDatabaseUrl = $env:DATABASE_URL
+$env:DATABASE_URL = $env:TEST_DATABASE_URL
+& server/node_modules/.bin/prisma.cmd migrate deploy --schema server/prisma/schema.prisma
+npm --prefix server run prisma:seed
+$env:DATABASE_URL = $developmentDatabaseUrl
+```
+
+หลัง migrate/seed แล้ว `DATABASE_URL` ต้องกลับไปเป็น development target หรือไม่ถูกกำหนดใน shell ส่วน `TEST_DATABASE_URL` ต้องยังชี้ไปยัง test database แยกต่างหาก
+
+4. รันชุดทดสอบ:
+
+```powershell
+# Database/integration tests only
+npm --prefix server run test:db
+
+# Full server regression, including the database project
+npm --prefix server test
+
+# Full client regression
+npm --prefix client test
+```
+
+CI ใช้ PostgreSQL service และฐานข้อมูล `toktickit_test` แบบ isolated ด้วยหลักการเดียวกัน รายละเอียดคำสั่งเพิ่มเติมอยู่ใน `docs/lab-02/tests.md` ห้ามใช้ `prisma migrate reset` กับ development หรือ production database เพื่อเตรียม test environment
 
