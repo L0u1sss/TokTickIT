@@ -354,6 +354,23 @@ describe("Create Ticket page", () => {
     expect(globalThis.crypto.randomUUID).toHaveBeenCalledTimes(1);
   });
 
+  it("opens the protected Ticket Detail destination after success", async () => {
+    vi.spyOn(api, "createTicket").mockResolvedValue({ ticket, replayed: false });
+    const detailSpy = vi.spyOn(api, "getTicketDetail").mockResolvedValue(ticket);
+    const user = await renderCreateTicket();
+    await fillValidForm(user);
+    await user.click(screen.getByRole("button", { name: "Create ticket" }));
+    await user.click(await screen.findByRole("button", { name: "View ticket" }));
+
+    await waitFor(() => expect(detailSpy).toHaveBeenCalledWith(
+      expect.any(Function),
+      ticket.id,
+      expect.any(AbortSignal),
+    ));
+    expect(window.location.pathname).toBe(`/tickets/${ticket.id}`);
+    expect(await screen.findByRole("heading", { name: "Attachments (0/5)" })).toBeInTheDocument();
+  });
+
   it("cancels a clean form to My Tickets without a confirmation", async () => {
     vi.spyOn(api, "getTickets").mockResolvedValue({
       items: [],

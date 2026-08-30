@@ -12,7 +12,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
-    "test:db": "vitest run --project database tests/lab-02/db-schema.test.ts"
+    "test:db": "vitest run --project database"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -20,12 +20,14 @@
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "multer": "^2.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.10.2",
     "@types/supertest": "^6.0.2",
     "eslint": "^10.8.1",

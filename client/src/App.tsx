@@ -2,12 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import AppHeader from "./components/AppHeader.js";
 import CreateTicketPage from "./components/CreateTicketPage.js";
 import MyTicketsPage from "./components/MyTicketsPage.js";
+import TicketDetailPage from "./components/TicketDetailPage.js";
 import RequesterSelection from "./components/RequesterSelection.js";
 import { useRequester } from "./context/RequesterContext.js";
 
 export const CREATE_TICKET_PATH = "/tickets/new";
 export const MY_TICKETS_PATH = "/tickets";
 export const REQUESTER_SELECTION_PATH = "/requester-selection";
+
+function isTicketDetailPath(path: string) {
+  return /^\/tickets\/[^/]+$/.test(path) && path !== CREATE_TICKET_PATH;
+}
 
 function enterCreateTicketRoute() {
   if (window.location.pathname !== CREATE_TICKET_PATH) {
@@ -24,8 +29,8 @@ function enterRequesterSelectionRoute() {
 export default function App() {
   const { currentRequester } = useRequester();
   const [intendedPath, setIntendedPath] = useState(() =>
-    window.location.pathname === MY_TICKETS_PATH
-      ? `${MY_TICKETS_PATH}${window.location.search}`
+    window.location.pathname === MY_TICKETS_PATH || isTicketDetailPath(window.location.pathname)
+      ? `${window.location.pathname}${window.location.search}`
       : CREATE_TICKET_PATH,
   );
 
@@ -48,8 +53,9 @@ function RequesterApplication({ intendedPath }: { intendedPath: string }) {
   const initialPath = window.location.pathname === REQUESTER_SELECTION_PATH
     ? intendedPath
     : `${window.location.pathname}${window.location.search}`;
+  const initialPathname = initialPath.split("?")[0];
   const [location, setLocation] = useState(
-    initialPath.split("?")[0] === MY_TICKETS_PATH
+    initialPathname === MY_TICKETS_PATH || isTicketDetailPath(initialPathname)
       ? initialPath
       : CREATE_TICKET_PATH,
   );
@@ -63,12 +69,13 @@ function RequesterApplication({ intendedPath }: { intendedPath: string }) {
     return () => window.removeEventListener("popstate", restore);
   }, [location]);
 
-  const navigate = useCallback((path: typeof CREATE_TICKET_PATH | typeof MY_TICKETS_PATH) => {
+  const navigate = useCallback((path: string) => {
     window.history.pushState({}, "", path);
     setLocation(path);
   }, []);
 
-  const activePath = location.split("?")[0] === MY_TICKETS_PATH
+  const pathname = location.split("?")[0];
+  const activePath = pathname === MY_TICKETS_PATH || isTicketDetailPath(pathname)
     ? MY_TICKETS_PATH
     : CREATE_TICKET_PATH;
 
@@ -85,13 +92,21 @@ function RequesterApplication({ intendedPath }: { intendedPath: string }) {
         Skip to main content
       </a>
       <AppHeader activePath={activePath} onNavigate={navigate} />
-      {activePath === MY_TICKETS_PATH ? (
+      {isTicketDetailPath(pathname) ? (
+        <TicketDetailPage
+          ticketIdSegment={pathname.slice("/tickets/".length)}
+          onBack={() => navigate(MY_TICKETS_PATH)}
+        />
+      ) : activePath === MY_TICKETS_PATH ? (
         <MyTicketsPage
           initialSearch={location.includes("?") ? location.slice(location.indexOf("?")) : ""}
           onCreateTicket={() => navigate(CREATE_TICKET_PATH)}
         />
       ) : (
-        <CreateTicketPage onCancel={() => navigate(MY_TICKETS_PATH)} />
+        <CreateTicketPage
+          onCancel={() => navigate(MY_TICKETS_PATH)}
+          onViewTicket={(ticketId) => navigate(`/tickets/${ticketId}`)}
+        />
       )}
     </div>
   );
