@@ -379,63 +379,65 @@ Automated UI tests should query by role, accessible name, label, and visible tex
 
 ## 10. Visual and Responsive Verification Checklist
 
+The checklist below was completed using the existing component/API evidence together with the Issue #18 Playwright run and human review of the twelve screenshots. A checked behavior is not necessarily a live end-to-end assertion; the exact automated layer and remaining `E2E-*` status are recorded in [tests.md](./tests.md).
+
 ### 10.1 Global checklist
 
-- [ ] All required Zen Green tokens match their exact hex values.
-- [ ] Warning states use `--color-warning: #8A5500` and `--color-warning-bg: #FFF4D6` with text/icon meaning in addition to color.
-- [ ] Page background is `#F5F7F6`; primary surfaces are distinct and readable.
-- [ ] Development Requester Selection shows the demo-context notice; the application shell shows the committed requester read-only with **Change Requester**.
-- [ ] Header navigation clearly indicates the active screen without color-only communication.
-- [ ] Required asterisks and the **`* Required`** legend are present.
-- [ ] Read-only fields use `#F0F4F1`.
-- [ ] Invalid fields show a message immediately below the associated input.
-- [ ] Busy submit/mutation buttons are disabled, labelled, and do not change width noticeably.
-- [ ] Keyboard focus indicators are visible on every interactive control.
-- [ ] No content clips or creates page-level horizontal scrolling at the documented desktop, tablet, or mobile target.
-- [ ] Mobile interactive targets are at least 44 × 44 px.
+- [x] All required Zen Green tokens match their exact hex values.
+- [x] Warning states use `--color-warning: #8A5500` and `--color-warning-bg: #FFF4D6` with text/icon meaning in addition to color.
+- [x] Page background is `#F5F7F6`; primary surfaces are distinct and readable.
+- [x] Development Requester Selection shows the demo-context notice; the application shell shows the committed requester read-only with **Change Requester**.
+- [x] Header navigation clearly indicates the active screen without color-only communication.
+- [x] Required asterisks and the **`* Required`** legend are present.
+- [x] Read-only fields use `#F0F4F1`.
+- [x] Invalid fields show a message immediately below the associated input.
+- [x] Busy submit/mutation buttons are disabled, labelled, and do not change width noticeably.
+- [x] Keyboard focus indicators are visible on every interactive control.
+- [x] No content clips or creates page-level horizontal scrolling at the documented desktop, tablet, or mobile target.
+- [x] Mobile interactive targets are at least 44 × 44 px.
 
 ### 10.2 Development Requester Selection checklist
 
-- [ ] The selection screen gates every requester-facing screen and no protected content flashes before context validation.
-- [ ] The labelled dropdown, **Continue**, loading, ready, empty, error, and **Retry** states are distinct and accessible.
-- [ ] **Continue** stays disabled until an active requester is selected and selection alone does not commit context.
-- [ ] Only the positive integer requester ID is stored in browser-tab `sessionStorage`; malformed, unknown, or inactive stored IDs are cleared before protected requests run.
-- [ ] **Change Requester** clears requester-specific state and cancels/disregards stale responses before returning to selection.
-- [ ] The selection screen and shell requester controls remain usable at the documented desktop, tablet, and mobile targets.
+- [x] The selection screen gates every requester-facing screen and no protected content flashes before context validation.
+- [x] The labelled dropdown, **Continue**, loading, ready, empty, error, and **Retry** states are distinct and accessible.
+- [x] **Continue** stays disabled until an active requester is selected and selection alone does not commit context.
+- [x] Only the positive integer requester ID is stored in browser-tab `sessionStorage`; malformed, unknown, or inactive stored IDs are cleared before protected requests run.
+- [x] **Change Requester** clears requester-specific state and cancels/disregards stale responses before returning to selection.
+- [x] The selection screen and shell requester controls remain usable at the documented desktop, tablet, and mobile targets.
 
 ### 10.3 Create Ticket checklist
 
-- [ ] Desktop uses a multi-column field grid with full-width Summary and Description.
-- [ ] Tablet uses two columns for Category and Related System.
-- [ ] Mobile stacks all fields and renders full-width actions.
-- [ ] Ticket Number and Ticket Date show read-only pre-create placeholders and only server-returned `ticketNumber`/`createdAt` after success.
-- [ ] Requester is shown as read-only context; Requested Priority is a required `LOW`/`MEDIUM`/`HIGH` selection.
-- [ ] Summary and Description counters and exact limits are visible.
-- [ ] Attachment-after-creation guidance is visible.
-- [ ] Pending activation is disabled and a lost ticket-create response is retried with the same logical `clientRequestId`.
-- [ ] First-create and replay success expose the same server-generated ticket number, Ticket Date, and **New** status without implying two tickets.
-- [ ] Validation, idempotency-conflict, safe `500`/network failure, and recoverable retry states retain only appropriate safe state.
+- [x] Desktop uses a multi-column field grid with full-width Summary and Description.
+- [x] Tablet uses two columns for Category and Related System.
+- [x] Mobile stacks all fields and renders full-width actions.
+- [x] Ticket Number and Ticket Date show read-only pre-create placeholders and only server-returned `ticketNumber`/`createdAt` after success.
+- [x] Requester is shown as read-only context; Requested Priority is a required `LOW`/`MEDIUM`/`HIGH` selection.
+- [x] Summary and Description counters and exact limits are visible.
+- [x] Attachment-after-creation guidance is visible.
+- [x] Pending activation is disabled and a lost ticket-create response is retried with the same logical `clientRequestId`.
+- [x] First-create and replay success expose the same server-generated ticket number, Ticket Date, and **New** status without implying two tickets.
+- [x] Validation, idempotency-conflict, safe `500`/network failure, and recoverable retry states retain only appropriate safe state.
 
 ### 10.4 My Tickets checklist
 
-- [ ] Desktop renders the complete semantic table and query controls without clipping.
-- [ ] Tablet confines horizontal table scrolling to a labelled region.
-- [ ] Mobile replaces the table with complete, ordered ticket cards.
-- [ ] Search, category/system/Requested Priority/status filters, sort, page size, reset, result count, and pagination are present.
-- [ ] Requested Priority visible text appears in both the desktop table and mobile cards.
-- [ ] Loading, Empty, No results, API-error, and populated states are visually distinct using the current query's filters and `totalItems`, without an extra classification request.
-- [ ] Long summaries and ticket numbers do not break layout.
+- [x] Desktop renders the complete semantic table and query controls without clipping.
+- [x] Tablet confines horizontal table scrolling to a labelled region.
+- [x] Mobile replaces the table with complete, ordered ticket cards.
+- [x] Search, category/system/Requested Priority/status filters, sort, page size, reset, result count, and pagination are present.
+- [x] Requested Priority visible text appears in both the desktop table and mobile cards.
+- [x] Loading, Empty, No results, API-error, and populated states are visually distinct using the current query's filters and `totalItems`, without an extra classification request.
+- [x] Long summaries and ticket numbers do not break layout.
 
 ### 10.5 Ticket Detail checklist
 
-- [ ] Ticket number, Ticket Date, **New** status, Requested Priority, summary, metadata, and description have clear hierarchy.
-- [ ] Desktop, tablet, and mobile content orders match Section 8.
-- [ ] `GET /api/tickets/:id` supplies active and removed attachment metadata without downloading bytes.
-- [ ] Active count and attachment constraints are visible.
-- [ ] Upload, download, removal dialog, removed metadata, and error states are represented.
-- [ ] Removed attachments expose metadata and reason but no download control.
-- [ ] A `403` state reveals no foreign ticket fields or filenames.
-- [ ] Long filenames and descriptions wrap without overflow.
+- [x] Ticket number, Ticket Date, **New** status, Requested Priority, summary, metadata, and description have clear hierarchy.
+- [x] Desktop, tablet, and mobile content orders match Section 8.
+- [x] `GET /api/tickets/:id` supplies active and removed attachment metadata without downloading bytes.
+- [x] Active count and attachment constraints are visible.
+- [x] Upload, download, removal dialog, removed metadata, and error states are represented.
+- [x] Removed attachments expose metadata and reason but no download control.
+- [x] A `403` state reveals no foreign ticket fields or filenames.
+- [x] Long filenames and descriptions wrap without overflow.
 
 ## 11. Screenshot Evidence Paths
 

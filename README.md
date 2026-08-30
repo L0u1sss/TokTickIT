@@ -5,7 +5,7 @@
 * **Frontend:** React + TypeScript + Vite
 * **Backend:** Node.js + Express + TypeScript
 * **Database & ORM:** PostgreSQL + Prisma
-* **Testing:** Vitest และ Supertest
+* **Testing:** Vitest, Supertest และ Playwright Chromium
 
 ---
 
@@ -19,12 +19,16 @@ TokTickIT/
 │   └── workflows/
 │       └── ci.yml
 ├── client/
+│   ├── e2e/
+│   │   └── lab-02/
+│   ├── scripts/
 │   ├── src/
 │   │   ├── components/
 │   │   └── context/
-│   └── tests/
-│       ├── lab-01/
-│       └── lab-02/
+│   ├── tests/
+│   │   ├── lab-01/
+│   │   └── lab-02/
+│   └── playwright.config.ts
 ├── docs/
 │   ├── lab-01/
 │   └── lab-02/
@@ -173,7 +177,13 @@ npm --prefix server test
 
 # Full client regression
 npm --prefix client test
+
+# Install the browser once, then run the Lab 2 responsive audit
+npm --prefix client exec playwright install chromium
+npm --prefix client run test:responsive
 ```
 
-CI ใช้ PostgreSQL service และฐานข้อมูล `toktickit_test` แบบ isolated ด้วยหลักการเดียวกัน รายละเอียดคำสั่งเพิ่มเติมอยู่ใน `docs/lab-02/tests.md` ห้ามใช้ `prisma migrate reset` กับ development หรือ production database เพื่อเตรียม test environment
+ชุด responsive จะเปิด Vite ชั่วคราวด้วยตัวเอง ใช้ deterministic mocked API fixtures และบันทึกภาพหลักฐาน 12 ภาพไว้ใน `docs/lab-02/evidence/` จึงไม่ต้องเปิด server หรือ PostgreSQL สำหรับคำสั่งนี้ ส่วน live end-to-end tests ยังคงเป็นงาน Issue #19
+
+CI ใช้ PostgreSQL service และฐานข้อมูล `toktickit_test` แบบ isolated ด้วยหลักการเดียวกัน พร้อมติดตั้ง Chromium และรัน responsive audit รายละเอียดคำสั่งเพิ่มเติมอยู่ใน `docs/lab-02/tests.md` ห้ามใช้ `prisma migrate reset` กับ development หรือ production database เพื่อเตรียม test environment
 

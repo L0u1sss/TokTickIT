@@ -68,6 +68,8 @@ describe("RequesterSelection", () => {
     await user.selectOptions(select, "1");
 
     expect(continueButton).toBeEnabled();
+    expect(select).toHaveAttribute("aria-describedby", "selected-requester-detail");
+    expect(screen.getByText("jennifer.a@example.com", { selector: "span" })).toBeVisible();
     expect(window.sessionStorage.getItem(REQUESTER_STORAGE_KEY)).toBeNull();
 
     await user.click(continueButton);

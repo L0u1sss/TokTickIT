@@ -7,6 +7,8 @@ node_modules/
 # build output
 dist/
 build/
+playwright-report/
+test-results/
 # prisma
 server/prisma/*.db
 .attachment-storage/
