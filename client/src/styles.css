@@ -39,6 +39,10 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+#main-content:focus {
+  outline: none;
+}
+
 .requester-page {
   display: grid;
   width: 100%;
@@ -122,6 +126,18 @@ a:focus-visible {
   border-radius: 0.75rem;
   color: var(--zen-text);
   background: #fff;
+}
+
+.selected-requester-detail {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  color: #49685a;
+  overflow-wrap: anywhere;
+}
+
+.selected-requester-detail strong {
+  color: var(--zen-text);
 }
 
 .state-panel {
@@ -766,6 +782,12 @@ a:focus-visible {
   margin: 0.45rem 0 1rem;
   overflow-wrap: anywhere;
   font-size: 1.2rem;
+}
+
+.ticket-card-number {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
 }
 
 .ticket-card dl {

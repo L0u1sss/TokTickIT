@@ -16,6 +16,9 @@ export default function RequesterSelection({ onContinue }: RequesterSelectionPro
     Number.isSafeInteger(selectedId) &&
     selectedId > 0 &&
     requesters.some(({ id }) => id === selectedId);
+  const selectedRequester = hasValidSelection
+    ? requesters.find(({ id }) => id === selectedId)
+    : undefined;
 
   useEffect(() => {
     if (error) {
@@ -94,6 +97,7 @@ export default function RequesterSelection({ onContinue }: RequesterSelectionPro
                 className="requester-select"
                 value={hasValidSelection ? selectedRequesterId : ""}
                 disabled={loading}
+                aria-describedby={selectedRequester ? "selected-requester-detail" : undefined}
                 onChange={(event) => setSelectedRequesterId(event.target.value)}
               >
                 <option value="">{loading ? "Loading requesters…" : "Select a requester"}</option>
@@ -103,6 +107,12 @@ export default function RequesterSelection({ onContinue }: RequesterSelectionPro
                   </option>
                 ))}
               </select>
+              {selectedRequester && (
+                <p className="selected-requester-detail" id="selected-requester-detail">
+                  Selected requester: <strong>{selectedRequester.displayName}</strong>
+                  <span>{selectedRequester.email}</span>
+                </p>
+              )}
             </div>
             <button
               className="zen-button continue-button"
