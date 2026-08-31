@@ -91,6 +91,10 @@ jobs:
         run: npm run test:responsive
         working-directory: client
 
+      - name: Run live end-to-end suite
+        run: npm run test:e2e
+        working-directory: client
+
       - name: Lint server
         run: npm run lint
         working-directory: server
