@@ -1,6 +1,6 @@
 # Lab 2 — Test Plan and Verification Evidence
 
-**Document status:** Issue #19 local verification complete — Issues #13–#18 retain their database, requester/ticket/attachment, and responsive evidence; `API-03` and live `E2E-01`–`E2E-06` now pass locally on the Issue #19 working tree. Hosted CI on the eventual Issue #19 commit and peer approval remain pending.
+**Document status:** Issue #19 verification complete — PRs #20–#27 are merged into `lab2-staging`; `API-03` and live `E2E-01`–`E2E-06` pass locally, and the final merge commit is `4799b60`. This document records local evidence; hosted checks/peer approval for any later release merge are tracked separately.
 
 **Related documents:** [Engineering Specification](./specification.md) · [API Specification](./api-spec.md) · [UI Specification](./ui-spec.md)
 
@@ -53,7 +53,7 @@ The server Vitest configuration separates a DB-free `unit` project from a sequen
 
 ## 2. Planned Tests
 
-All paths below are repository-relative. `DB-01` is implemented for Issue #13; requester context has Issue #14 evidence; Create Ticket has Issue #15 evidence; My Tickets has Issue #16 evidence; Ticket Detail/Attachment has Issue #17 evidence; and `RV-01`–`RV-04` have local and hosted Playwright Chromium evidence on the Issue #18 implementation baseline `9170d525`. The Issue #19 working tree based on merged `lab2-staging` SHA `722a56c` adds local `API-03` and live `E2E-01`–`E2E-06` evidence; its final SHA, hosted CI, and peer review do not exist until commit/push/review.
+All paths below are repository-relative. `DB-01` is implemented for Issue #13; requester context has Issue #14 evidence; Create Ticket has Issue #15 evidence; My Tickets has Issue #16 evidence; Ticket Detail/Attachment has Issue #17 evidence; and `RV-01`–`RV-04` have local and hosted Playwright Chromium evidence on the Issue #18 implementation baseline `9170d525`. PR #27 adds local `API-03` and live `E2E-01`–`E2E-06` evidence; PRs #20–#27 are now merged into `lab2-staging` at final merge commit `4799b60`.
 
 | Test ID | Type | Requirement / AC | What It Tests | Expected Result | Automated Test File Path | Final Status |
 |---|---|---|---|---|---|---|
@@ -245,7 +245,7 @@ The responsive wrapper starts a local Vite process, uses deterministic mocked AP
 
 | Item | Result |
 |---|---|
-| Commit SHA tested | Issue #13 evidence: `c09c6549833aac114e40fc5ecfa8c6a1308277ec`. Issue #14 hosted baseline: `8ef5a9c4b42fe1bf002ebed440f4109ac516ef59`. Issue #15 hosted baseline: `82a654011a353ac95e5b676509f3d62b0bda8d26`. Issue #16 final merge baseline: `aa4b81125dcd1e9d8459c4e76bde3f22ab6f55be`. Issue #17 implementation baseline: `68c0beba5f761535ebd26ccc16675efed6fd9d6d`; documentation follow-up: `98d8f989058f0604a4b8fe30d92a627278147371`. Issue #18 implementation baseline: `9170d525830983bb5f860d7871d835a0ef544b5f`. Issue #19 local working tree is based on merged `lab2-staging` SHA `722a56ca3d28d3595cec17f530b99fa29c7cb158`; its final SHA is pending commit |
+| Commit SHA tested | Issue #13 evidence: `c09c6549833aac114e40fc5ecfa8c6a1308277ec`. Issue #14 hosted baseline: `8ef5a9c4b42fe1bf002ebed440f4109ac516ef59`. Issue #15 hosted baseline: `82a654011a353ac95e5b676509f3d62b0bda8d26`. Issue #16 final merge baseline: `aa4b81125dcd1e9d8459c4e76bde3f22ab6f55be`. Issue #17 implementation baseline: `68c0beba5f761535ebd26ccc16675efed6fd9d6d`; documentation follow-up: `98d8f989058f0604a4b8fe30d92a627278147371`. Issue #18 implementation baseline: `9170d525830983bb5f860d7871d835a0ef544b5f`. Issue #19 final merge commit: `4799b606d0d9a9851a13206047fb112db3f94373` |
 | Date/time and timezone | Issue #13: `2026-08-25 16:45 ICT`; Issue #14 hosted CI: `2026-08-27`; Issue #15 baseline CI checked `2026-08-29 ICT`; Issue #16 merged `2026-08-30`; Issue #17 hosted follow-up `2026-08-30 20:33–20:35 ICT`; Issue #18 local/hosted responsive evidence `2026-08-30`; Issue #19 local full regression and live E2E `2026-08-31 23:43–23:49 ICT` (UTC+7) |
 | Tester | OpenAI Codex local verification; author and peer sign-off remain pending |
 | OS / Node.js / npm / PostgreSQL versions | Windows `10.0.19045`; Node.js `v24.14.0`; npm `11.9.0`; PostgreSQL `18.4` |
@@ -257,7 +257,7 @@ The responsive wrapper starts a local Vite process, uses deterministic mocked AP
 | Server build | PASS (`tsc`) |
 | Client build | PASS (`tsc && vite build`) |
 | Lint | PASS for both server and client with zero warnings |
-| Final release recommendation | Issue #19 implementation and the complete local release audit pass. Commit/push this working tree, require the updated CI workflow (including live E2E) to pass on the final SHA, obtain peer approval, then merge the Issue #19 PR into `lab2-staging`; merge `lab2-staging` into `main` only after those gates are green |
+| Final release recommendation | PRs #20–#27 and the complete local Lab 2 audit are merged into `lab2-staging`. Before merging `lab2-staging` into `main`, run/confirm the repository's final hosted CI and obtain release peer approval |
 
 | Command / Review | Timestamp | Result and Counts | Evidence Path or PR Link |
 |---|---|---|---|
@@ -323,7 +323,7 @@ The responsive wrapper starts a local Vite process, uses deterministic mocked AP
 - **The responsive audit uses deterministic mocked API fixtures.** `RV-01`–`RV-04` prove rendered CSS layout, fixed viewports, state presentation, focus behavior, tokens, and screenshots in Chromium. The separate `E2E-01`–`E2E-06` suite now proves the live client/API/PostgreSQL/private-storage workflows but is not a pixel-comparison suite.
 - **IT Staff workflows are intentionally excluded.** Assignment, staff queues, prioritization, status transitions beyond initial `New`, internal notes, and staff authorization are deferred.
 - **Public comments and status progression beyond `New` are out of Lab 2 scope.** No tests should imply those features exist.
-- **Issue #19 live browser E2E passes locally.** `E2E-01`–`E2E-06` run against the real client, server, guarded isolated PostgreSQL test database, and temporary private attachment storage. Hosted CI on the final Issue #19 SHA and peer approval remain release gates.
+- **Issue #19 live browser E2E passes locally.** `E2E-01`–`E2E-06` run against the real client, server, guarded isolated PostgreSQL test database, and temporary private attachment storage. PR #27 is merged; any final release CI/approval gate for `main` remains separate from this Lab 2 implementation evidence.
 - **Visual comparison is environment-sensitive.** Fixed viewport screenshots and checklist review are required initially; pixel-diff thresholds/baselines may be added after the UI stabilizes.
 - **Load, stress, penetration, malware-scanning, and object-storage failover tests are deferred.** Planned functional tests will still need to enforce documented file type, size, count, ownership, removal, and download behavior.
 - **Compatibility beyond the browser selected in final evidence is not claimed.** Add Chromium/Firefox/WebKit coverage if the course or product support matrix later requires it.

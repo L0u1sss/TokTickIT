@@ -2,6 +2,8 @@
 
 **Author:** พลัฏฐ์ อมาตย์ชยาภา - 67070507212 - GitHub: [@L0u1sss](https://github.com/L0u1sss)
 **Peer reviewer:** แทนบุญ เตียวสวัสดิ์ - 67070507211 - GitHub: [@Tanaboonnnnn](https://github.com/Tanaboonnnnn)
+**Peer reviewer:** ฌาธนัชย์ อุทัยพิบูลย์ - 67070507210 - GitHub: [@Chxtamos](https://github.com/Chxtamos)
+**Peer reviewer:** ธนนันท์ ครังตุ้ย - 67070507211 - GitHub: [@thananun-7203](https://github.com/thananun-7203)
 
 ## Pull Requests I authored (partner review status)
 | PR | Branch | Reviewer verdict |
@@ -10,9 +12,12 @@
 | [L0u1sss/TokTickIT#21](https://github.com/L0u1sss/TokTickIT/pull/21) | `feat/db-schema-and-seeds` | Implementation and corrected PR description accepted; merged on 2026-08-27 |
 | [L0u1sss/TokTickIT#22](https://github.com/L0u1sss/TokTickIT/pull/22) | `feat/requester-selection-context` | Requester flow and isolated PostgreSQL CI evidence accepted; merged on 2026-08-28 |
 | [L0u1sss/TokTickIT#23](https://github.com/L0u1sss/TokTickIT/pull/23) | `feat/create-ticket` | Create Ticket contract/accessibility and evidence follow-up accepted; merged on 2026-08-29 |
-| [L0u1sss/TokTickIT#24](https://github.com/L0u1sss/TokTickIT/pull/24) | `feat/my-tickets-list` | Core implementation and hosted CI accepted; review follow-up for URL validation, filter-metadata recovery, and evidence is complete locally and awaits final-SHA CI/re-review |
+| [L0u1sss/TokTickIT#24](https://github.com/L0u1sss/TokTickIT/pull/24) | `feat/my-tickets-list` | Core implementation and review follow-up for URL validation, filter-metadata recovery, and evidence accepted; merged on 2026-08-30 |
+| [L0u1sss/TokTickIT#25](https://github.com/L0u1sss/TokTickIT/pull/25) | `feat/ticket-detail-and-attachments` | Ticket Detail/Attachment lifecycle, README setup, and synchronized evidence accepted after changes; merged on 2026-08-30 |
+| [L0u1sss/TokTickIT#26](https://github.com/L0u1sss/TokTickIT/pull/26) | `test/responsive-and-ui-checks` | Responsive/visual evidence and final-SHA documentation accepted; merged on 2026-08-31 |
+| [L0u1sss/TokTickIT#27](https://github.com/L0u1sss/TokTickIT/pull/27) | `chore/e2e-and-release-prep` | Final Lab 2 audit, live E2E, CI integration, and release preparation reviewed and merged on 2026-08-31 |
 
-The notes below preserve the review history that led to the approved Lab 2 contract. PRs #20–#23 are now merged. The active review item as of 2026-08-29 is PR #24; its confirmed implementation follow-up is recorded after the historical PR #20/#21 notes.
+The notes below preserve the review history that led to the approved Lab 2 contract. PRs #20–#27 were reviewed by the named peer reviewer above; requested changes were resolved in follow-up commits before merge. PR #27 is the final Lab 2 audit/release-preparation PR.
 
 The corrected PR description must state that Requested Priority accepts exactly `LOW`, `MEDIUM`, and `HIGH`, and that Ticket Status is constrained to `NEW` for Lab 2. It must not claim support for `CRITICAL`, `OPEN`, `IN_PROGRESS`, `RESOLVED`, or `CLOSED`. It should also identify `20260825000000_align_lab02_contract` as the corrective migration that safely narrows the original enum definitions while preserving supported existing data and failing explicitly when incompatible rows exist.
 
@@ -40,7 +45,7 @@ How I responded to the follow-up:
 - Kept the three documented responsive viewports and core keyboard/label/focus/live-region accessibility checks while removing extra 320 px, 200% zoom, forced-colors, and reduced-motion acceptance gates.
 - Simplified Empty versus No Results to depend on whether search/filter criteria are active instead of requiring an additional unrestricted API probe.
 
-Status: PRs #20–#23 are merged into `lab2-staging`. PR #24 remains open; the requested code, contract, and local-evidence follow-up is complete, while hosted CI and peer approval on the new final SHA remain pending.
+Status: PRs #20–#27 are merged into `lab2-staging`. PR #27 is the final audit/release-preparation change; any later `lab2-staging` to `main` merge is a release operation, not additional Lab 2 feature scope.
 
 CI follow-up on 2026-08-29:
 
@@ -77,75 +82,13 @@ Verification performed on the local review-follow-up tree based on `36857e27d631
 - `git diff --check` passed with no whitespace errors.
 - The prior PR head `36857e27d631e19777c94662c681bfb5d5dfa543` passed [GitHub Actions run 33261715434](https://github.com/L0u1sss/TokTickIT/actions/runs/33261715434); the new review-follow-up SHA must run hosted CI after commit/push.
 
-### PR #24 description update — ready to paste
-
-Add this subsection after **Loading and recovery states**:
-
-```markdown
-### Review follow-up
-
-- ยืนยันว่า query contract ใช้ `sortBy=createdAt`, `sortOrder=desc` หรือ **Newest first** เป็นค่า default ตรงกันทั้ง code, specification, API spec และ UI spec
-- URL query ฝั่ง client ใช้ validation domain เดียวกับ API และไม่ fallback ค่า invalid แบบเงียบ ๆ
-- URL ที่มี unknown/repeated parameter, search เกิน 120 Unicode characters, filter/sort ที่ไม่รองรับ, page ผิด หรือ pageSize นอก `10|20|50` จะแสดง **The ticket list URL contains invalid query values.** พร้อม **Reset filters** และยังไม่เรียก Ticket list API
-- Category และ Related System metadata มี Loading/Error state แยกจาก Ticket results
-- ถ้า metadata โหลดไม่สำเร็จ จะแสดง **We couldn't load filter options.** พร้อม **Retry**, disable เฉพาะสอง metadata filters, คง Ticket results/controls อื่นไว้ และไม่แสดง raw internal error
-- เพิ่ม component tests สำหรับ invalid URL query 6 กรณี และ metadata failure/Retry 1 กรณี
-```
-
-Replace **Verification Evidence** with the following after committing the follow-up. Keep final hosted CI unchecked until that new SHA is green:
-
-```markdown
-## Verification Evidence
-
-- [x] Full server suite: `103/103` passed across 14 files
-- [x] Full client suite: `66/66` passed across 8 files
-- [x] My Tickets query/route suites: `35/35` passed
-- [x] PostgreSQL My Tickets integration: `3/3` passed
-- [x] My Tickets component suite: `17/17` passed
-- [x] Server TypeScript build passed
-- [x] Client production build passed
-- [x] Server ESLint passed with zero warnings
-- [x] Client ESLint passed with zero warnings
-- [x] Prisma schema validation passed
-- [x] `git diff --check` passed
-- [x] Hosted CI baseline passed on `36857e27d631e19777c94662c681bfb5d5dfa543`
-- [ ] Hosted CI on the new review-follow-up commit
-- [ ] Peer review/approval on the new head
-- [ ] RV-02 real-browser responsive evidence
-```
-
 ## Pull Requests I reviewed for my partner
 
-My comment: Not recorded as part of PR #20.
 
-Partner's response: Not recorded as part of PR #20.
-
-## Issue #19 final audit and release preparation
-
-Issue reference: [#19](https://github.com/L0u1sss/TokTickIT/issues/19)
-
-Local implementation is based on merged `lab2-staging` SHA `722a56ca3d28d3595cec17f530b99fa29c7cb158`.
-
-What was added:
-
-- A 54-case `API-03` matrix covering nine invalid requester-context forms across all six protected endpoints, including proof that rejected context performs no protected read or mutation.
-- A guarded live Playwright runner that rejects an unsafe `TEST_DATABASE_URL`, resets/migrates/seeds only the isolated test target before each scenario, starts the real API/client, uses temporary private attachment storage, and cleans up processes/storage.
-- Six live browser workflows: full requester-to-attachment lifecycle, ownership isolation after requester switching, stored-context restore/invalidation, lost-response idempotent replay, Empty/No Results plus recoverable network failures, and keyboard-only accessibility.
-- CI execution of the live suite after isolated PostgreSQL preparation and the existing responsive suite.
-- README setup/safety instructions and synchronized `tests.md`/`ai-use.md` evidence.
-
-Local verification:
-
-- Server: 195/195 across 20 files.
-- Client: 84/84 across 10 files.
-- Responsive Playwright: 5/5.
-- Live Playwright: 6/6 (`E2E-01`–`E2E-06`).
-- Server/client lint and builds: passed.
-- Prisma validation: passed.
-
-Release gates still pending:
-
-- Commit/push and record the final Issue #19 SHA.
-- Hosted CI must pass on that SHA, including the new live E2E step.
-- Peer review/approval is required before merging Issue #19 into `lab2-staging`.
-- Merge `lab2-staging` into `main` only after the final Lab 2 gates are green.
+| Repository / PR | Review focus | Evidence recorded |
+|---|---|---|
+| [Tanaboonnnnn/toktickit#16](https://github.com/Tanaboonnnnn/toktickit/pull/16) | ตรวจความครบถ้วนของ Lab 2 documentation/specification และ feedback ต่อ requirement ที่ยังขาด | Local review request และ branch `remotes/tanaboon/pr/16` |
+| [Tanaboonnnnn/toktickit#21](https://github.com/Tanaboonnnnn/toktickit/pull/21) | ตรวจ database schema, migration, seed และความสอดคล้องกับ Lab 2 contract | Local review request และ branch `remotes/tanaboon/pr/21` |
+| [Tanaboonnnnn/toktickit#25](https://github.com/Tanaboonnnnn/toktickit/pull/25) | ตรวจ Ticket Detail/Attachment lifecycle, README, responsive evidence และ test evidence | Review feedback ที่บันทึกในงานสนทนา; GitHub merge status ไม่สรุปซ้ำในเอกสารนี้ |
+| [Tanaboonnnnn/toktickit#27](https://github.com/Tanaboonnnnn/toktickit/pull/27) | ตรวจ final Lab 2 audit, E2E, CI และ release preparation | Review feedback ที่บันทึกในงานสนทนา; GitHub merge status ไม่สรุปซ้ำในเอกสารนี้ |
+| [Chxtamos/-TokTickIT-#23](https://github.com/Chxtamos/-TokTickIT-/pull/23) | ตรวจ Ticket Detail/Attachment implementation เทียบกับเอกสารอ้างอิง | Review request ที่บันทึกในงานสนทนา |
