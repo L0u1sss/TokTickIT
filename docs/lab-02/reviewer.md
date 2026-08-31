@@ -119,3 +119,33 @@ Replace **Verification Evidence** with the following after committing the follow
 My comment: Not recorded as part of PR #20.
 
 Partner's response: Not recorded as part of PR #20.
+
+## Issue #19 final audit and release preparation
+
+Issue reference: [#19](https://github.com/L0u1sss/TokTickIT/issues/19)
+
+Local implementation is based on merged `lab2-staging` SHA `722a56ca3d28d3595cec17f530b99fa29c7cb158`.
+
+What was added:
+
+- A 54-case `API-03` matrix covering nine invalid requester-context forms across all six protected endpoints, including proof that rejected context performs no protected read or mutation.
+- A guarded live Playwright runner that rejects an unsafe `TEST_DATABASE_URL`, resets/migrates/seeds only the isolated test target before each scenario, starts the real API/client, uses temporary private attachment storage, and cleans up processes/storage.
+- Six live browser workflows: full requester-to-attachment lifecycle, ownership isolation after requester switching, stored-context restore/invalidation, lost-response idempotent replay, Empty/No Results plus recoverable network failures, and keyboard-only accessibility.
+- CI execution of the live suite after isolated PostgreSQL preparation and the existing responsive suite.
+- README setup/safety instructions and synchronized `tests.md`/`ai-use.md` evidence.
+
+Local verification:
+
+- Server: 195/195 across 20 files.
+- Client: 84/84 across 10 files.
+- Responsive Playwright: 5/5.
+- Live Playwright: 6/6 (`E2E-01`–`E2E-06`).
+- Server/client lint and builds: passed.
+- Prisma validation: passed.
+
+Release gates still pending:
+
+- Commit/push and record the final Issue #19 SHA.
+- Hosted CI must pass on that SHA, including the new live E2E step.
+- Peer review/approval is required before merging Issue #19 into `lab2-staging`.
+- Merge `lab2-staging` into `main` only after the final Lab 2 gates are green.
