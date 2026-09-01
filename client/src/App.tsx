@@ -1,57 +1,112 @@
-import { useState } from "react";
-import { checkSystem, Category } from "./api.js";
+import { useCallback, useEffect, useState } from "react";
+import AppHeader from "./components/AppHeader.js";
+import CreateTicketPage from "./components/CreateTicketPage.js";
+import MyTicketsPage from "./components/MyTicketsPage.js";
+import TicketDetailPage from "./components/TicketDetailPage.js";
+import RequesterSelection from "./components/RequesterSelection.js";
+import { useRequester } from "./context/RequesterContext.js";
 
-// UI states for Issue 4: idle, loading, success, error.
-type UiState = "idle" | "loading" | "success" | "error";
+export const CREATE_TICKET_PATH = "/tickets/new";
+export const MY_TICKETS_PATH = "/tickets";
+export const REQUESTER_SELECTION_PATH = "/requester-selection";
+
+function isTicketDetailPath(path: string) {
+  return /^\/tickets\/[^/]+$/.test(path) && path !== CREATE_TICKET_PATH;
+}
+
+function enterCreateTicketRoute() {
+  if (window.location.pathname !== CREATE_TICKET_PATH) {
+    window.history.replaceState({}, "", CREATE_TICKET_PATH);
+  }
+}
+
+function enterRequesterSelectionRoute() {
+  if (window.location.pathname !== REQUESTER_SELECTION_PATH) {
+    window.history.replaceState({}, "", REQUESTER_SELECTION_PATH);
+  }
+}
 
 export default function App() {
-  const [state, setState] = useState<UiState>("idle");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [error, setError] = useState("");
+  const { currentRequester } = useRequester();
+  const [intendedPath, setIntendedPath] = useState(() =>
+    window.location.pathname === MY_TICKETS_PATH || isTicketDetailPath(window.location.pathname)
+      ? `${window.location.pathname}${window.location.search}`
+      : CREATE_TICKET_PATH,
+  );
 
-  async function handleCheck() {
-    setState("loading");
-    setError("");
-    setCategories([]);
-    try {
-      const status = await checkSystem();
-      setCategories(status.categories);
-      setState("success");
-    } catch {
-      setError("Unable to connect to TokTickIT API");
-      setState("error");
-    }
+  if (!currentRequester) {
+    return <RequesterGate onContinue={() => { setIntendedPath(CREATE_TICKET_PATH); enterCreateTicketRoute(); }} />;
   }
 
+  return <RequesterApplication key={currentRequester.id} intendedPath={intendedPath} />;
+}
+
+function RequesterGate({ onContinue }: { onContinue: () => void }) {
+  useEffect(() => {
+    enterRequesterSelectionRoute();
+  }, []);
+
+  return <RequesterSelection onContinue={onContinue} />;
+}
+
+function RequesterApplication({ intendedPath }: { intendedPath: string }) {
+  const initialPath = window.location.pathname === REQUESTER_SELECTION_PATH
+    ? intendedPath
+    : `${window.location.pathname}${window.location.search}`;
+  const initialPathname = initialPath.split("?")[0];
+  const [location, setLocation] = useState(
+    initialPathname === MY_TICKETS_PATH || isTicketDetailPath(initialPathname)
+      ? initialPath
+      : CREATE_TICKET_PATH,
+  );
+
+  useEffect(() => {
+    if (`${window.location.pathname}${window.location.search}` !== location) {
+      window.history.replaceState({}, "", location);
+    }
+    const restore = () => setLocation(`${window.location.pathname}${window.location.search}`);
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, [location]);
+
+  const navigate = useCallback((path: string) => {
+    window.history.pushState({}, "", path);
+    setLocation(path);
+  }, []);
+
+  const pathname = location.split("?")[0];
+  const activePath = pathname === MY_TICKETS_PATH || isTicketDetailPath(pathname)
+    ? MY_TICKETS_PATH
+    : CREATE_TICKET_PATH;
+
   return (
-    <div className="container py-5" style={{ maxWidth: 640 }}>
-      <h1 className="h3 mb-4">
-        TokTickIT <span className="text-success">IT Service Desk</span>
-      </h1>
-
-      <button className="btn btn-success" onClick={handleCheck} disabled={state === "loading"}>
-        {state === "loading" ? "Loading…" : "Check System"}
-      </button>
-
-      {state === "success" && (
-        <div className="mt-4">
-          <p className="text-success fw-semibold mb-2">System Status: Online</p>
-          <h2 className="h5 mb-2">Supported Request Categories</h2>
-          <ul className="list-group">
-            {categories.map((category) => (
-              <li key={category.id} className="list-group-item">
-                {category.id}. {category.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {state === "error" && (
-        <div className="mt-4">
-          <p className="text-danger fw-semibold mb-2">System Status: Offline</p>
-          <p className="text-danger mb-0">{error}</p>
-        </div>
+    <div className="app-shell">
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("main-content")?.focus();
+        }}
+      >
+        Skip to main content
+      </a>
+      <AppHeader activePath={activePath} onNavigate={navigate} />
+      {isTicketDetailPath(pathname) ? (
+        <TicketDetailPage
+          ticketIdSegment={pathname.slice("/tickets/".length)}
+          onBack={() => navigate(MY_TICKETS_PATH)}
+        />
+      ) : activePath === MY_TICKETS_PATH ? (
+        <MyTicketsPage
+          initialSearch={location.includes("?") ? location.slice(location.indexOf("?")) : ""}
+          onCreateTicket={() => navigate(CREATE_TICKET_PATH)}
+        />
+      ) : (
+        <CreateTicketPage
+          onCancel={() => navigate(MY_TICKETS_PATH)}
+          onViewTicket={(ticketId) => navigate(`/tickets/${ticketId}`)}
+        />
       )}
     </div>
   );

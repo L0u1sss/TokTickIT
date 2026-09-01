@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - lab2-staging
+  push:
+    branches:
+      - lab2-staging
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, build, and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: toktickit_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d toktickit_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/toktickit?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/toktickit_test?schema=public
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: client
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
+        working-directory: server
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        working-directory: server
+
+      - name: Prepare isolated test database
+        run: |
+          DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
+          DATABASE_URL="$TEST_DATABASE_URL" npx prisma db seed
+        working-directory: server
+
+      - name: Run server test suite
+        run: npm test
+        working-directory: server
+
+      - name: Run client test suite
+        run: npm test
+        working-directory: client
+
+      - name: Run responsive browser suite
+        run: npm run test:responsive
+        working-directory: client
+
+      - name: Run live end-to-end suite
+        run: npm run test:e2e
+        working-directory: client
+
+      - name: Lint server
+        run: npm run lint
+        working-directory: server
+
+      - name: Lint client
+        run: npm run lint
+        working-directory: client
+
+      - name: Build server
+        run: npm run build
+        working-directory: server
+
+      - name: Build client
+        run: npm run build
+        working-directory: client

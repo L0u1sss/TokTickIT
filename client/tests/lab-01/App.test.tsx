@@ -1,91 +1,72 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import App from "../../src/App.js";
-import * as api from "../../src/api.js";
+import { checkHealth, checkSystem, Category } from "../../src/api.js";
+import { RequesterProvider } from "../../src/context/RequesterContext.js";
 
-const seededCategories: api.Category[] = [
+const seededCategories: Category[] = [
   { id: 1, name: "Account and Access" },
   { id: 2, name: "Hardware" },
   { id: 3, name: "Software" },
   { id: 4, name: "Network" },
 ];
 
-describe("App", () => {
+describe("Lab 1 client regression", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    window.sessionStorage.clear();
   });
 
-  // WORKED EXAMPLE — provided for you.
-  it("renders the TokTickIT heading", () => {
-    render(<App />);
-    expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
+  it("still starts from the TokTickIT requester entry screen", () => {
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}));
+    render(
+      <RequesterProvider>
+        <App />
+      </RequesterProvider>,
+    );
+    expect(screen.getByText(/TokTickIT Service Desk/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Select a Development Requester" }),
+    ).toBeInTheDocument();
   });
 
-  // Issue 4 — mock checkSystem, click the button, assert the Online list.
-  it("shows System Status: Online and the seeded categories on success", async () => {
-    vi.spyOn(api, "checkSystem").mockResolvedValue({
+  it("keeps the Lab 1 health helper working", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ status: "ok" }), { status: 200 }),
+    );
+    await expect(checkHealth()).resolves.toEqual({ online: true });
+  });
+
+  it("keeps the Lab 1 health failure behavior", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 503 }));
+    await expect(checkHealth()).rejects.toThrow("Backend health check failed");
+  });
+
+  it("keeps the Lab 1 category integration helper working", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(seededCategories), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    await expect(checkSystem()).resolves.toEqual({
       online: true,
       categories: seededCategories,
     });
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: /check system/i }));
-
-    expect(await screen.findByText("System Status: Online")).toBeInTheDocument();
-    expect(screen.getByText("Supported Request Categories")).toBeInTheDocument();
-    for (const category of seededCategories) {
-      expect(screen.getByText(`${category.id}. ${category.name}`)).toBeInTheDocument();
-    }
-    expect(screen.queryByText("System Status: Offline")).not.toBeInTheDocument();
   });
 
-  // Issue 4 — mock checkSystem to reject, assert the Offline message.
-  it("shows System Status: Offline when the API is unavailable", async () => {
-    vi.spyOn(api, "checkSystem").mockRejectedValue(new Error("API unavailable"));
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: /check system/i }));
-
-    expect(await screen.findByText("System Status: Offline")).toBeInTheDocument();
-    expect(screen.getByText("Unable to connect to TokTickIT API")).toBeInTheDocument();
-    expect(screen.queryByText("System Status: Online")).not.toBeInTheDocument();
-  });
-
-  // Issue 4 — while the request is pending, the button shows Loading… and is disabled.
-  it("shows Loading… and disables the button while a request is in flight", async () => {
-    let resolveCheck!: (result: api.SystemStatus) => void;
-    const pendingCheck = new Promise<api.SystemStatus>((resolve) => {
-      resolveCheck = resolve;
-    });
-    vi.spyOn(api, "checkSystem").mockReturnValue(pendingCheck);
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: /check system/i }));
-
-    expect(screen.getByRole("button", { name: "Loading…" })).toBeDisabled();
-
-    resolveCheck({ online: true, categories: seededCategories });
-    expect(await screen.findByText("System Status: Online")).toBeInTheDocument();
-  });
-
-  // Issue 4 — a failed request must not leave stale categories on screen.
-  it("clears stale categories when a later request fails", async () => {
-    vi.spyOn(api, "checkSystem")
-      .mockResolvedValueOnce({ online: true, categories: [{ id: 1, name: "Hardware" }] })
-      .mockRejectedValueOnce(new Error("request failed"));
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: /check system/i }));
-    expect(await screen.findByText("1. Hardware")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /check system/i }));
-
-    expect(await screen.findByText("System Status: Offline")).toBeInTheDocument();
-    expect(screen.queryByText("1. Hardware")).not.toBeInTheDocument();
+  it("keeps the Lab 1 category failure behavior", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 500 }));
+    await expect(checkSystem()).rejects.toThrow(
+      "Categories request failed with status 500",
+    );
   });
 });
