@@ -34,7 +34,7 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | DB-05 | Integration | BR-36, AC-09, AC-16 | concurrent claim, unique email, last-admin guards | one safe winner; invariant remains | `server/tests/lab-03/concurrency.test.ts` | Planned |
 | DB-06 | Integration | BR-18, BR-32, BR-36, AC-10, AC-16 | assign/reassign to X racing deactivate/demote X | one side 409; final non-null owner always eligible | `server/tests/lab-03/concurrency.test.ts` | Planned |
 | API-01 | API | FR-01, AC-01 | Valid active login and safe response/cookie | 200, identity+role, secure cookie attrs | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-02 | API | BR-01–BR-03, BR-39, AC-02 | Wrong password/unknown email/inactive user/rate limit | no session; indistinguishable safe errors/429 | `server/tests/lab-03/auth.api.test.ts` | Planned |
+| API-02 | API | BR-01–BR-03, BR-39, AC-02 | Valid request/approved Origin within rate limit: wrong password, unknown email, inactive user with correct or incorrect password; separate rate-limit case | All account-specific failures: `401 AUTHENTICATION_FAILED`, exact message `Unable to sign in with the provided credentials.`, no account-specific detail/fieldErrors (requestId may differ), no new session/authenticated session cookie; rate limit: `429 TOO_MANY_ATTEMPTS` + `Retry-After` | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-03 | API | BR-07, BR-10, AC-04 | Missing/invalid/expired/revoked session | 401, no protected data | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-04 | API | FR-02, AC-03 | Forced password user accesses endpoints | only me/change/logout allowed | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-05 | API | BR-04–BR-06, AC-03 | Change-password valid/invalid/boundary/rotation | flag clears; other sessions revoked | `server/tests/lab-03/auth.api.test.ts` | Planned |
@@ -63,7 +63,7 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | API-28 | API | FR-15, AC-15 | Set initial password and next login | sessions revoked; forced change true | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-29 | Security | BR-37, AC-13, AC-17 | Unexpected failures and response/log redaction | safe 500 + requestId; no secrets/private data | `server/tests/lab-03/safe-errors.api.test.ts` | Planned |
 | API-30 | API/Security | FR-08, BR-14, AC-19 | Staff/Admin Attachment download; Requester, removed, wrong-Ticket and storage failures | authorized bytes/headers; safe 403/404/500, no path leak | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
-| UI-01 | UI | FR-01, AC-01–AC-02, AC-17 | Login form validation/busy/errors/focus | accessible states and routing | `client/tests/lab-03/Login.test.tsx` | Planned |
+| UI-01 | UI | FR-01, AC-01–AC-02, AC-17 | Login form validation/busy/errors/focus; unknown email/wrong password/inactive account | accessible states and routing; all account-specific failures show `Unable to sign in with the provided credentials.` without account-state hints or entry to authenticated shell | `client/tests/lab-03/Login.test.tsx` | Planned |
 | UI-02 | UI | FR-02, AC-03, AC-17 | Password rules/change/Logout/focus | forced flow cannot bypass | `client/tests/lab-03/ChangePassword.test.tsx` | Planned |
 | UI-03 | UI | FR-04, AC-04–AC-05 | Role shell nav/direct route/logout incl. Admin queue access | correct nav; forbidden protected | `client/tests/lab-03/AppAuthorization.test.tsx` | Planned |
 | UI-04 | Regression | FR-05–FR-06, AC-06, AC-12, AC-14 | No selector; own Ticket/comment and status-aware resolution UI | authenticated requester flow works; terminal action absent | `client/tests/lab-03/RequesterRegression.test.tsx` | Planned |
@@ -152,7 +152,7 @@ git diff --check
 
 | Evidence | Commit/run | Result |
 |---|---|---|
-| Contract review | Not available yet | Pending |
+| Contract review | [PR #39 review on `b8e0412`](https://github.com/L0u1sss/TokTickIT/pull/39#pullrequestreview-5210534997) | Changes requested; Login failure contract remediation prepared locally, peer re-review pending |
 | Migration + seed | Not run — implementation out of scope for Issue #29 | Planned |
 | Server suites | Not run — implementation out of scope for Issue #29 | Planned |
 | Client suites | Not run — implementation out of scope for Issue #29 | Planned |

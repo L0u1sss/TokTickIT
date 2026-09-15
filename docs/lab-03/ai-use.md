@@ -20,6 +20,7 @@
 | 7 | Write the Issue #29 title/description and branch scope | Produced a docs-only engineering-contract issue definition | Confirmed exact issue body from GitHub and used branch `docs/lab3-engineering-contract` |
 | 8 | Implement Issue #29 using the Lab 3 reference | Drafted numbered FR/BR/AC, matrices, migration, API/UI contracts and pre-implementation tests | Chose session/password/workflow decisions, removed ambiguous TBDs and kept every test status Planned |
 | 9 | Apply the review comments from PR #39 | Identified cross-file contradictions and proposed atomic ownership, historical-owner, status and Origin rules | Verified the review against the contract, chose a dedicated staff download route and added explicit planned race/security tests |
+| 10 | Fix the PR #39 re-review on `b8e0412` locally | Aligned BR/AC/API/UI/test planning on generic Login failures, updated the review record and drafted a PR description with 19/19 AC traceability | Local contract decision: unknown email, wrong password and inactive account share `401 AUTHENTICATION_FAILED`; implementation tests remain Planned and peer re-review is pending |
 
 ## Important Decisions I Retained or Changed
 
@@ -32,6 +33,8 @@
 - Separated active `ownerId` from terminal `lastOwnerId`, required one transaction/lock protocol across assignment and account eligibility changes, and required Login Origin validation because Login creates the session cookie.
 
 ## My Reflection
+
+The latest review exposed a mismatch between a distinguishable inactive-account API response and the planned indistinguishable-error test. The local remediation chooses one observable status/code/message across all account-specific Login failures and carries it through BR-02, AC-02, API, UI and API-02. This is a contract decision; runtime behavior and passing authentication tests must be evidenced by the later implementation issue.
 
 AI ช่วยลดเวลาการแตก labsheet ที่ยาวให้เป็น requirement IDs, authorization/status matrices และ test traceability ได้มาก โดยเฉพาะการมองหาจุดที่มักกำกวม เช่น identity source, safe `404`, concurrent claim และ last-active-admin protection อย่างไรก็ตาม output แรกยังเป็นเพียง template และมี `TBD` มากเกินไป จึงต้องตรวจกลับกับ labsheet และ contract ของ Lab 2 แล้วตัดสินใจรายละเอียดเองก่อนใช้เป็นฐาน implementation
 

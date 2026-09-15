@@ -44,7 +44,7 @@ Development Requester selector, Change Requester และ sessionStorage reques
 - Primary “Sign in” button และ product/context text
 - Submit validation แสดง field error และ focus error summary; error items linkกลับ field
 - Pending: disable duplicate submit, label “Signing in…”, preserve email และไม่ echo password
-- Invalid credentials: safe generic error; inactive account: clear butไม่เผย unnecessary data
+- Unknown email, wrong password และ inactive account (รวม valid password): แสดง generic error เดียวกัน `Unable to sign in with the provided credentials.` จาก `401 AUTHENTICATION_FAILED`; ไม่แสดงข้อความแยกเพื่อบอกว่าบัญชีมีอยู่หรือ inactive และไม่เข้า authenticated shell
 - Network/server failure: alert พร้อม Retry ที่ไม่เก็บ passwordถ้า policy เลือก clear
 - Successful login: forced-change ไป Change Password; อื่นไป role home
 
@@ -163,7 +163,7 @@ Editable fieldsใช้ form surface/amber cue ส่วน source/requester fi
 
 | Screen | View/input modes | Meaningful feedback |
 |---|---|---|
-| Login | initial, editing, submitting | validation, invalid/inactive, rate-limit, safe failure |
+| Login | initial, editing, submitting | validation, generic authentication failure (unknown email/wrong password/inactive), rate-limit, safe failure |
 | Change Password | editing, submitting | rules, mismatch, reuse, success, safe failure |
 | Requester Ticket Detail | view, comment, resolution confirmation | empty, pending, success, forbidden/not found/failure |
 | Staff Queue | browse, filter, paginate | loading, empty/no-results, invalid query, forbidden, failure |

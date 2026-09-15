@@ -115,8 +115,8 @@ Body: `{ "email": "user@example.test", "password": "Local-only-password1!" }`
 - `password`: required string, max 128 code points; login ไม่ trim password
 - `200`: `{ "user": CurrentUser }` พร้อม `Set-Cookie`
 - `400 VALIDATION_ERROR`: invalid shape/type/length
-- `401 AUTHENTICATION_FAILED`: unknown email หรือ wrong password ใช้ข้อความเดียวกัน
-- `403 ACCOUNT_INACTIVE`: valid credentials แต่ inactive; ไม่สร้าง session
+- `401 AUTHENTICATION_FAILED`: unknown email, wrong password และ inactive account (รวม valid password) ใช้ข้อความเดียวกัน `Unable to sign in with the provided credentials.`; ไม่สร้าง session หรือออก authenticated session cookie
+- ทั้งสามกรณีใช้ error envelope เดียวกัน ไม่มี account-specific detail/fieldErrors; `requestId` ต่างกันได้ Login ไม่คืน code แยกเพื่อเปิดเผย inactive account ตาม BR-02
 - `500 INTERNAL_ERROR`: safe failure
 
 Request นี้ต้องผ่าน Origin check แม้ caller ยังไม่มี session cookie เพราะ response ที่สำเร็จจะสร้าง cookie; invalid/missing Origin ต้องไม่ตรวจหรือเปิดเผยผล credentials

@@ -66,7 +66,7 @@
 ### 5.1 Authentication and account rules
 
 - **BR-01:** เฉพาะ active user ที่มี valid credentials เท่านั้นที่ authenticate ได้
-- **BR-02:** Email ใช้เปรียบเทียบแบบ trim และ case-insensitive และต้อง unique ด้วย canonical normalized value; login failure ต้องไม่บอกว่า email มีอยู่หรือ password ผิด
+- **BR-02:** Email ใช้เปรียบเทียบแบบ trim และ case-insensitive และต้อง unique ด้วย canonical normalized value; unknown email, wrong password และ inactive account (แม้ password ถูกต้อง) ต้องคืน `401 AUTHENTICATION_FAILED` พร้อมข้อความเดียวกัน `Unable to sign in with the provided credentials.` โดยไม่สร้าง session หรือออก authenticated session cookie และไม่เผยว่า email มีอยู่, password ถูก/ผิด หรือบัญชี inactive; requestId ต่างกันได้ แต่ห้ามมี account-specific detail/fieldErrors ส่วน malformed input, Origin rejection, rate limit และ unexpected failure ใช้ error ตาม API contract แยกจาก account-specific authentication failure
 - **BR-03:** Password ไม่เก็บหรือ log เป็น plaintext ต้อง hash ด้วย Argon2id พร้อม random salt และค่าที่เหมาะกับ environment; API response ต้องไม่คืน hash
 - **BR-04:** Password ใหม่ต้องยาว 12–128 Unicode code points ไม่มี whitespace ต้น/ท้าย และมีอย่างน้อย 3 จาก 4 กลุ่มตาม Unicode properties: lowercase letter, uppercase letter, decimal number และ character ที่ไม่ใช่ letter/number/whitespace
 - **BR-05:** Initial password และ password ที่ Administrator ตั้งใหม่มี `mustChangePassword = true`; user ดังกล่าวเข้า normal application ไม่ได้จนเปลี่ยนสำเร็จ
@@ -211,7 +211,7 @@ REST API ใช้ JSON UTF-8 ใต้ `/api`, authenticated cookie ตาม B
 ## 10. Acceptance Criteria
 
 - **AC-01:** Given active user และ valid credentials, when login, then server creates authenticated session และคืน safe identity/role
-- **AC-02:** Given inactive user หรือ invalid credentials, when login, then access is deniedด้วย safe message และไม่มี session
+- **AC-02:** Given unknown email, wrong password หรือ inactive user (รวม valid password), when login ด้วย valid request และ approved Origin ภายใน rate limit, then ทั้งสามกรณีคืน `401 AUTHENTICATION_FAILED` พร้อมข้อความเดียวกัน `Unable to sign in with the provided credentials.`, ไม่มี account-specific detail/fieldErrors, ไม่สร้าง session หรือออก authenticated session cookie และ UI แสดง generic error เดียวกัน
 - **AC-03:** Given `mustChangePassword`, when login succeeds, then normal screens/APIs remain forbidden until valid password change succeeds
 - **AC-04:** Given authenticated session, when logout then protected direct navigation/API is inaccessible and revoked session cannot be reused
 - **AC-05:** Given each role, when app loads then shell/navigation/actions match matrix; direct forbidden API still rejects the request
