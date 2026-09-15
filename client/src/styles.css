@@ -15,6 +15,12 @@
   font-synthesis: none;
 }
 
+.auth-field { display: grid; gap: .4rem; margin-block: 1rem; }
+.auth-field input { width: 100%; min-width: 0; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; }
+.auth-field button { justify-self: start; }
+.auth-card button { white-space: normal; }
+.auth-error { color: var(--zen-error); overflow-wrap: anywhere; }
+
 *,
 *::before,
 *::after {

@@ -1,8 +1,8 @@
 # TokTickIT Lab 3 — Test Plan and Verification Evidence
 
-> สถานะ: Planned before implementation ตาม Test DD
+> สถานะ: Issue #30 มี local verification แล้วตาม Section 6; งาน Lab 3 ส่วนอื่นยัง Planned/Partial ตาม matrix
 >
-> Issue: [#29](https://github.com/L0u1sss/TokTickIT/issues/29)
+> Contract: [#29](https://github.com/L0u1sss/TokTickIT/issues/29); authentication implementation: [#30](https://github.com/L0u1sss/TokTickIT/issues/30)
 >
 > สถานะ `Planned` หมายถึงยังไม่มีผลทดสอบ ห้ามตีความว่า Pass
 
@@ -22,8 +22,8 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 
 | Test ID | Type | Requirement / AC | What it tests | Expected result | Automated test path | Status |
 |---|---|---|---|---|---|---|
-| UT-01 | Unit | BR-02, BR-34 | Email normalization/validation boundaries | canonical comparison; invalid rejected | `server/tests/lab-03/validation.test.ts` | Planned |
-| UT-02 | Unit | BR-04, BR-06, AC-03 | Password Unicode length, classes, trim, confirmation, reuse | exact policy enforced | `server/tests/lab-03/password-policy.test.ts` | Planned |
+| UT-01 | Unit | BR-02, BR-34 | Email normalization/validation boundaries | canonical comparison; invalid rejected | `server/tests/lab-03/validation.test.ts` | Partial — email validation/normalization passed in #30; broader BR-34 validation remains planned |
+| UT-02 | Unit | BR-04, BR-06, AC-03 | Password Unicode length, classes, trim, confirmation, reuse | exact policy enforced | `server/tests/lab-03/password-policy.test.ts` | Pass — #30 password-policy unit tests plus API confirmation/reuse/rotation tests |
 | UT-03 | Unit | BR-20–BR-22, AC-11 | Every status transition pair | only matrix transitions allowed | `server/tests/lab-03/status-transition.test.ts` | Planned |
 | UT-04 | Unit | BR-25, BR-27, BR-34 | Comment/note whitespace, Unicode boundaries, plain text | exact limits; HTML not executed | `server/tests/lab-03/content-validation.test.ts` | Planned |
 | UT-05 | Unit | FR-07, AC-08 | Queue query parse/defaults/tie-breaker | strict validated query | `server/tests/lab-03/staff-queue-query.test.ts` | Planned |
@@ -33,13 +33,13 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | DB-04 | Integration | BR-33, FR-17 | Seed run twice and role/account/ticket fixtures | exact stable fixtures; no duplicates | `server/tests/lab-03/migration.test.ts` | Planned |
 | DB-05 | Integration | BR-36, AC-09, AC-16 | concurrent claim, unique email, last-admin guards | one safe winner; invariant remains | `server/tests/lab-03/concurrency.test.ts` | Planned |
 | DB-06 | Integration | BR-18, BR-32, BR-36, AC-10, AC-16 | assign/reassign to X racing deactivate/demote X | one side 409; final non-null owner always eligible | `server/tests/lab-03/concurrency.test.ts` | Planned |
-| API-01 | API | FR-01, AC-01 | Valid active login and safe response/cookie | 200, identity+role, secure cookie attrs | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-02 | API | BR-01–BR-03, BR-39, AC-02 | Valid request/approved Origin within rate limit: wrong password, unknown email, inactive user with correct or incorrect password; separate rate-limit case | All account-specific failures: `401 AUTHENTICATION_FAILED`, exact message `Unable to sign in with the provided credentials.`, no account-specific detail/fieldErrors (requestId may differ), no new session/authenticated session cookie; rate limit: `429 TOO_MANY_ATTEMPTS` + `Retry-After` | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-03 | API | BR-07, BR-10, AC-04 | Missing/invalid/expired/revoked session | 401, no protected data | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-04 | API | FR-02, AC-03 | Forced password user accesses endpoints | only me/change/logout allowed | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-05 | API | BR-04–BR-06, AC-03 | Change-password valid/invalid/boundary/rotation | flag clears; other sessions revoked | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-06 | API | FR-03, AC-04 | Logout with valid/missing session | 204 idempotent; cookie/session invalid | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-07 | Security | BR-09 | Missing/cross-origin mutation including Login before cookie exists | 403 before credential/body evaluation | `server/tests/lab-03/auth.api.test.ts` | Planned |
+| API-01 | API | FR-01, AC-01 | Valid active login and safe response/cookie | 200, identity+role, secure cookie attrs | `server/tests/lab-03/auth.api.test.ts` | Pass — #30 isolated auth API tests |
+| API-02 | API | BR-01–BR-03, BR-39, AC-02 | Valid request/approved Origin within rate limit: wrong password, unknown email, inactive user with correct or incorrect password; separate rate-limit case | All account-specific failures: `401 AUTHENTICATION_FAILED`, exact message `Unable to sign in with the provided credentials.`, no account-specific detail/fieldErrors (requestId may differ), no new session/authenticated session cookie; rate limit: `429 TOO_MANY_ATTEMPTS` + `Retry-After` | `server/tests/lab-03/auth.api.test.ts` | Pass — #30 exact generic failures and rate-limit tests |
+| API-03 | API | BR-07, BR-10, AC-04 | Missing/invalid/expired/revoked session | 401, no protected data | `server/tests/lab-03/auth.api.test.ts` | Pass — #30 session lifecycle tests |
+| API-04 | API | FR-02, AC-03 | Forced password user accesses endpoints | only me/change/logout allowed | `server/tests/lab-03/auth.api.test.ts` | Partial — reusable guard tested; application-wide route cutover remains #31 |
+| API-05 | API | BR-04–BR-06, AC-03 | Change-password valid/invalid/boundary/rotation | flag clears; other sessions revoked | `server/tests/lab-03/auth.api.test.ts` | Pass — #30 API boundaries, rotation and concurrent change tests |
+| API-06 | API | FR-03, AC-04 | Logout with valid/missing session | 204 idempotent; cookie/session invalid | `server/tests/lab-03/auth.api.test.ts` | Pass — #30 idempotent logout and old-session denial |
+| API-07 | Security | BR-09 | Missing/cross-origin mutation including Login before cookie exists | 403 before credential/body evaluation | `server/tests/lab-03/auth.api.test.ts` | Partial — all auth mutations tested; legacy route Origin cutover remains #31 |
 | API-08 | Security | BR-11–BR-14, AC-05 | Cross-role direct API matrix | 403/404 as contract; no data leak | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | API-09 | Regression | FR-05, AC-06 | Supplied requesterId/header cannot switch identity | own data only; protected fields rejected/ignored | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | API-10 | Regression | FR-05, AC-06–AC-07 | Lab 2 create/list/detail/attachments under session | prior behavior passes with auth | `server/tests/lab-03/requester-regression.api.test.ts` | Planned |
@@ -63,9 +63,9 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | API-28 | API | FR-15, AC-15 | Set initial password and next login | sessions revoked; forced change true | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-29 | Security | BR-37, AC-13, AC-17 | Unexpected failures and response/log redaction | safe 500 + requestId; no secrets/private data | `server/tests/lab-03/safe-errors.api.test.ts` | Planned |
 | API-30 | API/Security | FR-08, BR-14, AC-19 | Staff/Admin Attachment download; Requester, removed, wrong-Ticket and storage failures | authorized bytes/headers; safe 403/404/500, no path leak | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
-| UI-01 | UI | FR-01, AC-01–AC-02, AC-17 | Login form validation/busy/errors/focus; unknown email/wrong password/inactive account | accessible states and routing; all account-specific failures show `Unable to sign in with the provided credentials.` without account-state hints or entry to authenticated shell | `client/tests/lab-03/Login.test.tsx` | Planned |
-| UI-02 | UI | FR-02, AC-03, AC-17 | Password rules/change/Logout/focus | forced flow cannot bypass | `client/tests/lab-03/ChangePassword.test.tsx` | Planned |
-| UI-03 | UI | FR-04, AC-04–AC-05 | Role shell nav/direct route/logout incl. Admin queue access | correct nav; forbidden protected | `client/tests/lab-03/AppAuthorization.test.tsx` | Planned |
+| UI-01 | UI | FR-01, AC-01–AC-02, AC-17 | Login form validation/busy/errors/focus; unknown email/wrong password/inactive account | accessible states and routing; all account-specific failures show `Unable to sign in with the provided credentials.` without account-state hints or entry to authenticated shell | `client/tests/lab-03/Login.test.tsx` | Pass — #30 Login component tests |
+| UI-02 | UI | FR-02, AC-03, AC-17 | Password rules/change/Logout/focus | forced flow cannot bypass | `client/tests/lab-03/ChangePassword.test.tsx` | Pass — #30 Change Password component tests and auth browser flow |
+| UI-03 | UI | FR-04, AC-04–AC-05 | Role shell nav/direct route/logout incl. Admin queue access | correct nav; forbidden protected | `client/tests/lab-03/AppAuthorization.test.tsx` | Partial — #30 account shell/logout tested; final role navigation remains #31 |
 | UI-04 | Regression | FR-05–FR-06, AC-06, AC-12, AC-14 | No selector; own Ticket/comment and status-aware resolution UI | authenticated requester flow works; terminal action absent | `client/tests/lab-03/RequesterRegression.test.tsx` | Planned |
 | UI-05 | UI | FR-07, AC-08, AC-17 | Queue controls/URL/states/metadata retry | strict query and recoverable feedback | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
 | UI-06 | UI | FR-08–FR-12, AC-09–AC-14, AC-17, AC-19 | Staff detail controls/conflicts, active/final owner, Attachment download, comments/notes | role-safe operational flows and exact staff download route | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
@@ -76,7 +76,7 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | RV-03 | Browser | AC-18 | Staff Detail comments/notes/actions | no confusion/overlap; focus works | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
 | RV-04 | Browser | AC-18 | User Management list/forms/dialogs | responsive cards/forms/focus | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
 | A11Y-01 | Browser | AC-18 | axe, landmarks, names, contrast, live regions | no serious/critical violations | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
-| E2E-01 | E2E | AC-01–AC-05 | login → forced change → role home → logout | complete auth path passes | `e2e/lab-03/authentication.spec.ts` | Planned |
+| E2E-01 | E2E | AC-01–AC-05 | login → forced change → role home → logout | complete auth path passes | `client/e2e/lab-03/authentication.spec.ts` | Partial — real auth/account/logout flow passed; final role home and Ticket cutover remain #31 |
 | E2E-02 | E2E | AC-08–AC-14 | queue → claim → priority/status → comment/note; requester indication | complete staff/requester collaboration | `e2e/lab-03/staff-ticket-flow.spec.ts` | Planned |
 | E2E-03 | E2E | AC-15–AC-16 | create/edit/reset/deactivate safety and new-user login | complete admin path passes | `e2e/lab-03/user-administration.spec.ts` | Planned |
 
@@ -148,16 +148,23 @@ npm --prefix client run test:e2e
 git diff --check
 ```
 
-## 6. Final Evidence
+## 6. Local Verification Evidence — Issue #30
+
+ผลด้านล่างมาจาก working tree บน branch `feat/lab3-authentication` ซึ่งต่อจาก `db281f2` ไม่ใช่ผล hosted CI หรือ final committed SHA การ push/review ยังไม่ได้ทำในรอบนี้
 
 | Evidence | Commit/run | Result |
 |---|---|---|
-| Contract review | [PR #39 review on `b8e0412`](https://github.com/L0u1sss/TokTickIT/pull/39#pullrequestreview-5210534997) | Changes requested; Login failure contract remediation prepared locally, peer re-review pending |
-| Migration + seed | Not run — implementation out of scope for Issue #29 | Planned |
-| Server suites | Not run — implementation out of scope for Issue #29 | Planned |
-| Client suites | Not run — implementation out of scope for Issue #29 | Planned |
-| E2E/browser | Not run — implementation out of scope for Issue #29 | Planned |
-| Hosted CI | Not available for implementation yet | Planned |
-| Peer approval | Not available yet | Pending |
+| Auth migration | Local disposable PostgreSQL schema; `auth.api.test.ts` | Migration deployment and Prisma schema diff passed; full Requester migration/seed DB-01–DB-04 remain #31 |
+| Server suites | `npm --prefix server test` | 224/224 passed, 22 files; includes 13 password-policy tests and 16 auth API tests |
+| Client suites | `npm --prefix client test` | 92/92 passed, 13 files; includes 8 auth component tests |
+| Auth E2E/browser | `npm --prefix client run test:auth:e2e` | 1/1 passed against isolated real API/database; Login → forced change → account → Logout and direct-account denial |
+| Auth account viewport checks | Same auth browser test | No-overflow/account Logout checks at 1440×900, 834×1112 and 390×844; not full RV-01 or 200% zoom evidence |
+| Lint/build | Server and client `run lint`, `run build` | Passed |
+| Hosted CI | Workflow updated for `lab3-staging` and auth browser test | Pending — no hosted result claimed for uncommitted changes |
+| Peer approval | Issue #30 implementation | Pending |
+
+UT-01 email assertions are implemented in `server/tests/lab-03/password-policy.test.ts`; confirmation/reuse and session rotation are in `auth.api.test.ts`. The labsheet E2E location maps to `client/e2e/lab-03/` in this repository.
+
+`/login`, `/change-password` and `/account` use the new session flow. Existing Lab 2 Ticket routes still use legacy requester context until #31; passing regression tests does **not** prove application-wide Lab 3 authorization or selector removal. See [authentication implementation and run instructions](authentication-implementation.md).
 
 เมื่อ implementation เสร็จ ต้องใส่ exact final SHA, test counts, workflow run link และ screenshot paths ห้ามเขียน “all tests pass” โดยไม่มี reproducible evidence

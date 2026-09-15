@@ -2,8 +2,8 @@
 
 - **Developer:** [L0u1sss](https://github.com/L0u1sss)
 - **LLM/agent used:** OpenAI Codex
-- **Current scope:** Lab 3 planning, engineering contract, traceability and documentation setup
-- **Disclosure status:** Updated for Issue [#29](https://github.com/L0u1sss/TokTickIT/issues/29); implementation prompts/evidence will be appended as work proceeds
+- **Current scope:** Lab 3 engineering contract and Issue #30 authentication foundation
+- **Disclosure status:** Includes contract Issue [#29](https://github.com/L0u1sss/TokTickIT/issues/29) and local authentication implementation [#30](https://github.com/L0u1sss/TokTickIT/issues/30); actual local test results are recorded in `tests.md`, not claimed as hosted CI or peer approval
 
 ## Selected Key Prompts
 
@@ -23,6 +23,10 @@
 | 10 | Fix the PR #39 re-review on `b8e0412` locally | Aligned BR/AC/API/UI/test planning on generic Login failures, updated the review record and drafted a PR description with 19/19 AC traceability | Local contract decision: unknown email, wrong password and inactive account share `401 AUTHENTICATION_FAILED`; implementation tests remain Planned and peer re-review is pending |
 
 ## Important Decisions I Retained or Changed
+
+- Issue #30 prompt: implement authentication using the approved Lab 3 contract, then continue. Codex added User/Session storage, Argon2id, auth endpoints, session/password-change rules, auth UI, isolated API/browser tests and setup instructions. Local validation was performed with tests and lint/build commands; it is not peer approval.
+- The implementation explicitly stages User/Session and the `/login` → `/change-password` → `/account` flow in #30. Existing Requester data migration, legacy transport removal and Ticket-route activation remain in #31. The full Lab 3 cutover is not claimed complete.
+- Corrected a UI test timeout by supplying the long Unicode boundary value as one input change, and fixed Logout failure handling so the Retry action survives account-shell unmounting.
 
 - Retained the labsheet requirement to replace the Development Requester selector with authenticated identity.
 - Chose an opaque database-backed HttpOnly session cookie and Argon2id rather than asking the AI to leave auth decisions unspecified.

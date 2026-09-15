@@ -17,6 +17,40 @@ enum Status {
   NEW
 }
 
+enum UserRole {
+  REQUESTER
+  IT_STAFF
+  ADMINISTRATOR
+}
+
+// Authentication foundation (#30). RequesterUser/Ticket/Attachment migration
+// and their authenticated access cutover are implemented together in #31.
+model User {
+  id                 Int       @id @default(autoincrement())
+  displayName        String    @db.VarChar(120)
+  email              String    @unique @db.VarChar(254)
+  passwordHash       String
+  role               UserRole
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  sessions           Session[]
+}
+
+model Session {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique @db.Char(64)
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
 model RequesterUser {
   id                  Int          @id @default(autoincrement())
   displayName         String       @db.VarChar(120)

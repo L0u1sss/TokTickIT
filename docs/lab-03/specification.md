@@ -184,6 +184,8 @@ Constraints/indexes ขั้นต่ำคือ unique `User.email`, unique `
 
 ### 8.2 Migration strategy
 
+Issue #30 introduces the additive User/Session authentication foundation and separate local auth fixtures only. Steps below that convert existing Requesters, move Ticket/Attachment FKs and remove the legacy transport remain #31 deliverables. See [authentication-implementation.md](./authentication-implementation.md) for the staged entry points and collision checks required at that handoff.
+
 1. เพิ่ม enums/models/nullable columns โดยยังไม่ลบ `RequesterUser` หรือข้อมูลเดิม
 2. สร้าง `User` rows จาก Requester เดิมโดย preserve ID, displayName, email, activation state และกำหนด role `REQUESTER`
 3. สร้าง Argon2id hash จาก local-lab initial password ที่ documented และตั้ง `mustChangePassword = true`

@@ -102,6 +102,8 @@ Internal Note ใช้ shape เดียวกันแต่ต้องป�
 
 ## 3. Authentication and Session
 
+Implementation note (#30): auth endpoints below are implemented; the Requester/Staff/Admin API cutover remains in #31 and later issues. [Setup, rate-limit policy and handoff](./authentication-implementation.md). Login permits ten attempts per IP + normalized email per fifteen-minute fixed window (including successful attempts), then returns `429 TOO_MANY_ATTEMPTS` with `Retry-After`.
+
 ### 3.1 Login
 
 ```http
