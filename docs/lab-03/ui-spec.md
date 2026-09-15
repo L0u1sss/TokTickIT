@@ -62,7 +62,7 @@ Development Requester selector, Change Requester และ sessionStorage reques
 - Create Ticket, My Tickets, Ticket Detail และ AttachmentSection รักษา behavior Lab 2 แต่ identity มาจาก session
 - Header ไม่มี selector/Change Requester; loading session ต้องไม่ render ticket dataของ userก่อนหน้า
 - Ticket Detail เพิ่ม `Public comments` section: chronological list, author/role/time, textarea, character counter และ Post button
-- เพิ่ม `Problem appears resolved` action พร้อม explanatory textและ confirmation; success แสดง indication โดยไม่ claim ว่า Ticket ถูก Resolved
+- เพิ่ม `Problem appears resolved` action เฉพาะ status New/Open/In Progress/Waiting for Requester/Reopened พร้อม explanatory textและ confirmation; success แสดง indicationโดยไม่ claim ว่า Ticket ถูก Resolved ส่วน Resolved/Closed/Cancelled ไม่แสดง action และ direct API conflictต้องมี safe feedback
 - Requester ไม่เห็น owner editing, IT Priority editing, staff status control หรือ Internal Notes
 
 ## 5. IT Staff Ticket Queue
@@ -71,7 +71,7 @@ Development Requester selector, Change Requester และ sessionStorage reques
 
 - Page title, short queue purpose และ optional simple count
 - Search by Ticket Number, Summary, Requester name/email
-- Single-value filters: Status, Requested Priority, IT Priority, Owner (`All`, `Mine`, `Unassigned`, named active staff)
+- Single-value filters: Status, Requested Priority, IT Priority, Owner (`All`, `Mine`, `Unassigned`, named active IT Staff/Administrator)
 - Sort field/order, Clear filters และ pagination
 - Row/card fields: Ticket Number, Summary, Requester, Created Date, Status, Requested Priority, IT Priority, Owner, Last Updated และ “View ticket”
 
@@ -100,19 +100,21 @@ Metadata/assignee load failure ต้องแยกจาก legitimate empty c
 ### 6.1 Read-only groups
 
 - Ticket Number, dates, Summary, Description, Category, Related System และ Requester
-- Requested Priority, current IT Priority, Status และ Owner
+- Requested Priority, current IT Priority, Status, active Owner และ Final owner history (`lastOwner`) เมื่อ Ticket Closed/Cancelled
 - Problem Appears Resolved indication (ถ้ามี)
-- Existing attachment metadata/download continuity ตาม Lab 2
+- Existing attachment metadata พร้อม Download action สำหรับ IT Staff/Administrator ผ่าน `/api/staff/tickets/:id/attachments/:attId/download`; removed attachmentไม่มี action และ UI ไม่สร้าง requester download URL
 
 ### 6.2 Operational controls
 
 - `Claim ticket` แสดงเมื่อ unassigned
-- Owner select + Assign/Reassign แสดง active IT Staff และ current owner
+- Owner select + Assign/Reassign แสดง active IT Staff/Administrator และ current owner
 - IT Priority select
 - Status select แสดงเฉพาะ permitted next statesจาก current state
 - Resolve/Close/Cancel ต้อง confirmation ที่บอกผลกระทบชัดเจน
 - แต่ละ mutationมี independent pending state ป้องกัน duplicate และ refetch/merge server result
 - `409` แสดง conflictเฉพาะจุด พร้อม Reload latest ticket; `404` แสดง not-found state; safe failure มี Retry
+- เมื่อ status เปลี่ยนเป็น Closed/Cancelled UI ต้องแสดง Owner เป็น unassigned และ Final owner เป็น historical read-only valueจาก server; ห้ามเสนอ assign/reassignบน terminal Ticket
+- Attachment download pending/failureต้องไม่เปิดเผย storage path และ Retry ต้องเรียก staff routeเดิม
 
 Editable fieldsใช้ form surface/amber cue ส่วน source/requester fieldsใช้ read-only surface เพื่อไม่ให้สับสน
 
@@ -147,7 +149,7 @@ Editable fieldsใช้ form surface/amber cue ส่วน source/requester fi
 ### 7.3 Edit user
 
 - Fields: Name, Email, one Role, Active state; separate “Set new initial password” action
-- Self-deactivation controlอาจ disableพร้อมคำอธิบาย แต่ backendยังต้อง reject
+- Self-deactivation controlอาจ disableพร้อมคำอธิบาย แต่ backendยังต้อง reject User ที่มี active Ticket assignmentsต้อง reassignหรือปิด/ยกเลิก Ticket ก่อน deactivate/demote; historical Final ownerไม่ขวางและ UI ต้องไม่เรียกร้องให้แก้ historical Ticket
 - Last-active-admin conflict แสดงข้อความและคืน focusไป status/role control
 - ไม่มี Delete action, multiple-role UI, bulk selection, import/export หรือ account history
 

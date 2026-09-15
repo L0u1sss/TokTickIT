@@ -19,6 +19,7 @@
 | 6 | Add a Lab 3 section to README based on the labsheet | Summarised roles, required repository increment, branch flow and submission headings | Checked that README describes requirements, not fabricated implementation evidence |
 | 7 | Write the Issue #29 title/description and branch scope | Produced a docs-only engineering-contract issue definition | Confirmed exact issue body from GitHub and used branch `docs/lab3-engineering-contract` |
 | 8 | Implement Issue #29 using the Lab 3 reference | Drafted numbered FR/BR/AC, matrices, migration, API/UI contracts and pre-implementation tests | Chose session/password/workflow decisions, removed ambiguous TBDs and kept every test status Planned |
+| 9 | Apply the review comments from PR #39 | Identified cross-file contradictions and proposed atomic ownership, historical-owner, status and Origin rules | Verified the review against the contract, chose a dedicated staff download route and added explicit planned race/security tests |
 
 ## Important Decisions I Retained or Changed
 
@@ -28,6 +29,7 @@
 - Defined exact status transitions, queue defaults, password/content limits and error behavior so implementation tests have observable boundaries.
 - Required migration tests on both an empty database and populated Lab 2 data before removing the old requester model.
 - Rejected any suggestion to mark tests, CI, screenshots, reviews or approvals as complete before evidence exists.
+- Separated active `ownerId` from terminal `lastOwnerId`, required one transaction/lock protocol across assignment and account eligibility changes, and required Login Origin validation because Login creates the session cookie.
 
 ## My Reflection
 

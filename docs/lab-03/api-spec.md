@@ -12,6 +12,7 @@
 - Request JSON ต้องเป็น object, `Content-Type: application/json` และ reject unknown fields
 - Integer path/query IDs ต้องเป็น positive base-10 integer; string length นับด้วย Unicode code points หลัง trim
 - Protected requests ใช้ cookie `toktickit_session`; client ส่ง `credentials: "include"`
+- ทุก browser request ที่ใช้ unsafe method ต้องส่ง `Origin` ตรง configured client origin รวม `POST /api/auth/login`; missing/unapproved Origin คืน `403 ORIGIN_NOT_ALLOWED` ก่อน credential/body validation
 - Response ห้ามมี `password`, `passwordHash`, session token/hash หรือ Internal Notes สำหรับ Requester
 - Endpoint เดิมของ Lab 2 คง path เดิม แต่ไม่ใช้ `x-requester-id`; identity มาจาก session ตาม BR-12
 
@@ -118,6 +119,8 @@ Body: `{ "email": "user@example.test", "password": "Local-only-password1!" }`
 - `403 ACCOUNT_INACTIVE`: valid credentials แต่ inactive; ไม่สร้าง session
 - `500 INTERNAL_ERROR`: safe failure
 
+Request นี้ต้องผ่าน Origin check แม้ caller ยังไม่มี session cookie เพราะ response ที่สำเร็จจะสร้าง cookie; invalid/missing Origin ต้องไม่ตรวจหรือเปิดเผยผล credentials
+
 Login endpoint ต้อง rate-limit แบบ local-course appropriate ต่อ IP+normalized email และคืน `429 TOO_MANY_ATTEMPTS` พร้อม `Retry-After` หลังเกิน policy ที่ implementation document
 
 ### 3.2 Current user
@@ -170,10 +173,10 @@ Allowed role: `REQUESTER`; paths และ success schemas เดิมคงอ
 | Metadata | `GET /api/metadata` | authenticated; active categories/systems |
 | Create Ticket | `POST /api/tickets` | requester from session; reject body `requesterId` |
 | My Tickets | `GET /api/tickets` | session-scoped; expanded status values |
-| Ticket Detail | `GET /api/tickets/:id` | owner-only safe lookup; adds operational read-only fields |
-| Upload | `POST /api/tickets/:id/attachments` | owner-only; uploader from session |
-| Download | `GET /api/tickets/:id/attachments/:attId/download` | owner-only private download |
-| Remove | `PATCH /api/tickets/:id/attachments/:attId/remove` | owner-only; remover from session |
+| Ticket Detail | `GET /api/tickets/:id` | submitting Requester-only safe lookup; adds operational read-only fields |
+| Upload | `POST /api/tickets/:id/attachments` | submitting Requester only; uploader from session |
+| Download | `GET /api/tickets/:id/attachments/:attId/download` | submitting Requester-only private download |
+| Remove | `PATCH /api/tickets/:id/attachments/:attId/remove` | submitting Requester only; remover from session |
 
 `GET /api/requesters` ถูกถอดออกและไม่มี selector replacement endpoint Legacy `x-requester-id` ถูก ignore และห้ามมีผลต่อ query/write; ownership tests ต้องส่งค่าของ user อื่นเพื่อยืนยัน
 
@@ -196,9 +199,10 @@ POST /api/tickets/:id/comments
 POST /api/tickets/:id/problem-appears-resolved
 ```
 
-- owner Requester เท่านั้น; body เป็น `{}` หรือไม่มี body
+- owner Requester เท่านั้น; body เป็น `{}` หรือไม่มี body และ current status ต้องเป็น `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER` หรือ `REOPENED`
 - `200`: `{ "problemAppearsResolvedAt": "...", "problemAppearsResolvedBy": CurrentUserSummary }`
 - ส่งซ้ำสำหรับ indication ปัจจุบันคืน representation เดิมและไม่เปลี่ยน Ticket status
+- status `RESOLVED`, `CLOSED` หรือ `CANCELLED` → `409 RESOLUTION_INDICATION_NOT_ALLOWED`; status transition ไป `REOPENED` clear indication เดิม
 
 ## 5. IT Staff APIs
 
@@ -216,7 +220,7 @@ GET /api/staff/tickets?search=printer&status=OPEN&requestedPriority=HIGH&itPrior
 | `status` | optional exact status enum |
 | `requestedPriority` | optional exact priority enum |
 | `itPriority` | optional exact priority enum |
-| `ownerId` | optional positive active staff ID, `me`, หรือ `unassigned` |
+| `ownerId` | optional positive active IT Staff/Administrator ID, `me`, หรือ `unassigned` |
 | `sortBy` | `updatedAt` (default), `createdAt`, `ticketNumber`, `itPriority`, `status` |
 | `sortOrder` | `desc` default หรือ `asc` |
 | `page` | positive integer, default 1 |
@@ -264,9 +268,21 @@ GET /api/staff/assignees
 GET /api/staff/tickets/:id
 ```
 
-คืน `200` Ticket detail ที่รวม requester, category/system, requested/IT priorities, owner, status, resolution indication, active attachment metadata และ Public Comments; Internal Notesดึงแยกเพื่อไม่ปะปน response ไม่พบ → `404`
+คืน `200` Ticket detail ที่รวม requester, category/system, requested/IT priorities, active `owner`, historical `lastOwner`, status, resolution indication, active attachment metadata และ Public Comments; Internal Notesดึงแยกเพื่อไม่ปะปน response ไม่พบ → `404` Attachment download actionต้องใช้ staff routeในหัวข้อ 5.4 ไม่ใช้ requester route
 
-### 5.4 Claim and assign/reassign
+### 5.4 Download an active Attachment
+
+```http
+GET /api/staff/tickets/:id/attachments/:attId/download
+```
+
+- Allowed roles: `IT_STAFF`, `ADMINISTRATOR`
+- `200`: private file bytes พร้อม validated `Content-Type`, exact `Content-Length`, `X-Content-Type-Options: nosniff` และ safe `Content-Disposition: attachment` filename เช่นเดียวกับ Lab 2
+- malformed IDs → `400`; missing Ticket, wrong-Ticket Attachment, missing metadata/file หรือ removed Attachment → safe `404 NOT_FOUND`
+- storage key/path ไม่ปรากฏใน URL, JSON, header หรือ error; safe pre-stream failureใช้ `500 INTERNAL_ERROR`
+- Requester เรียก staff route → `403 FORBIDDEN`; requester route `/api/tickets/:id/attachments/:attId/download` ยังคง owner-only
+
+### 5.5 Claim and assign/reassign
 
 ```http
 POST  /api/staff/tickets/:id/claim
@@ -275,10 +291,11 @@ PATCH /api/staff/tickets/:id/owner
 
 - Claim body `{}`; `200` คืน updated owner; assigned อยู่แล้ว → `409 TICKET_ALREADY_ASSIGNED`
 - Owner body `{ "ownerId": 12 }`; target ต้องเป็น active `IT_STAFF` หรือ `ADMINISTRATOR`; `200` คืน updated owner
-- invalid/inactive/non-staff target → `400 INVALID_ASSIGNEE`; missing Ticket → `404`
-- concurrency ต้อง serialize/conditional-update เพื่อมีผู้ชนะหนึ่งราย
+- malformed `ownerId` → `400 VALIDATION_ERROR`; missing target/Ticket → `404`; inactiveหรือ non-operational target → `409 INVALID_ASSIGNEE`
+- `CLOSED`/`CANCELLED` → `409 TICKET_NOT_ASSIGNABLE`
+- Claim/assign/reassign กับ deactivate/demote ต้องใช้ PostgreSQL transaction-scoped advisory lock namespace เดียวกัน keyed by target `User.id` จากนั้น re-check Ticket status, owner, target role และ activation ก่อน write หาก assignment commitก่อน account mutationต้องคืน `409 USER_HAS_ASSIGNED_TICKETS`; หาก account mutation commitก่อน assignmentต้องคืน `409 INVALID_ASSIGNEE`
 
-### 5.5 Update IT Priority
+### 5.6 Update IT Priority
 
 ```http
 PATCH /api/staff/tickets/:id/it-priority
@@ -286,15 +303,15 @@ PATCH /api/staff/tickets/:id/it-priority
 
 Body `{ "itPriority": "HIGH" }`; `200` คืน `{ "itPriority": "HIGH", "updatedAt": "..." }`; invalid value/shape → `400`
 
-### 5.6 Update status
+### 5.7 Update status
 
 ```http
 PATCH /api/staff/tickets/:id/status
 ```
 
-Body `{ "status": "IN_PROGRESS" }`; `200` คืน status และ updatedAt; value unknown → `400`; known แต่ transition ไม่อนุญาต → `409 INVALID_STATUS_TRANSITION`
+Body `{ "status": "IN_PROGRESS" }`; `200` คืน status และ updatedAt; value unknown → `400`; known แต่ transition ไม่อนุญาต → `409 INVALID_STATUS_TRANSITION` เมื่อ target เป็น `CLOSED` หรือ `CANCELLED` server ต้อง copy current `owner` ไป `lastOwner`, clear `owner` และเปลี่ยน statusใน transactionเดียวกัน; transitionไป `REOPENED` clear Problem Appears Resolved indication เดิม
 
-### 5.7 Staff Public Comments
+### 5.8 Staff Public Comments
 
 ```http
 GET  /api/staff/tickets/:id/comments
@@ -303,7 +320,7 @@ POST /api/staff/tickets/:id/comments
 
 ใช้ schema/order/validation เดียวกับ requester comments แต่เข้าถึง Ticket ใดก็ได้ใน staff scope
 
-### 5.8 Internal Notes
+### 5.9 Internal Notes
 
 ```http
 GET  /api/staff/tickets/:id/internal-notes
@@ -364,8 +381,8 @@ Body ต้องมีอย่างน้อยหนึ่ง field จา�
 - duplicate email → `409 EMAIL_ALREADY_EXISTS`
 - deactivate self → `409 SELF_DEACTIVATION_NOT_ALLOWED`
 - deactivate/change role ของ last active Administrator → `409 LAST_ACTIVE_ADMIN_REQUIRED`
-- deactivate/changeเป็น Requester ขณะที่ target ยังเป็น Ticket owner → `409 USER_HAS_ASSIGNED_TICKETS`
-- conflicting checks ทำใน transaction พร้อม database-safe guard
+- deactivate/changeเป็น Requester ขณะที่ target ยังมี active `Ticket.ownerId` → `409 USER_HAS_ASSIGNED_TICKETS`; historical `lastOwner` ไม่ขวาง operation
+- account mutationต้องใช้ cross-operation lock เดียวกับ claim/assign/reassign แล้ว re-check active assignmentsก่อน commit เพื่อป้องกัน target กลายเป็น ineligible ownerจาก concurrent requests
 
 ### 6.4 Set new initial password
 
@@ -384,7 +401,7 @@ Body `{ "initialPassword": "New-local-password2!" }`; `200 { "user": UserSummary
 | `/api/auth/me`, logout, change-password | Allowed | Allowed | Allowed |
 | Lab 2 `/api/tickets*` requester paths | Own only | Forbidden | Forbidden |
 | requester comments/resolution indication | Own only | Forbidden | Forbidden |
-| `/api/staff/*` | Forbidden | Allowed | Allowed |
+| `/api/staff/tickets*` รวม Attachment download | Forbidden | Allowed | Allowed |
 | `/api/admin/*` | Forbidden | Forbidden | Allowed |
 
 ทุก endpoint อาจคืน safe `500 INTERNAL_ERROR`; mutating endpoint อาจคืน `429` ตาม rate/abuse controls ไม่มี endpoint ใดใช้ UI state เป็น authorization

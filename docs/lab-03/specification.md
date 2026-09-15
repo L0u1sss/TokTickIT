@@ -50,7 +50,7 @@
 - **FR-05 — Authenticated Requester regression:** Requester ต้องใช้ Create Ticket, My Tickets, Ticket Detail และ Attachment functions ของ Lab 2 ด้วย `requesterId` จาก session เท่านั้น โดยไม่มี selector หรือ Change Requester
 - **FR-06 — Requester collaboration:** Requester เจ้าของ Ticket ต้องอ่าน/เพิ่ม Public Comment และส่ง “Problem Appears Resolved” ได้ แต่ตั้ง Resolved หรือ Closed เองไม่ได้
 - **FR-07 — Staff queue:** IT Staff ต้องเห็น shared queue พร้อม search, status/requested-priority/IT-priority/owner filters, sorting, pagination และ open-detail action
-- **FR-08 — Staff ticket access:** IT Staff ต้องเปิด Ticket Detail รวม Requester, Ticket fields, owner, priorities, status, attachments และ public conversation ได้
+- **FR-08 — Staff ticket access:** IT Staff และ Administrator ต้องเปิด Ticket Detail รวม Requester, Ticket fields, owner, priorities, status, attachment metadata/secure download และ public conversation ได้
 - **FR-09 — Assignment:** IT Staff และ Administrator ต้อง claim Ticket ที่ยังไม่ assigned และ assign/reassign Ticket ให้ active IT Staff หรือ Administrator ได้ตาม authorization matrix
 - **FR-10 — Operational fields:** IT Staff และ Administrator ต้องเปลี่ยน IT Priority และ status เฉพาะค่าหรือ transition ที่ contract อนุญาต
 - **FR-11 — Public Comments:** ผู้มีสิทธิ์ต้องอ่านและเพิ่ม Public Comments แบบ append-only พร้อม author และเวลาจาก backend
@@ -73,7 +73,7 @@
 - **BR-06:** Change Password ต้องตรวจ current password, confirmation และห้ามใช้รหัสเดิม; เมื่อสำเร็จต้อง clear `mustChangePassword` และ invalidate session อื่นของบัญชีนั้น
 - **BR-07:** Session token ต้องสุ่มแบบ cryptographically secure เก็บเฉพาะ SHA-256 hash ในฐานข้อมูล ใช้ cookie `toktickit_session` แบบ `HttpOnly`, `SameSite=Lax`, `Path=/` และ `Secure` นอก local development อายุไม่เกิน 8 ชั่วโมง
 - **BR-08:** Logout ลบ server session และ expire cookie; การเรียกซ้ำให้สำเร็จแบบ idempotent โดยไม่คืนข้อมูลผู้ใช้
-- **BR-09:** Endpoint ที่เปลี่ยน state ผ่าน cookie ต้องตรวจ same-origin/Origin ที่อนุญาต และ CORS ต้อง allow เฉพาะ configured client origin พร้อม credentials
+- **BR-09:** ทุก unsafe method (`POST`, `PATCH`, `PUT`, `DELETE`) ที่ browser เรียกต้องมี `Origin` ตรงกับ configured client origin รวมถึง `POST /api/auth/login` เพราะ endpoint นี้สร้าง session cookie แม้ request เริ่มต้นยังไม่มี cookie; missing/unapproved Origin คืน `403 ORIGIN_NOT_ALLOWED` ก่อนตรวจ credentials/body และ CORS ต้อง allow เฉพาะ configured origin พร้อม credentials
 - **BR-10:** บัญชี inactive หรือ session หมดอายุต้องใช้ protected endpoint ไม่ได้ และไม่สร้าง session ใหม่อัตโนมัติ
 
 ### 5.2 Identity, authorization and ownership
@@ -86,14 +86,14 @@
 
 ### 5.3 Ticket workflow
 
-- **BR-16:** Ticket เริ่ม unassigned ได้และมี owner ได้สูงสุดหนึ่งคน โดย owner ต้องเป็น active `IT_STAFF` หรือ `ADMINISTRATOR`; contract นี้อนุญาต Administrator ทำ Ticket operations อย่างชัดเจนตาม matrix แต่ User Management ยังคงเป็นหน้าที่เฉพาะ Administrator
-- **BR-17:** Claim ทำได้เมื่อ Ticket ยัง unassigned เท่านั้น; การ claim ซ้ำหรือแข่งกันหลังมี ownerแล้วคืน `409 TICKET_ALREADY_ASSIGNED`
-- **BR-18:** Assign/reassign ต้องชี้ไป active IT Staff หรือ Administrator; ผู้ใช้ที่มี Ticket-operation permission อาจ assign/reassign ตาม shared-queue model และ server บันทึก `updatedAt`
+- **BR-16:** Ticket ที่ยังไม่เป็น terminal status เริ่ม unassigned ได้และมี active assignment (`ownerId`) ได้สูงสุดหนึ่งคน โดย owner ต้องเป็น active `IT_STAFF` หรือ `ADMINISTRATOR`; เมื่อ status เปลี่ยนเป็น `CLOSED` หรือ `CANCELLED` server ต้องย้าย final owner ไป `lastOwnerId` และตั้ง `ownerId = null` ใน transaction เดียวกัน เพื่อรักษา historical ownership โดยไม่ทำให้ terminal Ticket ขวางการ deactivate/demote ภายหลัง
+- **BR-17:** Claim ทำได้เมื่อ Ticket ยัง unassigned และไม่ใช่ `CLOSED`/`CANCELLED` เท่านั้น; การ claim ซ้ำหรือแข่งกันหลังมี ownerแล้วคืน `409 TICKET_ALREADY_ASSIGNED` และ terminal Ticket คืน `409 TICKET_NOT_ASSIGNABLE`
+- **BR-18:** Assign/reassign ทำได้เฉพาะ non-terminal Ticket และต้องชี้ไป active IT Staff หรือ Administrator ทุก operation ที่อาจ assign ให้ user หรือทำให้ user หมด eligibility ต้องใช้ PostgreSQL transaction-scoped advisory lock namespace เดียวกัน keyed by target `User.id` หลังได้ lock แล้วต้อง re-check role, activation และ current assignment ก่อน commit; ผลหลัง concurrent assign/reassign กับ deactivate/demote ต้องเป็น assignment ที่ eligible หรือ `null` เสมอ โดยหนึ่งฝั่งคืน `409` (`INVALID_ASSIGNEE` หรือ `USER_HAS_ASSIGNED_TICKETS`)
 - **BR-19:** `requestedPriority` เป็นค่าที่ Requester ส่งและแก้ไม่ได้ ส่วน `itPriority` เริ่ม copy จาก requested priority แล้วเปลี่ยนได้เฉพาะ IT Staff หรือ Administrator
 - **BR-20:** Status มี `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`; API/UI แสดง label ที่อ่านง่าย
 - **BR-21:** Status transition ต้องเป็นไปตาม matrix ในหัวข้อ 6.2 และ backend reject transition อื่นด้วย `409 INVALID_STATUS_TRANSITION`
 - **BR-22:** การเปลี่ยนเป็น `RESOLVED`, `CLOSED` หรือ `CANCELLED` ต้องมี confirmation ใน UI; confirmation เป็น usability control ส่วน backend transition validation เป็น authoritative control
-- **BR-23:** Requester “Problem Appears Resolved” สร้าง timestamp/actor indication และไม่เปลี่ยน status เป็น `RESOLVED` หรือ `CLOSED`; ส่งซ้ำหลัง indication ปัจจุบันแล้วเป็น idempotent
+- **BR-23:** Requester “Problem Appears Resolved” ทำได้เฉพาะ status `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER` หรือ `REOPENED`; สร้าง timestamp/actor indication โดยไม่เปลี่ยน formal status ส่งซ้ำขณะที่ indication ปัจจุบันยังอยู่ให้ idempotent ส่วน `RESOLVED`, `CLOSED` หรือ `CANCELLED` คืน `409 RESOLUTION_INDICATION_NOT_ALLOWED` และ transition ไป `REOPENED` ต้อง clear indication เดิมเพื่อรับรอบใหม่
 - **BR-24:** Actions Taken และเงื่อนไขที่เกี่ยวข้องกับการ resolve ถูก defer ไป Lab 4 และห้ามนำมาเป็นเงื่อนไขปิดงาน Lab 3
 
 ### 5.4 Comments and notes
@@ -108,14 +108,14 @@
 - **BR-29:** Administrator สร้าง user ได้หนึ่ง permitted role และแก้เฉพาะ name, email, role, activation state; unknown/invalid fields ถูกปฏิเสธ
 - **BR-30:** Duplicate normalized email คืน `409 EMAIL_ALREADY_EXISTS` โดยไม่แก้ข้อมูลเดิม
 - **BR-31:** Administrator ห้าม deactivate บัญชีตนเอง และห้าม deactivate หรือเปลี่ยน role ของ active Administrator คนสุดท้าย
-- **BR-32:** User ไม่มี hard-delete endpoint; ใช้ deactivation เท่านั้น User ที่เป็น owner ของ Ticket ใดอยู่ต้องถูก reassign ก่อน deactivate หรือเปลี่ยนเป็น `REQUESTER`; มิฉะนั้นคืน `409 USER_HAS_ASSIGNED_TICKETS` และ historical authorship/ownership ต้องไม่ถูกลบ
+- **BR-32:** User ไม่มี hard-delete endpoint; ใช้ deactivation เท่านั้น User ที่มี active assignment (`Ticket.ownerId`) ต้องถูก reassign หรือให้ Ticket เข้าสู่ terminal statusก่อน deactivate/เปลี่ยนเป็น `REQUESTER`; มิฉะนั้นคืน `409 USER_HAS_ASSIGNED_TICKETS` ส่วน `lastOwnerId` เป็น historical reference และไม่ขวาง operation นี้ Historical authorship/ownership ต้องไม่ถูกลบ
 - **BR-33:** Seeded credentials ใช้เฉพาะ local development ต้องระบุใน README/seed output และห้ามใช้ personal password หรือ secret จริง
 
 ### 5.6 Validation, concurrency and failures
 
 - **BR-34:** Validation ใช้ Unicode code-point counting เหมือนกันทั้ง UI และ API; integer IDs ต้องเป็น positive base-10 integers และ enum/query values ต้องตรง exact contract
 - **BR-35:** Server เป็นผู้กำหนด actor, owner-sensitive fields, timestamps และ workflow outcomes; client-supplied protected fields ถูกปฏิเสธ
-- **BR-36:** Concurrent claim, last-active-admin change และ unique-email operation ต้องมี database/transaction protection ไม่พึ่ง check ฝั่ง clientอย่างเดียว
+- **BR-36:** Concurrent claim, assign/reassign versus deactivate/demote, last-active-admin change และ unique-email operation ต้องมี database/transaction protection ไม่พึ่ง check ฝั่ง client ทุก path ที่เปลี่ยน owner eligibility ต้องใช้ lock order/transaction protocol เดียวกันและ re-checkก่อน commit เพื่อให้ invariant `ownerId IS NULL OR owner is active IT_STAFF/ADMINISTRATOR` เป็นจริงหลังทุก commit
 - **BR-37:** Unexpected errorsคืน safe error envelope และ server log correlation ID โดยไม่เผย stack trace, SQL, token, password hash หรือ protected resource data
 - **BR-38:** ทุก Lab 2 invariant ที่ไม่ถูกแทนที่โดย contract นี้ยังมีผล รวม attachment 5 MiB decision, private opaque storage, soft removal และ idempotent ticket creation
 - **BR-39:** Login ต้องจำกัดความถี่ตาม IP และ normalized email ด้วยค่าที่กำหนดจาก environment; เมื่อเกิน limit คืน `429 TOO_MANY_ATTEMPTS` และ `Retry-After` โดยไม่เปิดเผยว่าบัญชีมีอยู่หรือไม่
@@ -133,6 +133,7 @@
 | Problem Appears Resolved on own Ticket | No | Yes | No | No |
 | Shared Ticket Queue / staff Ticket Detail | No | No | Yes | Yes |
 | Claim, assign/reassign, IT Priority, status | No | No | Yes | Yes |
+| Download active Attachment from permitted Ticket | No | Own Ticket only | Yes | Yes |
 | Public Comments on any Ticket | No | No | Yes | Yes |
 | Internal Notes on any Ticket | No | No | Yes | Yes |
 | User Management | No | No | No | Yes |
@@ -173,13 +174,13 @@ Contract นี้ใช้ทางเลือกที่ labsheet อนุ�
 |---|---|
 | `User` | Preserve migrated requester IDs; `displayName` varchar(120), canonical lowercase unique `email` varchar(254), `passwordHash`, `role`, `isActive`, `mustChangePassword`, timestamps; relations to submitted Tickets, owned Tickets, Attachments, Comments, Notes และ resolution indications |
 | `Session` | Opaque token hash unique, `userId`, `expiresAt`, `createdAt`, optional `revokedAt`; index by user and expiry |
-| `Ticket` | Existing fields plus nullable `ownerId`, `itPriority`, expanded status, optional resolution-indication actor/time; indexes for queue ordering and filters |
+| `Ticket` | Existing fields plus nullable active-assignment `ownerId`, nullable historical `lastOwnerId`, `itPriority`, expanded status, optional resolution-indication actor/time; indexes for queue ordering and filters |
 | `PublicComment` | `id`, `ticketId`, `authorId`, `content`, `createdAt`; append-only; index `(ticketId, createdAt, id)` |
 | `InternalNote` | `id`, `ticketId`, `authorId`, `content`, `createdAt`; append-only; index `(ticketId, createdAt, id)` |
 
 `Category`, `RelatedSystem` และ `Attachment` เดิมยังคงอยู่ โดย Attachment actor relations เปลี่ยนจาก `RequesterUser` เป็น `User` โดยรักษา IDs
 
-Constraints/indexes ขั้นต่ำคือ unique `User.email`, unique `Session.tokenHash`, foreign keys แบบ restrictive สำหรับ historical actor/owner records, session indexesที่ `(userId, expiresAt)` และ `expiresAt`, queue indexesที่รองรับ `(status, updatedAt, id)`, `(ownerId, updatedAt, id)`, `(itPriority, updatedAt, id)` และ `(requestedPriority, updatedAt, id)` รวมถึง comment/note indexes `(ticketId, createdAt, id)` การบังคับว่า owner ต้อง active และมี operational roleทำใน transactional service เพราะ cross-row stateตรวจด้วย simple check constraintไม่ได้
+Constraints/indexes ขั้นต่ำคือ unique `User.email`, unique `Session.tokenHash`, restrictive foreign keys สำหรับ historical actor/`lastOwnerId`, session indexesที่ `(userId, expiresAt)` และ `expiresAt`, queue indexesที่รองรับ `(status, updatedAt, id)`, `(ownerId, updatedAt, id)`, `(itPriority, updatedAt, id)` และ `(requestedPriority, updatedAt, id)` รวมถึง comment/note indexes `(ticketId, createdAt, id)` Ticket มี same-row check ว่า terminal status ต้องมี `ownerId = null`; ส่วน owner role/activation เป็น cross-row invariant ที่ transactional service บังคับด้วย protocol เดียวกันตาม BR-18/BR-36
 
 ### 8.2 Migration strategy
 
@@ -218,15 +219,16 @@ REST API ใช้ JSON UTF-8 ใต้ `/api`, authenticated cookie ตาม B
 - **AC-07:** Given migrated Lab 2 data, when migrations finish then requester, ticket and attachment relationships/counts remain intact and functions regress successfully
 - **AC-08:** Given staff queue data, when valid search/filter/sort/page queries are used then deterministic correct rows and pagination metadata are returned; invalid query returns `400`
 - **AC-09:** Given unassigned Ticket, when IT Staff claims it then that staff becomes owner exactly once; conflicting claim is `409`
-- **AC-10:** Given Ticket and active IT Staff, when authorized assignment or IT Priority update occurs then validated change persists and queue/detail agree
+- **AC-10:** Given Ticket และ eligible owner, when authorized assignment/IT Priority update หรือ concurrent assignmentกับ account eligibility change occurs then validated change persists, queue/detail agree และ committed non-null owner remains eligible
 - **AC-11:** Given a current Ticket status, when IT Staff requests a permitted transition it persists; invalid transition is `409` and terminal status remains unchanged
 - **AC-12:** Given Ticket access, when authorized actor posts valid Public Comment then all permitted viewers see identical append-only author/time/content; invalid content is rejected
 - **AC-13:** Given Requester or unauthorized role, when Internal Note endpoint is requested then no note data or existence detail is disclosed
-- **AC-14:** Given owning Requester, when Problem Appears Resolved is submitted then indication is recorded but formal Ticket status is not changed
+- **AC-14:** Given owning Requester and an allowed non-terminal workflow status, when Problem Appears Resolved is submitted then indication is recorded without formal status change; Resolved/Closed/Cancelled requests are rejected and Reopened starts a fresh indication cycle
 - **AC-15:** Given Administrator, when list/search/filter/create/edit/set-initial-password actions use valid data then results persist with exactly one role and next login requires password change
 - **AC-16:** Given duplicate email, self-deactivation, last-active-admin removal หรือ deactivate/role-change ของ assigned owner, when Administrator submits change then backend returns conflict and preserves safe valid state
 - **AC-17:** Given processing/empty/no-results/forbidden/conflict/failure scenarios, when user uses a major screen then clear recoverable feedback is shown without leaking secrets or private notes
 - **AC-18:** Given desktop/tablet/mobile viewport and keyboard/zoom use, when major Lab 3 screens are exercised then content remains usable without horizontal page overflow, controls are labelled, focus is visible/managed, and status is announced
+- **AC-19:** Given an active Attachment on a Ticket, when IT Staff or Administrator downloads through the staff Attachment route then authorized bytes and safe headers are returned; Requester, missing/removed/wrong-Ticket requests reveal no protected file or storage path
 
 ทุก AC map ไปยัง planned tests ใน [tests.md](./tests.md)
 
@@ -249,6 +251,8 @@ REST API ใช้ JSON UTF-8 ใต้ `/api`, authenticated cookie ตาม B
 - เลือก opaque database-backed session cookie แทนเก็บ bearer token ใน browser storage เพื่อลดการเปิดเผย credential ต่อ client scriptและรองรับ server-side logout invalidation
 - เลือก Argon2id สำหรับ password hashing; ค่า tuning ต้องวัดใน CI/development และห้าม hard-code secret
 - Contract นี้อนุญาต Administrator ใช้ Ticket Queue/operations ผ่าน staff endpoints อย่างชัดเจน เพื่อรองรับ owner และ IT Priority rule ของ labsheet; User Management ยังคงห้าม IT Staff
+- `ownerId` หมายถึง active assignment เท่านั้น ส่วน `lastOwnerId` เก็บ final historical owner เมื่อ Ticket ปิดหรือยกเลิก จึงไม่ใช้ historical rows เป็นเหตุผลบังคับ reassign ตอน deactivate/demote
+- Staff/Admin download ใช้ route แยก `/api/staff/tickets/:id/attachments/:attId/download`; requester route เดิมยังเป็น owner-only และไม่ถูกเปิดกว้าง
 - Staff queue default order คือ `updatedAt desc, id desc`; page size default 20 และสูงสุด 100
 - User Management ไม่บังคับ pagination เพราะ labsheet ระบุว่าไม่จำเป็น; search กับ single role filter เพียงพอ
 - `Problem Appears Resolved` เป็น indication ไม่ใช่ comment และไม่ใช่ status transition

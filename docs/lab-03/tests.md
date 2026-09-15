@@ -32,13 +32,14 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | DB-03 | Integration | BR-19, AC-07 | Ticket status/owner/IT Priority backfill | NEW preserved; owner null; IT=requested | `server/tests/lab-03/migration.test.ts` | Planned |
 | DB-04 | Integration | BR-33, FR-17 | Seed run twice and role/account/ticket fixtures | exact stable fixtures; no duplicates | `server/tests/lab-03/migration.test.ts` | Planned |
 | DB-05 | Integration | BR-36, AC-09, AC-16 | concurrent claim, unique email, last-admin guards | one safe winner; invariant remains | `server/tests/lab-03/concurrency.test.ts` | Planned |
+| DB-06 | Integration | BR-18, BR-32, BR-36, AC-10, AC-16 | assign/reassign to X racing deactivate/demote X | one side 409; final non-null owner always eligible | `server/tests/lab-03/concurrency.test.ts` | Planned |
 | API-01 | API | FR-01, AC-01 | Valid active login and safe response/cookie | 200, identity+role, secure cookie attrs | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-02 | API | BR-01–BR-03, BR-39, AC-02 | Wrong password/unknown email/inactive user/rate limit | no session; indistinguishable safe errors/429 | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-03 | API | BR-07, BR-10, AC-04 | Missing/invalid/expired/revoked session | 401, no protected data | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-04 | API | FR-02, AC-03 | Forced password user accesses endpoints | only me/change/logout allowed | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-05 | API | BR-04–BR-06, AC-03 | Change-password valid/invalid/boundary/rotation | flag clears; other sessions revoked | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-06 | API | FR-03, AC-04 | Logout with valid/missing session | 204 idempotent; cookie/session invalid | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| API-07 | Security | BR-09 | Cross-origin mutation/CORS credentials | unapproved origin rejected | `server/tests/lab-03/auth.api.test.ts` | Planned |
+| API-07 | Security | BR-09 | Missing/cross-origin mutation including Login before cookie exists | 403 before credential/body evaluation | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | API-08 | Security | BR-11–BR-14, AC-05 | Cross-role direct API matrix | 403/404 as contract; no data leak | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | API-09 | Regression | FR-05, AC-06 | Supplied requesterId/header cannot switch identity | own data only; protected fields rejected/ignored | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | API-10 | Regression | FR-05, AC-06–AC-07 | Lab 2 create/list/detail/attachments under session | prior behavior passes with auth | `server/tests/lab-03/requester-regression.api.test.ts` | Planned |
@@ -48,25 +49,26 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | API-14 | API | FR-07, AC-08 | Invalid/unknown/duplicate query | 400; no silent fallback | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
 | API-15 | API | FR-08, AC-05 | Staff Ticket Detail and attachment continuity | permitted complete detail; 404 missing | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | API-16 | API | FR-09, AC-09 | Claim unassigned and conflict/concurrency | owner set once; 409 conflict | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
-| API-17 | API | BR-16, BR-18, AC-10 | Assign/reassign active staff/admin; bad target | persists valid; invalid rejected | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
+| API-17 | API | BR-16, BR-18, BR-36, AC-10 | Assign/reassign eligible staff/admin, terminal/bad target and races | valid persists; invalid/conflicting 409 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | API-18 | API | BR-19, AC-10 | IT Priority update versus Requested Priority | IT changes; requested remains unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
-| API-19 | API | BR-20–BR-22, AC-11 | All valid/invalid/terminal status changes | permitted persists; invalid 409 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
+| API-19 | API | BR-16, BR-20–BR-22, AC-11 | All valid/invalid/terminal status changes | valid persists; terminal archives lastOwner and clears owner; invalid 409 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | API-20 | API | FR-11, BR-25–BR-27, AC-12 | Public Comment create/list/boundaries/order | append-only server author/time | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
 | API-21 | Security | FR-12, BR-28, AC-13 | Requester accesses note routes/payloads/counts | forbidden/no note existence or content | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
 | API-22 | API | FR-12, BR-25–BR-28 | Staff/Admin Internal Note create/list/boundaries | append-only server author/time | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
-| API-23 | API | FR-06, BR-23, AC-14 | Problem Appears Resolved and replay | indication idempotent; status unchanged | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
+| API-23 | API | FR-06, BR-23, AC-14 | Problem Appears Resolved allowed/disallowed statuses, replay and Reopened cycle | allowed idempotent; terminal/formal states 409; status unchanged | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
 | API-24 | API | FR-13, AC-15 | Admin list, name/email search, role filter | correct ordered safe users | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-25 | API | FR-14, AC-15–AC-16 | Create user/one role/duplicate/invalid | 201 valid; 400/409 invalid | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-26 | API | FR-14, AC-15–AC-16 | Edit name/email/role/activation | permitted fields persist safely | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| API-27 | Security | BR-31–BR-32, AC-16 | Self-deactivation, last admin, assigned-owner role/state, no delete | conflict; account/ticket/history preserved | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
+| API-27 | Security | BR-31–BR-32, BR-36, AC-16 | Self-deactivation, last admin, active assignment, historical lastOwner, no delete | active conflict; history alone permits change and remains preserved | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-28 | API | FR-15, AC-15 | Set initial password and next login | sessions revoked; forced change true | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-29 | Security | BR-37, AC-13, AC-17 | Unexpected failures and response/log redaction | safe 500 + requestId; no secrets/private data | `server/tests/lab-03/safe-errors.api.test.ts` | Planned |
+| API-30 | API/Security | FR-08, BR-14, AC-19 | Staff/Admin Attachment download; Requester, removed, wrong-Ticket and storage failures | authorized bytes/headers; safe 403/404/500, no path leak | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | UI-01 | UI | FR-01, AC-01–AC-02, AC-17 | Login form validation/busy/errors/focus | accessible states and routing | `client/tests/lab-03/Login.test.tsx` | Planned |
 | UI-02 | UI | FR-02, AC-03, AC-17 | Password rules/change/Logout/focus | forced flow cannot bypass | `client/tests/lab-03/ChangePassword.test.tsx` | Planned |
 | UI-03 | UI | FR-04, AC-04–AC-05 | Role shell nav/direct route/logout incl. Admin queue access | correct nav; forbidden protected | `client/tests/lab-03/AppAuthorization.test.tsx` | Planned |
-| UI-04 | Regression | FR-05–FR-06, AC-06, AC-12, AC-14 | No selector; own Ticket/comment/resolution UI | authenticated requester flow works | `client/tests/lab-03/RequesterRegression.test.tsx` | Planned |
+| UI-04 | Regression | FR-05–FR-06, AC-06, AC-12, AC-14 | No selector; own Ticket/comment and status-aware resolution UI | authenticated requester flow works; terminal action absent | `client/tests/lab-03/RequesterRegression.test.tsx` | Planned |
 | UI-05 | UI | FR-07, AC-08, AC-17 | Queue controls/URL/states/metadata retry | strict query and recoverable feedback | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
-| UI-06 | UI | FR-08–FR-12, AC-09–AC-14, AC-17 | Staff detail controls/conflicts/comments/notes | role-safe operational flows | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
+| UI-06 | UI | FR-08–FR-12, AC-09–AC-14, AC-17, AC-19 | Staff detail controls/conflicts, active/final owner, Attachment download, comments/notes | role-safe operational flows and exact staff download route | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | UI-07 | UI | FR-13–FR-15, AC-15–AC-17 | User list/create/edit/password/safety feedback | minimal admin workflow accessible | `client/tests/lab-03/UserManagement.test.tsx` | Planned |
 | UI-08 | UI/Security | BR-27–BR-28, AC-12–AC-13 | Malicious comment/note content rendering | rendered as text; notes remain private | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | RV-01 | Browser | AC-18 | Login/Change Password at 3 viewports + 200% | no overflow/clipping; keyboard usable | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
@@ -91,15 +93,16 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | AC-07 | DB-01–DB-04, API-10 |
 | AC-08 | UT-05, API-11–API-14, UI-05, E2E-02 |
 | AC-09 | DB-05, API-16, UI-06, E2E-02 |
-| AC-10 | API-17, API-18, UI-06, E2E-02 |
+| AC-10 | DB-06, API-17, API-18, UI-06, E2E-02 |
 | AC-11 | UT-03, API-19, UI-06, E2E-02 |
 | AC-12 | UT-04, API-20, UI-04, UI-06, E2E-02 |
 | AC-13 | API-08, API-21, API-29, UI-08, E2E-02 |
 | AC-14 | API-23, UI-04, UI-06, E2E-02 |
 | AC-15 | API-24–API-26, API-28, UI-07, E2E-03 |
-| AC-16 | DB-05, API-25, API-27, UI-07, E2E-03 |
+| AC-16 | DB-05–DB-06, API-25, API-27, UI-07, E2E-03 |
 | AC-17 | API-29, UI-01–UI-07 |
 | AC-18 | RV-01–RV-04, A11Y-01 |
+| AC-19 | API-30, UI-06, E2E-02 |
 
 ## 4. Required Test Locations
 
