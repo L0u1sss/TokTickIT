@@ -263,3 +263,109 @@ npm --prefix client run test:e2e
 
 CI ใช้ PostgreSQL service และฐานข้อมูล `toktickit_test` แบบ isolated ด้วยหลักการเดียวกัน พร้อมติดตั้ง Chromium และรันทั้ง responsive audit กับ live E2E รายละเอียดคำสั่งเพิ่มเติมอยู่ใน `docs/lab-02/tests.md` ห้ามใช้ `prisma migrate reset` กับ development หรือ production database เพื่อเตรียม test environment
 
+---
+
+## Lab 3 — Users, Roles, IT Staff Ticketing และ Admin Screens
+
+Lab 3 อ้างอิงจาก Lab 3 labsheet และต่อยอดจาก Lab 2 โดยเปลี่ยน Development Requester selector เป็นระบบ authentication จริง พร้อม role-based authorization สำหรับ 3 roles:
+
+- **Requester** — สร้างและจัดการเฉพาะ Ticket/Attachment ของตนเอง, Public Comments และแจ้งว่า problem appears resolved
+- **IT Staff** — ใช้ Ticket Queue, เปิด Ticket Detail, claim/reassign Ticket, ตั้ง IT Priority, เปลี่ยน status ตาม workflow, เขียน Public Comments และ Internal Notes
+- **Administrator** — จัดการ User Management, สร้าง/แก้ไข user, กำหนด role เดียว, activate/deactivate และตั้ง initial password; contract ปัจจุบันอนุญาต Ticket Queue/operations ตาม authorization matrix อย่างชัดเจน
+
+### Lab 3 scope
+
+- Login, logout, current-user และ mandatory first-login password change
+- Password hashing และ authenticated session/token ตาม contract ที่อนุมัติ
+- Server-side authentication, role authorization และ ownership checks
+- Migration จาก Lab 2 User/Requester identity โดยรักษา Ticket และ Attachment เดิม
+- IT Staff Ticket Queue และ Ticket Detail operations
+- Claim/reassign, IT Priority และ permitted status transitions
+- Public Comments และ Internal Notes แบบ append-only
+- Minimalist Administrator User Management
+- Requester regression, responsive UI, accessibility และ end-to-end evidence
+
+### Lab 3 out of scope
+
+MFA, SSO, social login, email invitations, email password reset, self-registration, user deletion, bulk user operations, import/export, multiple roles, departments, multi-tenant organizations, SLA/escalation, notification services, analytics dashboards และ production cloud infrastructure
+
+### Lab 3 documentation
+
+เอกสาร contract และ evidence ต้องอยู่ใน `docs/lab-03/`:
+
+```text
+docs/lab-03/
+├── specification.md
+├── tests.md
+├── ui-spec.md
+├── api-spec.md
+├── reviewer.md
+├── ai-use.md
+└── report.md
+```
+
+`specification.md`, `api-spec.md` และ `ui-spec.md` ต้องจัดทำก่อนหรือพร้อม implementation ส่วน `tests.md` ต้องมี unit, API/integration, authorization/security, migration/regression, UI, responsive, accessibility และ E2E traceability
+
+### Lab 3 test structure
+
+```text
+server/tests/lab-03/
+├── auth.api.test.ts
+├── authorization.api.test.ts
+├── staff-queue.api.test.ts
+├── staff-ticket-detail.api.test.ts
+├── comments-notes.api.test.ts
+└── users-admin.api.test.ts
+
+client/tests/lab-03/
+├── Login.test.tsx
+├── ChangePassword.test.tsx
+├── StaffTicketQueue.test.tsx
+├── StaffTicketDetail.test.tsx
+└── UserManagement.test.tsx
+
+e2e/lab-03/
+├── authentication.spec.ts
+├── staff-ticket-flow.spec.ts
+└── user-administration.spec.ts
+```
+
+ชื่อไฟล์ข้างต้นเป็นโครงสร้างขั้นต่ำตาม labsheet ให้ปรับ path ให้ตรงกับไฟล์จริงเมื่อ implementation เสร็จ และบันทึก path จริงไว้ใน `docs/lab-03/tests.md`
+
+### Lab 3 local workflow
+
+เริ่ม feature branch จาก `lab3-staging` ซึ่งทีมสร้างจาก baseline ที่รวม Lab 2 เสร็จแล้ว:
+
+```powershell
+git switch lab3-staging
+git pull origin lab3-staging
+git switch -c <lab3-feature-branch>
+```
+
+รันระบบจาก repository root:
+
+```powershell
+npm --prefix server run dev
+npm --prefix client run dev
+```
+
+ก่อน merge ต้องรัน test ของ server/client, migration/regression, authorization, responsive และ E2E ตามคำสั่งที่บันทึกใน `docs/lab-03/tests.md` และต้องตรวจให้ test database แยกจาก development database
+
+### Lab 3 PDF submission
+
+Labsheet กำหนดให้ส่ง **PDF เพียง 1 ไฟล์** โดยใช้หัวข้อตามลำดับและชื่อ exact ดังนี้:
+
+```text
+Answer Part 1: Git Use with Engineering Workflow
+Answer Part 2: Spec DD
+Answer Part 3: Test DD and Traceability
+Answer Part 4: AI Use with Reflection
+Answer Part 5: Working Login and Password Change UI
+Answer Part 6: Working IT Staff Ticket Queue UI
+Answer Part 7: Working IT Staff Ticket Detail UI
+Answer Part 8: Working Administrator User Management UI
+Answer Part 9: Zen Green UI and Responsive Evidence
+```
+
+PDF ต้องมี working links, screenshots ที่อ่านได้ และ evidence จาก final `main` branch ส่วน `docs/lab-03/report.md` ใช้เป็นต้นฉบับสำหรับจัดทำ PDF ได้ แต่ไฟล์ที่ส่งจริงต้องเป็น PDF ไฟล์เดียว
+
