@@ -2,8 +2,8 @@
 
 - **Developer:** [L0u1sss](https://github.com/L0u1sss)
 - **LLM/agent used:** OpenAI Codex
-- **Current scope:** Lab 3 planning, engineering contract, traceability and documentation setup
-- **Disclosure status:** Updated for Issue [#29](https://github.com/L0u1sss/TokTickIT/issues/29); implementation prompts/evidence will be appended as work proceeds
+- **Current scope:** Lab 3 engineering contract and Issue #30 authentication foundation
+- **Disclosure status:** Includes contract Issue [#29](https://github.com/L0u1sss/TokTickIT/issues/29) and local authentication implementation [#30](https://github.com/L0u1sss/TokTickIT/issues/30); actual local test results are recorded in `tests.md`, not claimed as hosted CI or peer approval
 
 ## Selected Key Prompts
 
@@ -24,6 +24,10 @@
 
 ## Important Decisions I Retained or Changed
 
+- Issue #30 prompt: implement authentication using the approved Lab 3 contract, then continue. Codex added User/Session storage, Argon2id, auth endpoints, session/password-change rules, auth UI, isolated API/browser tests and setup instructions. Local validation was performed with tests and lint/build commands; it is not peer approval.
+- The implementation explicitly stages User/Session and the `/login` → `/change-password` → `/account` flow in #30. Existing Requester data migration, legacy transport removal and Ticket-route activation remain in #31. The full Lab 3 cutover is not claimed complete.
+- Corrected a UI test timeout by supplying the long Unicode boundary value as one input change, and fixed Logout failure handling so the Retry action survives account-shell unmounting.
+
 - Retained the labsheet requirement to replace the Development Requester selector with authenticated identity.
 - Chose an opaque database-backed HttpOnly session cookie and Argon2id rather than asking the AI to leave auth decisions unspecified.
 - Explicitly permitted Administrator Ticket operations in the approved matrix to satisfy owner/IT Priority rules, while keeping User Management exclusive to Administrator.
@@ -41,5 +45,9 @@ AI ช่วยลดเวลาการแตก labsheet ที่ยาว�
 สิ่งสำคัญที่ได้เรียนรู้คือ “เอกสารครบ” ไม่ใช่แค่มีชื่อหัวข้อ แต่ทุก requirement ต้องมี behavior ที่สังเกตได้ มี API/UI ที่สอดคล้อง และ trace ไป test ได้ อีกทั้งต้องแยก planned evidence ออกจาก passed evidence อย่างเคร่งครัด เพื่อไม่ให้ PR description หรือรายงานอ้างผลที่ยังไม่ได้รัน
 
 ## Evidence Maintenance Rule
+
+### PR #40 review remediation — 2026-09-17
+
+Prompt: fix review `5226584204` locally. AI normalized auth entry-point trailing slashes, changed the limiter to count credential failures only, shared the safe error response between router and reusable guard, and added regression tests. AI also documented the unresolved Issue #30 selector-cutover dependency and stacked PR #42 workflow without changing GitHub, switching branches, committing, or pushing. Local results: server 226/226, client 96/96, auth browser 1/1; see tests.md for scope. Human review must confirm the issue-boundary wording, perform the remote base/description updates and rerun hosted CI after integration. No peer approval or new hosted result is claimed.
 
 หลังแต่ละ implementation PR ให้เพิ่มเฉพาะ prompt ที่มีผลต่อ design/code/test อย่างมีนัยสำคัญ พร้อมบันทึกสิ่งที่ผู้พัฒนาตรวจสอบหรือแก้เอง Final submission เลือก 6–10 prompts ที่เป็นตัวแทน ไม่จำเป็นต้องคัดลอก transcript ทั้งหมด และต้อง sync exact final SHA/CI กับ [tests.md](./tests.md) และ [reviewer.md](./reviewer.md)

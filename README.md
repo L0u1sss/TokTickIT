@@ -1,6 +1,14 @@
 
 # TokTickIT - IT Service Desk (Lab 1–2)
 
+## Lab 3 authentication — Issue #30
+
+วิธีตั้งค่า User/Session, สร้าง initial password สำหรับ local และเปิดหน้า `/login` อยู่ใน [Authentication setup and scope](docs/lab-03/authentication-implementation.md)
+
+เริ่มจาก `server`: ติดตั้ง dependencies, `npx prisma generate`, `npx prisma migrate deploy`, ตั้ง `CLIENT_ORIGIN=http://localhost:5173` และ `NODE_ENV=development` ใน `.env` แล้วรัน `npm run auth:provision -- --email auth-demo@example.test --name "Local Auth Demo" --role REQUESTER` เพื่อรับ initial password ที่แสดงครั้งเดียว จากนั้นเปิด server/client และเข้า `http://localhost:5173/login`
+
+รอบนี้เป็น auth foundation; การ migrate Requester เดิมและเปลี่ยน Ticket/Attachment APIs จาก Development Requester เป็น session identity อยู่ใน Issue #31 จึงยังไม่ถือว่า API เดิมทั้งหมดมี authentication แล้ว
+
 ## Tech Stack
 * **Frontend:** React + TypeScript + Vite
 * **Backend:** Node.js + Express + TypeScript

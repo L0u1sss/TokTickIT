@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
+import { createAuthRouter } from "./auth-routes.js";
 import multer from "multer";
 import { getPrisma } from "./prisma.js";
 import { ApiError, toErrorResponse } from "./errors.js";
@@ -36,7 +37,9 @@ const upload = multer({
   limits: { fileSize: ATTACHMENT_MAX_BYTES, files: 1, fields: 0, parts: 2 },
 });
 
-app.use(cors());          // already wired: lets the Vite dev server call this API
+// Auth router checks Origin before JSON parsing, including unauthenticated Login.
+app.use("/api/auth", createAuthRouter(getPrisma));
+app.use(cors());          // Lab 2 route cutover is tracked by Issue #31.
 app.use(express.json());
 
 // ---------------------------------------------------------------------------
