@@ -1,3 +1,5 @@
+import { PrismaClient } from "../../server/node_modules/@prisma/client/default.js";
+import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -70,7 +72,7 @@ function databaseTarget(rawUrl, requireTestMarker) {
   return [parsed.hostname.toLowerCase(), parsed.port || "5432", database, schema].join("/");
 }
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+let testDatabaseUrl = process.env.TEST_DATABASE_URL;
 if (!testDatabaseUrl) {
   throw new Error("TEST_DATABASE_URL is required for live E2E.");
 }
@@ -81,6 +83,13 @@ if (
 ) {
   throw new Error("TEST_DATABASE_URL must target a different database or schema from DATABASE_URL.");
 }
+
+// Only reset a newly allocated schema owned by this runner, never the caller's schema.
+const schemaAdmin = new PrismaClient({ datasources: { db: { url: testDatabaseUrl } } });
+const runSchema = "browser_test_" + randomUUID().replaceAll("-", "");
+await schemaAdmin.$executeRawUnsafe(`CREATE SCHEMA "${runSchema}"`);
+const isolatedUrl = new URL(testDatabaseUrl); isolatedUrl.searchParams.set("schema", runSchema);
+testDatabaseUrl = isolatedUrl.toString();
 
 function waitForExit(child) {
   return new Promise((resolve, reject) => {
@@ -169,6 +178,8 @@ try {
         DATABASE_URL: testDatabaseUrl,
         TEST_DATABASE_URL: testDatabaseUrl,
         PORT: serverPort,
+        NODE_ENV: "test",
+        CLIENT_ORIGIN: clientUrl,
         ATTACHMENT_STORAGE_DIR: storageDirectory,
       },
       stdio: "inherit",
@@ -201,6 +212,8 @@ try {
   exitCode = 1;
 } finally {
   await stopChild(vite, viteExit);
+  await schemaAdmin.$executeRawUnsafe(`DROP SCHEMA "${runSchema}" CASCADE`);
+  await schemaAdmin.$disconnect();
   await rm(storageDirectory, { recursive: true, force: true });
 }
 

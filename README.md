@@ -1,13 +1,15 @@
 
-# TokTickIT - IT Service Desk (Lab 1–2)
+# TokTickIT - IT Service Desk (Lab 1–3)
 
-## Lab 3 authentication — Issue #30
+## Lab 3 authentication and identity migration — Issues #30–#31
 
-วิธีตั้งค่า User/Session, สร้าง initial password สำหรับ local และเปิดหน้า `/login` อยู่ใน [Authentication setup and scope](docs/lab-03/authentication-implementation.md)
+วิธีตั้งค่า User/Session, migrate ข้อมูลเดิม และเปิดหน้า `/login` อยู่ใน [Identity migration setup and scope](docs/lab-03/identity-migration.md) ส่วน [Authentication baseline #30](docs/lab-03/authentication-implementation.md) เก็บบริบทก่อน cutover
 
 เริ่มจาก `server`: ติดตั้ง dependencies, `npx prisma generate`, `npx prisma migrate deploy`, ตั้ง `CLIENT_ORIGIN=http://localhost:5173` และ `NODE_ENV=development` ใน `.env` แล้วรัน `npm run auth:provision -- --email auth-demo@example.test --name "Local Auth Demo" --role REQUESTER` เพื่อรับ initial password ที่แสดงครั้งเดียว จากนั้นเปิด server/client และเข้า `http://localhost:5173/login`
 
-รอบนี้เป็น auth foundation; การ migrate Requester เดิมและเปลี่ยน Ticket/Attachment APIs จาก Development Requester เป็น session identity อยู่ใน Issue #31 จึงยังไม่ถือว่า API เดิมทั้งหมดมี authentication แล้ว
+Issue #31 เปลี่ยน Ticket/Attachment API ให้ใช้ session identity แล้ว ไม่มี Development Requester selector อีกต่อไป ดู [migration, initial password, role scope และวิธีรัน](docs/lab-03/identity-migration.md) ก่อน migrate ฐานเดิม ห้าม reset ฐานเพื่อข้ามปัญหา ID/email ชนกัน
+
+สำหรับฐาน local Lab เท่านั้น: หลัง `prisma migrate deploy` และ `prisma db seed` ใช้ `jennifer.a@example.com`, `staff.one@example.com` หรือ `admin@example.com` กับ initial password `Lab3-Initial-password1!` แล้วเปลี่ยนรหัสผ่านก่อนใช้งาน บัญชีเดิมที่เปลี่ยนรหัสผ่านแล้วจะไม่ถูก reset โดย seed ส่วนหน้าปฏิบัติงาน Staff/Admin ยังเป็นงาน issue ถัดไป
 
 ## Tech Stack
 * **Frontend:** React + TypeScript + Vite
@@ -128,7 +130,7 @@ npm run prisma:seed
 Pop-Location
 ```
 
-ผล seed ปกติคือ 4 Categories, 6 Related Systems และ 5 Requesters การรัน seed ซ้ำไม่สร้างข้อมูลซ้ำเพราะใช้ `upsert`
+ผล seed ปกติคือ 4 Categories, 6 Related Systems, 5 Requesters, 4 IT Staff และ 1 Administrator การรันซ้ำไม่สร้างข้อมูลซ้ำและไม่ reset credentials ของบัญชีเดิม
 
 ### ขั้นที่ 6: เปิด Backend ใน Terminal 1
 
@@ -160,30 +162,15 @@ npm --prefix client run dev
 
 เปิด URL ที่ Vite แสดง โดยปกติคือ [http://localhost:5173](http://localhost:5173)
 
-### ขั้นที่ 8: ตรวจ Development Requester
+### ขั้นที่ 8: Login และตรวจ session
 
-หน้าแรกควรแสดง requester ที่ active จำนวน 4 คน หากขึ้น **We couldn't load requesters.** ให้ตรวจตามลำดับ:
+เปิด `/login` และใช้บัญชี local ที่ seed หรือสร้างด้วย `auth:provision` จากนั้นเปลี่ยน initial password ก่อนใช้ Ticket screens หน้า Requester แสดง Create Ticket/My Tickets และ Logout โดยไม่มี selector
 
-```powershell
-# Server ต้องตอบ 200
-Invoke-WebRequest http://localhost:3000/api/health -UseBasicParsing
-
-# Requester API ต้องตอบ 200 และมีข้อมูล requester
-Invoke-WebRequest http://localhost:3000/api/requesters -UseBasicParsing
-
-# ตรวจและ apply migration ที่ยังขาด จาก repository root
-Push-Location server
-npx prisma migrate status
-npx prisma migrate deploy
-npm run prisma:seed
-Pop-Location
-```
-
-จากนั้นกด **Retry** หรือ refresh หน้า Client
+`GET /api/health` ยังเป็น public ส่วน Ticket/metadata/categories ต้องส่ง session cookie; การเปิด API โดยไม่ Login ได้ `401` เป็นพฤติกรรมที่ถูกต้อง `/api/requesters` ถูกยกเลิกแล้ว หาก Login ไม่สำเร็จ ให้ตรวจ API server, database, migration และ `CLIENT_ORIGIN` ให้ตรงกับ URL ของ Vite
 
 ### การรันครั้งถัดไป
 
-หากติดตั้งและเตรียมฐานข้อมูลแล้ว ปกติเปิดเพียงสอง Terminal:
+หากเตรียมฐานข้อมูลแล้ว เปิดสอง Terminal จาก repository root:
 
 ```powershell
 # Terminal 1
@@ -195,11 +182,12 @@ npm --prefix server run dev
 npm --prefix client run dev
 ```
 
-หลัง `git pull` หากมี migration หรือ dependencies ใหม่ ให้รันขั้นที่ 2 และขั้นที่ 5 อีกครั้ง
+หลัง pull หากมี migration หรือ dependencies ใหม่ ให้อัปเดต dependencies และรัน `prisma migrate deploy` ก่อนเปิดระบบ โดยไม่ reset ฐานเดิม
 
----
 
 ## Running Tests (การรันระบบทดสอบ)
+
+สำหรับ Lab 3 แนะนำ `npm --prefix server run test:isolated` ซึ่งสร้าง schema ชั่วคราวจาก `TEST_DATABASE_URL`, migrate/seed, รัน suite และลบเฉพาะ schema ที่สร้างเอง โดยไม่ reset development หรือ shared test schema
 
 วิธีรันชุดทดสอบอัตโนมัติที่ตั้งค่าไว้ในโปรเจกต์:
 

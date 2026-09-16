@@ -71,7 +71,7 @@ export function createAuthRouter(database: () => PrismaClient) {
 /** Reusable guard for the #31 route cutover. No caller-supplied requester ID. */
 export function requireAuthentication(database:()=>PrismaClient, allowPasswordChange=false) {
   return (req:Request,res:Response,next:NextFunction)=>{
-    void authenticate(database(),readSessionToken(req)).then(session=>{
+    void Promise.resolve().then(() => authenticate(database(),readSessionToken(req))).then(session=>{
       if(session.user.mustChangePassword && !allowPasswordChange) throw new ApiError(403,"PASSWORD_CHANGE_REQUIRED","Change your initial password to continue.");
       res.locals.authenticatedUser=currentUser(session.user);next();
     }).catch(error=>{const result=toErrorResponse(error);res.set("Cache-Control","no-store");res.status(result.status).json(result.body);});

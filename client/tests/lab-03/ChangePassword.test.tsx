@@ -27,8 +27,8 @@ describe("UI-02 mandatory password change",()=>{
     await user.type(screen.getByLabelText(/^New Password/),"New-password2!");
     await user.type(screen.getByLabelText(/^Confirm New Password/),"New-password2!");
     await user.click(screen.getByRole("button",{name:"Save password"}));
-    await screen.findByRole("heading",{name:"Your account is ready"});
-    expect(screen.getByText("Person")).toBeInTheDocument();expect(screen.getByText("REQUESTER")).toBeInTheDocument();
+    await screen.findByRole("heading",{name:"Create Ticket"});
+    expect(screen.getAllByText("Person")[0]).toBeInTheDocument();expect(screen.getByText("Signed in as")).toBeInTheDocument();
     expect(screen.queryByText("Change Requester")).toBeNull();
   });
 });

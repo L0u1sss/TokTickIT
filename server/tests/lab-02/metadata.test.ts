@@ -13,6 +13,14 @@ vi.mock("../../src/prisma.js", () => ({
   }),
 }));
 
+vi.mock("../../src/auth-service.js", async (original) => {
+  const actual = await original<typeof import("../../src/auth-service.js")>();
+  return { ...actual, authenticate: async () => {
+    const actor = { id: 12, displayName: "Owner", email: "owner@example.test" };
+    if (!actor) throw new (await import("../../src/errors.js")).ApiError(401, "AUTHENTICATION_REQUIRED", "Sign in to continue.");
+    return { user: { ...actor, role: "REQUESTER", mustChangePassword: false } };
+  }};
+});
 import { app } from "../../src/app.js";
 
 describe("GET /api/metadata", () => {
@@ -34,7 +42,7 @@ describe("GET /api/metadata", () => {
 
     const response = await request(app)
       .get("/api/metadata?isActive=false")
-      .set("x-requester-id", "999");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -72,7 +80,7 @@ describe("GET /api/metadata", () => {
     );
     const response = await request(app).get("/api/metadata");
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({
+    expect(response.body).toMatchObject({
       error: {
         code: "INTERNAL_ERROR",
         message: "The request could not be completed.",

@@ -278,7 +278,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
     } catch (error) {
       if (
         error instanceof ApiResponseError &&
-        (error.code === "ATTACHMENT_NOT_AVAILABLE" || error.code === "ATTACHMENT_NOT_FOUND")
+        error.status === 404
       ) {
         await load();
         setNotice("This attachment is no longer available for download.");

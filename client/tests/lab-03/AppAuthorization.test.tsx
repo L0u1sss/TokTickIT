@@ -10,13 +10,13 @@ describe("UI-03 authentication shell subset",()=>{
     vi.stubGlobal("fetch",fetchMock);render(<AuthApp/>);
     expect(screen.getByRole("status")).toHaveTextContent("Checking your session");expect(screen.queryByText("Person")).toBeNull();
     await screen.findByRole("alert");await userEvent.click(screen.getByRole("button",{name:"Retry"}));
-    await screen.findByRole("heading",{name:"Your account is ready"});expect(screen.getByText("IT STAFF")).toBeInTheDocument();
+    await screen.findByRole("heading",{name:"Ticket Queue"});expect(screen.getByText("IT STAFF")).toBeInTheDocument();
   });
   it("removes legacy identity and keeps protected account hidden after logout and browser back",async()=>{
     sessionStorage.setItem("toktickit.requesterId","999");window.history.replaceState({},"","/account");
     vi.stubGlobal("fetch",vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({user:identity})))
       .mockResolvedValueOnce(new Response(null,{status:204})));
-    render(<AuthApp/>);await screen.findByRole("heading",{name:"Your account is ready"});
+    render(<AuthApp/>);await screen.findByRole("heading",{name:"Ticket Queue"});
     await userEvent.click(screen.getByRole("button",{name:"Logout"}));await screen.findByRole("heading",{name:"Sign in"});
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
     act(()=>{window.history.pushState({},"","/account");window.dispatchEvent(new PopStateEvent("popstate"));});
@@ -25,7 +25,7 @@ describe("UI-03 authentication shell subset",()=>{
   it("keeps failed logout hidden and offers a server logout retry",async()=>{
     const fetchMock=vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({user:identity})))
       .mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(new Response(null,{status:204}));
-    vi.stubGlobal("fetch",fetchMock);render(<AuthApp/>);await screen.findByRole("heading",{name:"Your account is ready"});
+    vi.stubGlobal("fetch",fetchMock);render(<AuthApp/>);await screen.findByRole("heading",{name:"Ticket Queue"});
     await userEvent.click(screen.getByRole("button",{name:"Logout"}));
     await screen.findByRole("button",{name:"Retry logout"});expect(screen.queryByText("Person")).toBeNull();
     await userEvent.click(screen.getByRole("button",{name:"Retry logout"}));

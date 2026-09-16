@@ -1,3 +1,4 @@
+import { cookieForUser } from "../session-fixture.js";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -23,7 +24,7 @@ let storageDirectory = "";
 
 async function removeFixture() {
   const prisma = getPrisma();
-  const requesters = await prisma.requesterUser.findMany({
+  const requesters = await prisma.user.findMany({
     where: { email: { in: [fixture.requesterEmail, fixture.otherRequesterEmail] } },
     select: { id: true },
   });
@@ -36,7 +37,8 @@ async function removeFixture() {
     where: { ticketId: { in: tickets.map(({ id }) => id) } },
   });
   await prisma.ticket.deleteMany({ where: { id: { in: tickets.map(({ id }) => id) } } });
-  await prisma.requesterUser.deleteMany({ where: { id: { in: requesterIds } } });
+  await prisma.session.deleteMany({ where: { userId: { in: requesterIds } } });
+  await prisma.user.deleteMany({ where: { id: { in: requesterIds } } });
   await prisma.category.deleteMany({ where: { name: fixture.categoryName } });
   await prisma.relatedSystem.deleteMany({ where: { name: fixture.systemName } });
 }
@@ -49,11 +51,11 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
     process.env.ATTACHMENT_STORAGE_DIR = storageDirectory;
 
     const [requester, otherRequester, category, relatedSystem] = await prisma.$transaction([
-      prisma.requesterUser.create({
-        data: { displayName: "Issue 17 Requester", email: fixture.requesterEmail },
+      prisma.user.create({
+        data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false, displayName: "Issue 17 Requester", email: fixture.requesterEmail },
       }),
-      prisma.requesterUser.create({
-        data: { displayName: "Issue 17 Other", email: fixture.otherRequesterEmail },
+      prisma.user.create({
+        data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false, displayName: "Issue 17 Other", email: fixture.otherRequesterEmail },
       }),
       prisma.category.create({ data: { name: fixture.categoryName } }),
       prisma.relatedSystem.create({ data: { name: fixture.systemName } }),
@@ -122,7 +124,7 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
   it("returns only the complete owned detail and attachment metadata", async () => {
     const response = await request(app)
       .get(`/api/tickets/${ticketId}`)
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
@@ -146,7 +148,7 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
     const bytes = Buffer.from("issue-17-private-pdf");
     const upload = await request(app)
       .post(`/api/tickets/${ticketId}/attachments`)
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .attach("file", bytes, { filename: "diagnostic-report.pdf", contentType: "application/pdf" });
 
     expect(upload.status).toBe(201);
@@ -173,7 +175,7 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
 
     const download = await request(app)
       .get(`/api/tickets/${ticketId}/attachments/${uploadedAttachmentId}/download`)
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
     expect(download.status).toBe(200);
     expect(download.headers["content-type"]).toBe("application/pdf");
     expect(download.headers["content-disposition"]).toContain('filename="diagnostic-report.pdf"');
@@ -183,20 +185,20 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
   it("enforces requester ownership and the five-active-attachment limit", async () => {
     const forbiddenDetail = await request(app)
       .get(`/api/tickets/${ticketId}`)
-      .set("x-requester-id", String(otherRequesterId));
-    expect(forbiddenDetail.status).toBe(403);
+      .set("Cookie", await cookieForUser(getPrisma(), otherRequesterId)).set("Origin", "http://localhost:5173");
+    expect(forbiddenDetail.status).toBe(404);
     expect(forbiddenDetail.text).not.toContain("Owned monitor detail");
     expect(forbiddenDetail.text).not.toContain("diagnostic-report.pdf");
 
     const forbiddenDownload = await request(app)
       .get(`/api/tickets/${ticketId}/attachments/${uploadedAttachmentId}/download`)
-      .set("x-requester-id", String(otherRequesterId));
-    expect(forbiddenDownload.status).toBe(403);
-    expect(forbiddenDownload.body.error.code).toBe("TICKET_FORBIDDEN");
+      .set("Cookie", await cookieForUser(getPrisma(), otherRequesterId)).set("Origin", "http://localhost:5173");
+    expect(forbiddenDownload.status).toBe(404);
+    expect(forbiddenDownload.body.error.code).toBe("NOT_FOUND");
 
     const rejectedSixth = await request(app)
       .post(`/api/tickets/${limitTicketId}/attachments`)
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.from("x"), { filename: "sixth.png", contentType: "image/png" });
     expect(rejectedSixth.status).toBe(400);
     expect(rejectedSixth.body.error.code).toBe("ATTACHMENT_LIMIT_REACHED");
@@ -208,22 +210,22 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
       .get(`/api/tickets/${ticketId}/attachments/${(
         await getPrisma().attachment.findFirstOrThrow({ where: { ticketId: limitTicketId } })
       ).id}/download`)
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
     expect(wrongParentAttachment.status).toBe(404);
-    expect(wrongParentAttachment.body.error.code).toBe("ATTACHMENT_NOT_FOUND");
+    expect(wrongParentAttachment.body.error.code).toBe("NOT_FOUND");
 
     const forbiddenUpload = await request(app)
       .post(`/api/tickets/${foreignTicketId}/attachments`)
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.from("private"), { filename: "foreign.pdf", contentType: "application/pdf" });
-    expect(forbiddenUpload.status).toBe(403);
+    expect(forbiddenUpload.status).toBe(404);
     expect(await getPrisma().attachment.count({ where: { ticketId: foreignTicketId } })).toBe(0);
   });
 
   it("soft-removes once with audit fields and blocks all later active operations", async () => {
     const invalid = await request(app)
       .patch(`/api/tickets/${ticketId}/attachments/${uploadedAttachmentId}/remove`)
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send({ reason: "no" });
     expect(invalid.status).toBe(400);
     expect((await getPrisma().attachment.findUniqueOrThrow({
@@ -233,7 +235,7 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
     const reason = "Uploaded a clearer diagnostic report.";
     const removed = await request(app)
       .patch(`/api/tickets/${ticketId}/attachments/${uploadedAttachmentId}/remove`)
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send({ reason: `  ${reason}  ` });
     expect(removed.status).toBe(200);
     expect(removed.body).toMatchObject({
@@ -255,7 +257,7 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
 
     const detail = await request(app)
       .get(`/api/tickets/${ticketId}`)
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
     expect(detail.body.activeAttachmentCount).toBe(0);
     expect(detail.body.attachments).toEqual([
       expect.objectContaining({
@@ -269,13 +271,13 @@ describe("Ticket Detail and attachment PostgreSQL integration", () => {
 
     const download = await request(app)
       .get(`/api/tickets/${ticketId}/attachments/${uploadedAttachmentId}/download`)
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
     expect(download.status).toBe(404);
-    expect(download.body.error.code).toBe("ATTACHMENT_NOT_AVAILABLE");
+    expect(download.body.error.code).toBe("NOT_FOUND");
 
     const repeatedRemoval = await request(app)
       .patch(`/api/tickets/${ticketId}/attachments/${uploadedAttachmentId}/remove`)
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send({ reason: "Attempt to overwrite the original audit reason." });
     expect(repeatedRemoval.status).toBe(404);
     const unchanged = await getPrisma().attachment.findUniqueOrThrow({

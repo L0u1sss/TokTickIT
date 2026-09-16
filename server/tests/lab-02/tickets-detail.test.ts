@@ -13,6 +13,14 @@ vi.mock("../../src/prisma.js", () => ({
   }),
 }));
 
+vi.mock("../../src/auth-service.js", async (original) => {
+  const actual = await original<typeof import("../../src/auth-service.js")>();
+  return { ...actual, authenticate: async (_db: unknown, token?: string) => {
+    const actor = token ? await mocks.requesterFindFirst() : null;
+    if (!actor) throw new (await import("../../src/errors.js")).ApiError(401, "AUTHENTICATION_REQUIRED", "Sign in to continue.");
+    return { user: { ...actor, role: "REQUESTER", mustChangePassword: false } };
+  }};
+});
 import { app } from "../../src/app.js";
 
 const requester = { id: 12, displayName: "Mali Chantarangsu", email: "mali@example.com" };
@@ -65,7 +73,7 @@ describe("GET /api/tickets/:id", () => {
   });
 
   it("returns complete owned Ticket Detail and active/removed attachment metadata", async () => {
-    const response = await request(app).get("/api/tickets/145").set("x-requester-id", "12");
+    const response = await request(app).get("/api/tickets/145").set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       id: 145,
@@ -91,36 +99,37 @@ describe("GET /api/tickets/:id", () => {
   it.each(["0", "-1", "1.5", "abc", "9007199254740992"])(
     "returns INVALID_PATH_PARAMETER for %s",
     async (id) => {
-      const response = await request(app).get(`/api/tickets/${id}`).set("x-requester-id", "12");
+      const response = await request(app).get(`/api/tickets/${id}`).set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
       expect(response.status).toBe(400);
       expect(response.body.error.code).toBe("INVALID_PATH_PARAMETER");
       expect(mocks.ticketFindUnique).not.toHaveBeenCalled();
     },
   );
 
-  it("returns 403 without protected content for a foreign Ticket", async () => {
+  it("returns 404 without protected content for a foreign Ticket", async () => {
     mocks.ticketFindUnique.mockResolvedValue({ ...ticket, requesterId: 27 });
-    const response = await request(app).get("/api/tickets/145").set("x-requester-id", "12");
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe("TICKET_FORBIDDEN");
+    const response = await request(app).get("/api/tickets/145").set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe("NOT_FOUND");
     expect(response.text).not.toMatch(/TKT-2026|monitor.jpg|Line one/);
   });
 
   it("returns 404 for a missing Ticket", async () => {
     mocks.ticketFindUnique.mockResolvedValue(null);
-    const response = await request(app).get("/api/tickets/999").set("x-requester-id", "12");
+    const response = await request(app).get("/api/tickets/999").set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(response.status).toBe(404);
-    expect(response.body.error.code).toBe("TICKET_NOT_FOUND");
+    expect(response.body.error.code).toBe("NOT_FOUND");
   });
 
   it("returns a safe 500 for an unexpected detail failure", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.ticketFindUnique.mockRejectedValue(new Error("Prisma postgres://secret"));
-    const response = await request(app).get("/api/tickets/145").set("x-requester-id", "12");
+    const response = await request(app).get("/api/tickets/145").set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(response.status).toBe(500);
     expect(response.body.error).toEqual({
       code: "INTERNAL_ERROR",
       message: "The request could not be completed.",
+      requestId: response.headers["x-request-id"],
     });
     expect(response.text).not.toMatch(/Prisma|secret|postgres/);
   });

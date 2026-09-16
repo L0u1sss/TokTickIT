@@ -31,10 +31,10 @@ export async function getOwnedTicketDetail(
     select: { requesterId: true },
   });
   if (!ownership) {
-    throw new ApiError(404, "TICKET_NOT_FOUND", "Ticket not found.");
+    throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
   }
   if (ownership.requesterId !== requester.id) {
-    throw new ApiError(403, "TICKET_FORBIDDEN", "You do not have access to this ticket.");
+    throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
   }
 
   const ticket = await prisma.ticket.findUnique({
@@ -42,7 +42,7 @@ export async function getOwnedTicketDetail(
     include: ticketDetailInclude,
   });
   if (!ticket) {
-    throw new ApiError(404, "TICKET_NOT_FOUND", "Ticket not found.");
+    throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
   }
   return serializeTicket(ticket);
 }

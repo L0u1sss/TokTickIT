@@ -14,7 +14,7 @@ test("E2E-01 auth foundation: login, forced change, account shell, logout and di
   await page.getByLabel("New Password",{exact:false}).first().fill("New-browser-password2!");
   await page.getByLabel("Confirm New Password",{exact:false}).fill("New-browser-password2!");
   await page.getByRole("button",{name:"Save password"}).click();
-  await expect(page.getByRole("heading",{name:"Your account is ready"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Create Ticket"})).toBeVisible();
   await expect(page.getByRole("banner")).toContainText("Auth Browser User");
   for(const viewport of [{width:1440,height:900},{width:834,height:1112},{width:390,height:844}]){
     await page.setViewportSize(viewport);

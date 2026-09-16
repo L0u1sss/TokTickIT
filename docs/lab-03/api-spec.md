@@ -40,6 +40,8 @@
 
 `fieldErrors` มีเฉพาะ validation ที่ปลอดภัย; unexpected `500` ใช้ code `INTERNAL_ERROR` และข้อความทั่วไป Server log ใช้ `requestId` แต่ไม่ log secrets
 
+Issue #31 compatibility note: existing Ticket form clients may still read the Lab 2 `details` array; those validation responses retain it alongside `fieldErrors`. Protected API errors now include `requestId` (also sent as `X-Request-ID`). Foreign and missing Tickets use safe `404 NOT_FOUND`; a wrong role still receives `403 FORBIDDEN` before resource lookup.
+
 | Status | Meaning |
 |---:|---|
 | `400` | malformed path/query/body หรือ validation failure |
@@ -102,7 +104,7 @@ Internal Note ใช้ shape เดียวกันแต่ต้องป�
 
 ## 3. Authentication and Session
 
-Implementation note (#30): auth endpoints below are implemented; the Requester/Staff/Admin API cutover remains in #31 and later issues. [Setup, rate-limit policy and handoff](./authentication-implementation.md). Login permits ten attempts per IP + normalized email per fifteen-minute fixed window (including successful attempts), then returns `429 TOO_MANY_ATTEMPTS` with `Retry-After`.
+Implementation note (#31): session/role guards now protect the existing APIs; legacy identity headers never select an actor. Requester migration and route cutover are implemented locally. Staff/Admin namespace guards are present, while their operational handlers remain subsequent issues. See [identity migration](identity-migration.md). Login retains the #30 ten-attempt/fifteen-minute rate policy.
 
 ### 3.1 Login
 

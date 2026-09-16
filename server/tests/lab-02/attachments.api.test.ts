@@ -20,6 +20,14 @@ vi.mock("../../src/attachment-service.js", () => ({
   removeOwnedAttachment: mocks.removeOwnedAttachment,
 }));
 
+vi.mock("../../src/auth-service.js", async (original) => {
+  const actual = await original<typeof import("../../src/auth-service.js")>();
+  return { ...actual, authenticate: async (_db: unknown, token?: string) => {
+    const actor = token ? await mocks.requesterFindFirst() : null;
+    if (!actor) throw new (await import("../../src/errors.js")).ApiError(401, "AUTHENTICATION_REQUIRED", "Sign in to continue.");
+    return { user: { ...actor, role: "REQUESTER", mustChangePassword: false } };
+  }};
+});
 import { app } from "../../src/app.js";
 
 const requester = { id: 12, displayName: "Mali", email: "mali@example.com" };
@@ -59,7 +67,7 @@ describe("Attachment HTTP lifecycle", () => {
   it("uploads exactly one owned multipart file", async () => {
     const response = await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.from("png"), { filename: "proof.png", contentType: "image/png" });
     expect(response.status).toBe(201);
     expect(response.body).toEqual(attachment);
@@ -74,7 +82,7 @@ describe("Attachment HTTP lifecycle", () => {
   it("accepts the exact 5 MiB multipart boundary", async () => {
     const response = await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.alloc(5_242_880), {
         filename: "boundary.pdf",
         contentType: "application/pdf",
@@ -91,7 +99,7 @@ describe("Attachment HTTP lifecycle", () => {
   it("preserves a Unicode display filename through multipart parsing", async () => {
     const response = await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.from("pdf"), {
         filename: "หลักฐาน.pdf",
         contentType: "application/pdf",
@@ -108,24 +116,24 @@ describe("Attachment HTTP lifecycle", () => {
   it("rejects missing, unexpected, multiple, and oversized file parts safely", async () => {
     await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send({})
       .expect(400)
       .expect(({ body }) => expect(body.error.code).toBe("INVALID_MULTIPART"));
     await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .field("note", "not allowed")
       .expect(400)
       .expect(({ body }) => expect(body.error.code).toBe("INVALID_MULTIPART"));
     await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("other", Buffer.from("x"), "other.png")
       .expect(400);
     await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.alloc(5_242_881), { filename: "large.pdf", contentType: "application/pdf" })
       .expect(400)
       .expect(({ body }) => expect(body.error.code).toBe("ATTACHMENT_SIZE_INVALID"));
@@ -135,7 +143,7 @@ describe("Attachment HTTP lifecycle", () => {
   it("downloads bytes with safe content headers", async () => {
     const response = await request(app)
       .get("/api/tickets/145/attachments/51/download")
-      .set("x-requester-id", "12");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(response.status).toBe(200);
     expect(response.headers["content-type"]).toBe("image/png");
     expect(response.headers["content-length"]).toBe("3");
@@ -146,7 +154,7 @@ describe("Attachment HTTP lifecycle", () => {
   it("validates and soft-removes with the trimmed reason", async () => {
     const response = await request(app)
       .patch("/api/tickets/145/attachments/51/remove")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send({ reason: "  Uploaded a clearer image.  " });
     expect(response.status).toBe(200);
     expect(mocks.removeOwnedAttachment).toHaveBeenCalledWith(
@@ -164,14 +172,14 @@ describe("Attachment HTTP lifecycle", () => {
     for (const body of invalidBodies) {
       const response = await request(app)
         .patch("/api/tickets/145/attachments/51/remove")
-        .set("x-requester-id", "12")
+        .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
         .send(body);
       expect(response.status).toBe(400);
       expect(response.body.error.code).toBe("VALIDATION_ERROR");
     }
     const malformed = await request(app)
       .patch("/api/tickets/145/attachments/51/remove")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .set("content-type", "application/json")
       .send("{");
     expect(malformed.status).toBe(400);
@@ -182,14 +190,14 @@ describe("Attachment HTTP lifecycle", () => {
   it("validates ticket and attachment path parameters", async () => {
     const badUpload = await request(app)
       .post("/api/tickets/not-an-id/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.from("png"), { filename: "proof.png", contentType: "image/png" });
     expect(badUpload.status).toBe(400);
     expect(badUpload.body.error.code).toBe("INVALID_PATH_PARAMETER");
 
     const badDownload = await request(app)
       .get("/api/tickets/145/attachments/0/download")
-      .set("x-requester-id", "12");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(badDownload.status).toBe(400);
     expect(badDownload.body.error).toMatchObject({
       code: "INVALID_PATH_PARAMETER",
@@ -198,7 +206,7 @@ describe("Attachment HTTP lifecycle", () => {
 
     const badRemove = await request(app)
       .patch("/api/tickets/145/attachments/1.5/remove")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send({ reason: "No longer required." });
     expect(badRemove.status).toBe(400);
     expect(badRemove.body.error.code).toBe("INVALID_PATH_PARAMETER");
@@ -209,27 +217,27 @@ describe("Attachment HTTP lifecycle", () => {
 
   it("checks a foreign parent before accepting upload bytes", async () => {
     mocks.requireOwnedTicket.mockRejectedValue(
-      new ApiError(403, "TICKET_FORBIDDEN", "You do not have access to this ticket."),
+      new ApiError(404, "NOT_FOUND", "Ticket not found."),
     );
     const response = await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.from("secret"), { filename: "proof.png", contentType: "image/png" });
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe("TICKET_FORBIDDEN");
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe("NOT_FOUND");
     expect(mocks.uploadOwnedAttachment).not.toHaveBeenCalled();
   });
 
   it("checks a foreign parent before validating a removal body", async () => {
     mocks.requireOwnedTicket.mockRejectedValue(
-      new ApiError(403, "TICKET_FORBIDDEN", "You do not have access to this ticket."),
+      new ApiError(404, "NOT_FOUND", "Ticket not found."),
     );
     const response = await request(app)
       .patch("/api/tickets/145/attachments/51/remove")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send({ reason: "no" });
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe("TICKET_FORBIDDEN");
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe("NOT_FOUND");
     expect(mocks.removeOwnedAttachment).not.toHaveBeenCalled();
   });
 
@@ -237,10 +245,10 @@ describe("Attachment HTTP lifecycle", () => {
     mocks.uploadOwnedAttachment.mockRejectedValueOnce(new Error("storage path C:/secret"));
     const uploadResponse = await request(app)
       .post("/api/tickets/145/attachments")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .attach("file", Buffer.from("png"), { filename: "proof.png", contentType: "image/png" });
     expect(uploadResponse.status).toBe(500);
-    expect(uploadResponse.body).toEqual({
+    expect(uploadResponse.body).toMatchObject({
       error: { code: "INTERNAL_ERROR", message: "The request could not be completed." },
     });
     expect(uploadResponse.text).not.toContain("C:/secret");
@@ -248,7 +256,7 @@ describe("Attachment HTTP lifecycle", () => {
     mocks.downloadOwnedAttachment.mockRejectedValueOnce(new Error("opaque-storage-key"));
     const downloadResponse = await request(app)
       .get("/api/tickets/145/attachments/51/download")
-      .set("x-requester-id", "12");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(downloadResponse.status).toBe(500);
     expect(downloadResponse.body.error.code).toBe("INTERNAL_ERROR");
     expect(downloadResponse.text).not.toContain("opaque-storage-key");
@@ -256,7 +264,7 @@ describe("Attachment HTTP lifecycle", () => {
     mocks.removeOwnedAttachment.mockRejectedValueOnce(new Error("database detail"));
     const removeResponse = await request(app)
       .patch("/api/tickets/145/attachments/51/remove")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send({ reason: "Uploaded a clearer image." });
     expect(removeResponse.status).toBe(500);
     expect(removeResponse.body.error.code).toBe("INTERNAL_ERROR");

@@ -10,15 +10,11 @@ test("E2E-06 the requester, ticket, attachment, and dialog workflow is keyboard 
   request,
 }) => {
   const requester = await requesterByEmail(request, "david.l@example.com");
-  await page.goto("/requester-selection");
-
-  const requesterSelect = page.getByLabel("Development Requester", { exact: true });
-  await tabTo(page, requesterSelect);
-  await page.keyboard.press("Home");
-  await page.keyboard.press("ArrowDown");
-  await expect(requesterSelect).toHaveValue(String(requester.id));
-  const continueButton = page.getByRole("button", { name: "Continue" });
-  await tabTo(page, continueButton);
+  await page.goto("/login");
+  const email = page.getByLabel("Email", { exact: false });
+  await tabTo(page, email); await page.keyboard.type(requester.email);
+  await page.keyboard.press("Tab"); await page.keyboard.type("Lab3-E2E-changed-password2!");
+  await tabTo(page, page.getByRole("button", { name: "Sign in", exact: true }));
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Create Ticket" })).toBeVisible();
 

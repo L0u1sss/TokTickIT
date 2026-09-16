@@ -1,3 +1,4 @@
+import { cookieForUser } from "../session-fixture.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
@@ -15,14 +16,15 @@ let relatedSystemId: number;
 
 async function removeFixture() {
   const prisma = getPrisma();
-  const requester = await prisma.requesterUser.findUnique({
+  const requester = await prisma.user.findUnique({
     where: { email: fixture.requesterEmail },
     select: { id: true },
   });
   if (requester) {
     await prisma.ticket.deleteMany({ where: { requesterId: requester.id } });
   }
-  await prisma.requesterUser.deleteMany({
+  await prisma.session.deleteMany({ where: { user: { email: fixture.requesterEmail } } });
+  await prisma.user.deleteMany({
     where: { email: fixture.requesterEmail },
   });
   await prisma.category.deleteMany({ where: { name: fixture.categoryName } });
@@ -34,8 +36,8 @@ describe("Create Ticket PostgreSQL integration", () => {
     const prisma = getPrisma();
     await removeFixture();
     const [requester, category, relatedSystem] = await prisma.$transaction([
-      prisma.requesterUser.create({
-        data: {
+      prisma.user.create({
+        data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false,
           displayName: "Issue 15 Requester",
           email: fixture.requesterEmail,
           isActive: true,
@@ -69,7 +71,7 @@ describe("Create Ticket PostgreSQL integration", () => {
   it("persists one requester-owned Ticket with authoritative fields", async () => {
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send(body());
 
     expect(response.status).toBe(201);
@@ -109,7 +111,7 @@ describe("Create Ticket PostgreSQL integration", () => {
     });
     const replay = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send(body());
     expect(replay.status).toBe(200);
     expect(replay.body).toMatchObject({
@@ -119,7 +121,7 @@ describe("Create Ticket PostgreSQL integration", () => {
 
     const conflict = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send({ ...body(), summary: "Different logical payload" });
     expect(conflict.status).toBe(409);
     expect(conflict.body.error.code).toBe("DUPLICATE_REQUEST_CONFLICT");
@@ -136,7 +138,7 @@ describe("Create Ticket PostgreSQL integration", () => {
     });
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send({
         ...body(),
         clientRequestId: "869769e9-266d-4cf2-9e40-23276d9672e0",
@@ -161,7 +163,7 @@ describe("Create Ticket PostgreSQL integration", () => {
     });
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", String(requesterId))
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173")
       .send({
         ...body(),
         clientRequestId: "6e354095-a37c-4f83-ab94-626d746fbdb1",

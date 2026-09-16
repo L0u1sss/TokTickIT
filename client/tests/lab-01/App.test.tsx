@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import App from "../../src/App.js";
+import App from "../../src/AuthApp.js";
 import { checkHealth, checkSystem, Category } from "../../src/api.js";
-import { RequesterProvider } from "../../src/context/RequesterContext.js";
+
 
 const seededCategories: Category[] = [
   { id: 1, name: "Account and Access" },
@@ -21,17 +21,12 @@ describe("Lab 1 client regression", () => {
     window.sessionStorage.clear();
   });
 
-  it("still starts from the TokTickIT requester entry screen", () => {
+  it("starts behind the Lab 3 session gate", () => {
     vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}));
     render(
-      <RequesterProvider>
-        <App />
-      </RequesterProvider>,
+      <App />,
     );
-    expect(screen.getByText(/TokTickIT Service Desk/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Select a Development Requester" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Checking your session");
   });
 
   it("keeps the Lab 1 health helper working", async () => {

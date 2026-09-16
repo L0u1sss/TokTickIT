@@ -32,7 +32,7 @@ test("E2E-02 requester switching clears stale state and protects owned resources
   let delayed = false;
 
   await page.route(`${apiUrl}/api/tickets?**`, async (route) => {
-    if (!delayed && route.request().headers()["x-requester-id"] === String(requesterA.id)) {
+    if (!delayed) {
       delayed = true;
       signalListStarted();
       await delayedList;
@@ -48,10 +48,9 @@ test("E2E-02 requester switching clears stale state and protects owned resources
 
   await page.getByRole("link", { name: "My Tickets", exact: true }).click();
   await listStarted;
-  await page.getByRole("button", { name: "Change Requester" }).click();
-  await expect(page.getByRole("heading", { name: "Select a Development Requester" })).toBeVisible();
-  await page.getByLabel("Development Requester", { exact: true }).selectOption(String(requesterB.id));
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Logout" }).click();
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await selectRequester(page, requesterB);
   releaseDelayedList();
 
   await page.getByRole("link", { name: "My Tickets", exact: true }).click();
@@ -60,19 +59,19 @@ test("E2E-02 requester switching clears stale state and protects owned resources
   await expect(page.getByText(`Tickets owned by ${requesterB.displayName}`)).toBeVisible();
 
   await page.goto(`/tickets/${ticket.id}`);
-  await expect(page.getByText("You don't have permission to view this ticket.")).toBeVisible();
+  await expect(page.getByText("Ticket not found.")).toBeVisible();
   await expect(page.getByText(summary, { exact: true })).toHaveCount(0);
 
   const detailAsB = await request.get(`${apiUrl}/api/tickets/${ticket.id}`, {
     headers: requesterHeaders(requesterB.id),
   });
-  expect(detailAsB.status()).toBe(403);
+  expect(detailAsB.status()).toBe(404);
 
   const downloadAsB = await request.get(
     `${apiUrl}/api/tickets/${ticket.id}/attachments/${attachment.id}/download`,
     { headers: requesterHeaders(requesterB.id) },
   );
-  expect(downloadAsB.status()).toBe(403);
+  expect(downloadAsB.status()).toBe(404);
   expect(downloadAsB.headers()["content-disposition"]).toBeUndefined();
 
   const removeAsB = await request.patch(
@@ -82,7 +81,7 @@ test("E2E-02 requester switching clears stale state and protects owned resources
       data: { reason: "Foreign requester must not remove this file" },
     },
   );
-  expect(removeAsB.status()).toBe(403);
+  expect(removeAsB.status()).toBe(404);
 
   const ownerDetail = await getTicketViaApi(request, requesterA, ticket.id);
   expect(ownerDetail.attachments).toContainEqual(

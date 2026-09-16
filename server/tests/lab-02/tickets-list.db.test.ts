@@ -1,3 +1,4 @@
+import { cookieForUser } from "../session-fixture.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
@@ -18,7 +19,7 @@ let relatedSystemId: number;
 
 async function removeFixture() {
   const prisma = getPrisma();
-  const requesters = await prisma.requesterUser.findMany({
+  const requesters = await prisma.user.findMany({
     where: { email: { in: [fixture.requesterEmail, fixture.otherRequesterEmail] } },
     select: { id: true },
   });
@@ -31,7 +32,8 @@ async function removeFixture() {
     where: { ticketId: { in: tickets.map(({ id }) => id) } },
   });
   await prisma.ticket.deleteMany({ where: { requesterId: { in: requesterIds } } });
-  await prisma.requesterUser.deleteMany({ where: { id: { in: requesterIds } } });
+  await prisma.session.deleteMany({ where: { userId: { in: requesterIds } } });
+  await prisma.user.deleteMany({ where: { id: { in: requesterIds } } });
   await prisma.category.deleteMany({
     where: { name: { in: [fixture.categoryName, fixture.otherCategoryName] } },
   });
@@ -46,14 +48,14 @@ describe("My Tickets PostgreSQL integration", () => {
     await removeFixture();
     const [requester, otherRequester, category, otherCategory, system, otherSystem] =
       await prisma.$transaction([
-        prisma.requesterUser.create({
-          data: {
+        prisma.user.create({
+          data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false,
             displayName: "Issue 16 Requester",
             email: fixture.requesterEmail,
           },
         }),
-        prisma.requesterUser.create({
-          data: {
+        prisma.user.create({
+          data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false,
             displayName: "Issue 16 Other Requester",
             email: fixture.otherRequesterEmail,
           },
@@ -157,7 +159,7 @@ describe("My Tickets PostgreSQL integration", () => {
   it("scopes before pagination and applies the stable default ordering", async () => {
     const firstPage = await request(app)
       .get("/api/tickets?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc")
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
 
     expect(firstPage.status).toBe(200);
     expect(firstPage.body.pagination).toEqual({
@@ -183,7 +185,7 @@ describe("My Tickets PostgreSQL integration", () => {
       .get(
         `/api/tickets?search=MONITOR&status=New&requestedPriority=HIGH&categoryId=${categoryId}&relatedSystemId=${relatedSystemId}&sortBy=summary&sortOrder=asc&page=1&pageSize=20`,
       )
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
 
     expect(response.status).toBe(200);
     expect(response.body.items).toHaveLength(1);
@@ -206,7 +208,7 @@ describe("My Tickets PostgreSQL integration", () => {
   it("returns an empty page beyond the last page with accurate totals", async () => {
     const response = await request(app)
       .get("/api/tickets?page=9&pageSize=10")
-      .set("x-requester-id", String(requesterId));
+      .set("Cookie", await cookieForUser(getPrisma(), requesterId)).set("Origin", "http://localhost:5173");
 
     expect(response.status).toBe(200);
     expect(response.body.items).toEqual([]);
