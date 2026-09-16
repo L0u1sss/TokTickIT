@@ -53,6 +53,25 @@ afterAll(async()=>{
 });
 
 describe("Issue #30 auth API with isolated PostgreSQL",()=>{
+  it("does not charge successful logins against the failed-attempt budget",async()=>{
+    for(let i=0;i<11;i++) expect((await signIn()).status).toBe(200);
+    for(let i=0;i<10;i++) expect((await signIn("wrong")).status).toBe(401);
+    expect((await signIn()).status).toBe(429);
+  });
+  it("uses the same safe envelope for guard failures, including synchronous database failure",async()=>{
+    const missing=await request(app).get("/protected");
+    expect(missing.status).toBe(401);
+    expect(missing.body.error.requestId).toEqual(expect.any(String));
+    const forced=await request(app).get("/protected").set("Cookie",cookie(await signIn()));
+    expect(forced.status).toBe(403);
+    expect(forced.body.error.requestId).toEqual(expect.any(String));
+    const failed=express();
+    failed.get("/protected",requireAuthentication(()=>{throw new Error("database secret");}));
+    const response=await request(failed).get("/protected");
+    expect(response.status).toBe(500);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.body.error).toEqual({code:"INTERNAL_ERROR",message:"The request could not be completed.",requestId:expect.any(String)});
+  });
   it("provisions a local account once and preserves changed credentials and role on rerun",async()=>{
     const input={email:"local-auth@example.test",displayName:"Local Auth",role:"IT_STAFF"};
     const result=await provisionAuthAccount(db,input);expect(result.created).toBe(true);

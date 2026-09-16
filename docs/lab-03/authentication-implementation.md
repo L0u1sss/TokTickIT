@@ -20,7 +20,23 @@ The overlapping migration/activation work is retained in [#31](https://github.co
 
 - Unknown email, wrong password and inactive accounts (including correct passwords) all return `401 AUTHENTICATION_FAILED` with `Unable to sign in with the provided credentials.` and no authenticated cookie/session. Unknown emails still perform a dummy Argon2id verification.
 - Unsafe auth requests require exact `CLIENT_ORIGIN` before JSON/credential validation. JSON body limit is 16 KiB; invalid/unknown fields receive safe validation errors.
-- Login allows ten attempts per IP + normalized email in a fifteen-minute fixed window, including successful attempts. Further requests return `429 TOO_MANY_ATTEMPTS` and `Retry-After`. The in-process map expires old buckets and caps active buckets at 10,000. It resets when the process restarts and is suitable only for this single-process local lab.
+- Login counts only failed credential checks per IP + normalized email in a fifteen-minute fixed window. After ten failures, further requests return `429 TOO_MANY_ATTEMPTS` and `Retry-After` until expiry. Successful logins neither consume nor reset the failure budget; malformed requests and server failures do not consume it. Concurrent checks already in flight may finish before the threshold is observed. The in-process map expires old buckets and caps active buckets at 10,000. It resets when the process restarts and is suitable only for this single-process local lab.
+
+## PR #40 review follow-up: completion and dependency boundary
+
+Issue #30 is **partial**, not complete: PR #40 delivers the authentication foundation, but does not yet replace the Development Requester selector on Ticket routes. The original Lab 3 requirement remains mandatory; this staged handoff does not waive or redefine it. Selector removal, authenticated Ticket ownership and role routing require Issue #31 / PR #42 integration and verification before #30 can close.
+
+- FR-01 authentication: implemented at the auth entry points; selector replacement remains pending integration.
+- FR-04 / UI-03: account identity exists; final role navigation and Ticket-route authorization remain pending #31.
+- Trailing-slash aliases of `/login`, `/change-password`, `/account` stay inside AuthApp.
+- Standalone authentication guards and auth-router errors share safe `requestId` / optional `fieldErrors` envelopes, including synchronous database failures.
+
+### GitHub actions still required by the owner (not performed locally)
+
+1. Update Issue #30 and PR #40 description to state the partial foundation/cutover dependency above. Use `Refs #30`, not `Closes #30`, until the original replacement requirement is verified.
+2. While #40 is open, set PR #42 base to `feat/lab3-authentication` (head `feat/lab3-user-migration`), or mark #42 Draft and do not request final approval. PR #40 remains based on `lab3-staging`.
+3. Incorporate this follow-up into #42, rerun CI, and review the new head. Old CI only proves its recorded SHA, not these uncommitted changes.
+4. After #40 merges, sync #42 with `lab3-staging`, retarget its base back to `lab3-staging`, and rerun CI before final review.
 - New passwords require 12–128 Unicode code points, no leading/trailing whitespace and at least three character classes. Confirmation and current password are checked; reuse is rejected.
 - Change Password rechecks live session/user state inside a transaction with a User row lock, rotates the current token and deletes all prior sessions. Login shares the lock and rechecks the password hash to prevent stale-credential session creation.
 - The reusable guard rejects missing/expired/revoked/inactive sessions and forced-change users. It is tested on a protected test route; mounting it across the legacy Ticket/Attachment routes is #31 work.

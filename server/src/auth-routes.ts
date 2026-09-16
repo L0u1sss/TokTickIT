@@ -16,6 +16,18 @@ export function authCookieOptions() {
   return {httpOnly:true, sameSite:"lax" as const, path:"/", secure:process.env.NODE_ENV!=="development" && process.env.NODE_ENV!=="test"};
 }
 
+/** Shared safe error envelope for the auth router and standalone guards. */
+export function sendAuthError(res: Response, error: unknown) {
+  res.set("Cache-Control", "no-store");
+  res.locals.requestId ??= randomUUID();
+  const parserError=error as {type?:string};
+  const result=toErrorResponse(parserError?.type==="entity.parse.failed" || parserError?.type==="entity.too.large"
+    ? new ApiError(400,"VALIDATION_ERROR","Send a valid JSON request within the size limit.") : error);
+  const {details,...safe}=result.body.error;
+  res.status(result.status).json({error:{...safe,requestId:res.locals.requestId,
+    ...(details?{fieldErrors:Object.fromEntries(details.map(d=>[d.field,d.issue]))}:{})}});
+}
+
 export function createAuthRouter(database: () => PrismaClient) {
   const router=Router();
   const attempts=new Map<string,{count:number;expires:number}>();
@@ -44,8 +56,17 @@ export function createAuthRouter(database: () => PrismaClient) {
       res.set("Retry-After",String(Math.max(1,Math.ceil(((bucket?.expires ?? now+windowMs)-now)/1000))));
       throw new ApiError(429,"TOO_MANY_ATTEMPTS","Too many attempts. Try again later.");
     }
-    attempts.set(key,{count:(bucket?.count ?? 0)+1,expires:bucket?.expires ?? now+windowMs});
-    setSession(res,await login(database(),input.email,input.password,readSessionToken(req)));
+    try {
+      setSession(res,await login(database(),input.email,input.password,readSessionToken(req)));
+    } catch(error) {
+      if(error instanceof ApiError && error.code==="AUTHENTICATION_FAILED") {
+        const failedAt=Date.now();
+        const latest=attempts.get(key);
+        const active=latest && latest.expires>failedAt ? latest : undefined;
+        if(active || attempts.size<10000) attempts.set(key,{count:(active?.count ?? 0)+1,expires:active?.expires ?? failedAt+windowMs});
+      }
+      throw error;
+    }
   }));
   router.get("/me",route(async(req,res)=>{
     const session=await authenticate(database(),readSessionToken(req));
@@ -58,12 +79,7 @@ export function createAuthRouter(database: () => PrismaClient) {
   }));
   router.use((error:unknown,_req:Request,res:Response,_next:NextFunction)=>{
     void _next;
-    const parserError=error as {type?:string};
-    const result=toErrorResponse(parserError?.type==="entity.parse.failed" || parserError?.type==="entity.too.large"
-      ? new ApiError(400,"VALIDATION_ERROR","Send a valid JSON request within the size limit.") : error);
-    const {details,...safe}=result.body.error;
-    res.status(result.status).json({error:{...safe,requestId:res.locals.requestId,
-      ...(details?{fieldErrors:Object.fromEntries(details.map(d=>[d.field,d.issue]))}:{})}});
+    sendAuthError(res,error);
   });
   return router;
 }
@@ -71,9 +87,9 @@ export function createAuthRouter(database: () => PrismaClient) {
 /** Reusable guard for the #31 route cutover. No caller-supplied requester ID. */
 export function requireAuthentication(database:()=>PrismaClient, allowPasswordChange=false) {
   return (req:Request,res:Response,next:NextFunction)=>{
-    void authenticate(database(),readSessionToken(req)).then(session=>{
+    void Promise.resolve().then(()=>authenticate(database(),readSessionToken(req))).then(session=>{
       if(session.user.mustChangePassword && !allowPasswordChange) throw new ApiError(403,"PASSWORD_CHANGE_REQUIRED","Change your initial password to continue.");
       res.locals.authenticatedUser=currentUser(session.user);next();
-    }).catch(error=>{const result=toErrorResponse(error);res.set("Cache-Control","no-store");res.status(result.status).json(result.body);});
+    }).catch(error=>sendAuthError(res,error));
   };
 }
