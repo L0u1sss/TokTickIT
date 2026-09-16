@@ -1,5 +1,11 @@
 # Lab 3 — AI Use and Reflection
 
+## Integration follow-up — 2026-09-17
+
+CI diagnosis follow-up: AI read job `104945197026` from run `35140205383`. The responsive step timed out waiting for Create Ticket after direct entry at `/tickets/new`. No new runtime change was required beyond the uncommitted unconditional AuthApp entry fix; rerunning `npm --prefix client run test:responsive` passed 5/5. Assertions/timeouts were not weakened, and no remote rerun or push was performed.
+
+User requested that local `feat/lab3-user-migration` continue from PR #40 after resolving conflicts on GitHub. AI fetched origin, confirmed local merge `10fa732` already includes `d3aa8c3` via `6163547`, and found that the web resolution reintroduced the legacy conditional app entry point. AI restored unconditional AuthApp routing, expanded real-browser direct-entry/reload coverage, and updated the handoff/API/evidence wording. Local verification: server 188/188, client 80/80, auth browser 1/1, live E2E 6/6, both lint/build passed. No commit, push or remote PR update was performed. Human review and hosted CI on the next pushed SHA remain required.
+
 - **Developer:** [L0u1sss](https://github.com/L0u1sss)
 - **LLM/agent used:** OpenAI Codex
 - **Current scope:** Lab 3 engineering contract and Issue #30 authentication foundation

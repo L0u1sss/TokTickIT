@@ -1,6 +1,23 @@
 # TokTickIT Lab 3 — Test Plan and Verification Evidence
 
-> สถานะ: ผล local ล่าสุดของ #31 อยู่ใน Section 7; Section 6 เป็นประวัติ #30 ไม่ใช่ current evidence
+> สถานะ: ผล local ล่าสุดหลังรวม PR #40 อยู่ด้านล่าง; Section 6–7 เป็นประวัติการทดสอบก่อนแก้ integration รอบนี้
+
+## Post-merge integration verification — 2026-09-17
+
+Working tree on `feat/lab3-user-migration`, based on `10fa732` (GitHub conflict-resolution merge). Its ancestry includes PR #40 reviewed head `d3aa8c3` and staging merge `6163547`. These results cover the additional local fix, not a new committed SHA or hosted CI run.
+
+The web merge restored the #30 conditional entry point in main.tsx. This follow-up restores #31's unconditional AuthApp boundary and retains #40's failed-only login limiter, shared safe errors and regression tests. Browser regression now opens `/`, `/tickets`, `/tickets/new`, `/tickets/1` and trailing-slash auth aliases while signed out, then verifies authenticated Create Ticket survives reload.
+
+| Command | Local result |
+|---|---|
+| `npm --prefix server run test:isolated` | 188/188 passed, 24 files; five migrations in disposable test schema |
+| `npm --prefix client test` | 80/80 passed, 14 files |
+| `npm --prefix client run test:auth:e2e` | 1/1 passed, including new entry-point assertions |
+| `npm --prefix client run test:e2e` | 6/6 passed |
+| `npm --prefix client run test:responsive` | 5/5 passed on 2026-09-17 after inspecting failed CI job 104945197026; includes 1440×900, 834×1112, 390×844 and state/focus checks |
+| Server/client lint and build | Passed |
+
+CI run [35140205383, job 104945197026](https://github.com/L0u1sss/TokTickIT/actions/runs/35140205383/job/104945197026?pr=42) failed in the responsive browser step while waiting for the Create Ticket heading at `responsive.spec.ts:346`. That test enters `/tickets/new`, which the merged conditional main.tsx sent outside AuthApp. The local unconditional AuthApp fix above resolves that boundary; the same responsive command now passes without weakening assertions or increasing timeouts. Hosted CI must run again on the next pushed SHA; this local result does not change the failed remote run. No push, approval or issue closure is claimed.
 >
 > Contract: [#29](https://github.com/L0u1sss/TokTickIT/issues/29); authentication implementation: [#30](https://github.com/L0u1sss/TokTickIT/issues/30)
 >

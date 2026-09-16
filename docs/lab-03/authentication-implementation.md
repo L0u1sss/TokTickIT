@@ -2,6 +2,8 @@
 
 ## Historical Issue #30 baseline
 
+Integration update (2026-09-17): this branch includes reviewed #40 head `d3aa8c3` through `lab3-staging` merge `6163547` and #42 merge `10fa732`. The workflow instructions below were written while #40 was open; they are historical, not an instruction to retarget the now-dependent PR back to the authentication branch. #42 can remain based on `lab3-staging`. All browser paths now enter AuthApp; the historical `isAuthPath` split is no longer used by main.tsx. Issue #30 closure still requires the #31 cutover to be merged and verified.
+
 > Current behavior has moved to Issue #31: see [identity migration and authorization](identity-migration.md). The staged `/account` flow and legacy-selector statements below describe only baseline `6d39f49`, not the current branch.
 
 Issue [#30](https://github.com/L0u1sss/TokTickIT/issues/30) implements Login, current user, mandatory password change, Logout, an authentication guard and the auth screens/account shell. The approved contract is PR #39 at `03b5b718`; implementation started from merged `lab3-staging` commit `db281f2` on `feat/lab3-authentication`.
