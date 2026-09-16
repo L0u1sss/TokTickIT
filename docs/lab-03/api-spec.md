@@ -104,7 +104,7 @@ Internal Note ใช้ shape เดียวกันแต่ต้องป�
 
 ## 3. Authentication and Session
 
-Implementation note (#31): session/role guards now protect the existing APIs; legacy identity headers never select an actor. Requester migration and route cutover are implemented locally. Staff/Admin namespace guards are present, while their operational handlers remain subsequent issues. See [identity migration](identity-migration.md). Login retains the #30 ten-attempt/fifteen-minute rate policy.
+Implementation note (#30): auth endpoints below are implemented; the Requester/Staff/Admin API cutover remains in #31 and later issues. Issue #30 remains partial until its selector-replacement requirement is integrated and verified. [Setup, rate-limit policy and handoff](./authentication-implementation.md). Login counts ten failed credential checks per IP + normalized email per fifteen-minute fixed window, then returns `429 TOO_MANY_ATTEMPTS` with `Retry-After`. Successful logins neither consume nor reset this budget; validation/server failures are not counted. Already in-flight concurrent checks may finish before the threshold is observed.
 
 ### 3.1 Login
 

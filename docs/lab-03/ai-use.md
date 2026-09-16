@@ -46,6 +46,10 @@ AI ช่วยลดเวลาการแตก labsheet ที่ยาว�
 
 ## Evidence Maintenance Rule
 
+### PR #40 review remediation — 2026-09-17
+
+Prompt: fix review `5226584204` locally. AI normalized auth entry-point trailing slashes, changed the limiter to count credential failures only, shared the safe error response between router and reusable guard, and added regression tests. AI also documented the unresolved Issue #30 selector-cutover dependency and stacked PR #42 workflow without changing GitHub, switching branches, committing, or pushing. Local results: server 226/226, client 96/96, auth browser 1/1; see tests.md for scope. Human review must confirm the issue-boundary wording, perform the remote base/description updates and rerun hosted CI after integration. No peer approval or new hosted result is claimed.
+
 หลังแต่ละ implementation PR ให้เพิ่มเฉพาะ prompt ที่มีผลต่อ design/code/test อย่างมีนัยสำคัญ พร้อมบันทึกสิ่งที่ผู้พัฒนาตรวจสอบหรือแก้เอง Final submission เลือก 6–10 prompts ที่เป็นตัวแทน ไม่จำเป็นต้องคัดลอก transcript ทั้งหมด และต้อง sync exact final SHA/CI กับ [tests.md](./tests.md) และ [reviewer.md](./reviewer.md)
 
 ## Issue #31 implementation disclosure

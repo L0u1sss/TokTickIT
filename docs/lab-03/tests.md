@@ -152,7 +152,18 @@ git diff --check
 
 ## 6. Historical Local Verification — Issue #30 at baseline `6d39f49`
 
-**Historical snapshot before #31; superseded by Section 7.** ผลด้านล่างมาจาก working tree บน branch `feat/lab3-authentication` ซึ่งต่อจาก `db281f2` ไม่ใช่ผล hosted CI หรือ final committed SHA การ push/review ยังไม่ได้ทำในรอบนี้
+### PR #40 review follow-up (2026-09-17)
+
+Local working tree based on `6d39f49f921e15cfa4549b3e398c23e8a7036074`; not a new committed SHA or hosted CI result. The earlier implementation evidence below is historical.
+
+- Server: `npm --prefix server test` — 226/226 passed, 22 files (18 auth API cases). Regenerated Prisma Client for this branch after the initial run exposed a stale generated client from another branch.
+- Client: `npm --prefix client test` — 96/96 passed, 14 files. Four new routing cases cover canonical paths, trailing-slash aliases and non-auth routes.
+- Auth browser: `npm --prefix client run test:auth:e2e` — 1/1 passed with an isolated PostgreSQL schema.
+- Regression coverage: successful login does not consume the failure budget; ten credential failures still throttle; standalone guard 401/403/500 uses safe requestId envelopes and handles synchronous database errors.
+- Issue #30 remains partial until selector replacement / authenticated Ticket-route cutover is integrated through #31. Passing this foundation suite is not application-wide authorization evidence.
+- Hosted CI and peer re-review for these local changes are not yet available. Previous PR #42 CI must not be reused as evidence for an updated #40 dependency. See [handoff and required GitHub updates](authentication-implementation.md#github-actions-still-required-by-the-owner-not-performed-locally).
+
+ผลด้านล่างมาจาก working tree บน branch `feat/lab3-authentication` ซึ่งต่อจาก `db281f2` ไม่ใช่ผล hosted CI หรือ final committed SHA การ push/review ยังไม่ได้ทำในรอบนี้
 
 | Evidence | Commit/run | Result |
 |---|---|---|
