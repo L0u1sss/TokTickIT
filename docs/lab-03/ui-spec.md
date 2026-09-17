@@ -38,7 +38,7 @@ Development Requester selector, Change Requester และ sessionStorage reques
 
 ## 3. Authentication Screens
 
-Issue #30 staging note: `/login` and `/change-password` lead to the authenticated `/account` shell. Final role-home navigation and replacement of the legacy root/Ticket entry are integrated in #31. This intermediate route is documented in [authentication-implementation.md](./authentication-implementation.md); the final routing matrix above remains the target contract.
+Issue #31 integration note: all app entries now use session authentication; Requester enters Create Ticket/My Tickets, IT Staff enters Ticket Queue and Administrator enters User Management. Staff/Admin screens currently show explicit planned placeholders; operational screens remain subsequent issues. The Development Requester selector is removed. See [identity migration](identity-migration.md).
 
 ### 3.1 Login
 

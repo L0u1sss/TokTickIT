@@ -1,10 +1,10 @@
+import { mockRequesterSession } from "../auth-fixture.js";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App.js";
 import * as api from "../../src/api.js";
 import {
-  REQUESTER_STORAGE_KEY,
   RequesterProvider,
 } from "../../src/context/RequesterContext.js";
 
@@ -12,11 +12,6 @@ const requester: api.Requester = {
   id: 12,
   displayName: "Mali Chantarangsu",
   email: "mali@example.com",
-};
-const otherRequester: api.Requester = {
-  id: 13,
-  displayName: "Niran Kittisak",
-  email: "niran@example.com",
 };
 const metadata: api.TicketMetadata = {
   categories: [{ id: 3, name: "Hardware" }],
@@ -80,9 +75,8 @@ function renderMyTickets() {
 describe("My Tickets page", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
-    window.sessionStorage.setItem(REQUESTER_STORAGE_KEY, String(requester.id));
     window.history.replaceState({}, "", "/tickets");
-    vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
+    mockRequesterSession(requester);
     vi.spyOn(api, "getTicketMetadata").mockResolvedValue(metadata);
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
@@ -421,29 +415,15 @@ describe("My Tickets page", () => {
     expect(new URLSearchParams(window.location.search).get("page")).toBe("3");
   });
 
-  it("clears list state and ignores a late response when changing requester", async () => {
-    vi.mocked(api.getRequesters).mockResolvedValue([requester, otherRequester]);
+  it("aborts list loading when the authenticated screen unmounts", async () => {
     const pending = deferred<api.TicketListResponse>();
-    vi.spyOn(api, "getTickets").mockReturnValue(pending.promise);
-    const user = userEvent.setup();
-    renderMyTickets();
+    const listSpy = vi.spyOn(api, "getTickets").mockReturnValue(pending.promise);
+    const view = render(<App />);
     await screen.findByRole("heading", { name: "My Tickets" });
-
-    await user.click(screen.getByRole("button", { name: "Change Requester" }));
-    expect(
-      await screen.findByRole("heading", { name: "Select a Development Requester" }),
-    ).toBeInTheDocument();
+    const signal = listSpy.mock.calls[0][2];
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
     pending.resolve(response());
-    expect(screen.queryByText(ticket.ticketNumber)).not.toBeInTheDocument();
-
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Development Requester" }),
-      String(otherRequester.id),
-    );
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { name: "Create Ticket" })).toBeInTheDocument();
-    expect(window.location.pathname).toBe("/tickets/new");
-    expect(window.location.search).toBe("");
     expect(screen.queryByText(ticket.ticketNumber)).not.toBeInTheDocument();
   });
 });

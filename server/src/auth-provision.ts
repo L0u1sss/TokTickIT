@@ -14,14 +14,8 @@ export async function provisionAuthAccount(prisma:PrismaClient, input:{email:str
     await tx.$executeRaw`LOCK TABLE "User" IN SHARE ROW EXCLUSIVE MODE`;
     const existing=await tx.user.findUnique({where:{email}});
     if(existing)return {created:false as const,email};
-    // #31 owns conversion of existing identities; this command cannot silently
-    // create a second account with an existing Development Requester's email.
-    const legacy=await tx.requesterUser.findFirst({where:{email:{equals:email,mode:"insensitive"}}});
-    if(legacy)throw new Error("This email belongs to a Lab 2 Requester. Migrate it through Issue #31; use a separate local auth fixture email here.");
-    const [users,requesters]=await Promise.all([
-      tx.user.aggregate({_max:{id:true}}),tx.requesterUser.aggregate({_max:{id:true}}),
-    ]);
-    const id=Math.max(users._max.id ?? 0,requesters._max.id ?? 0)+1;
+    const users=await tx.user.aggregate({_max:{id:true}});
+    const id=(users._max.id ?? 0)+1;
     await tx.user.create({data:{id,email,displayName,role:input.role as UserRole,passwordHash,mustChangePassword:true}});
     await tx.$queryRaw`SELECT setval(pg_get_serial_sequence('"User"', 'id'), ${id}, true)`;
     return {created:true as const,email,password};

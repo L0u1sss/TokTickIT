@@ -1,5 +1,11 @@
 # Lab 3 — AI Use and Reflection
 
+## Integration follow-up — 2026-09-17
+
+CI diagnosis follow-up: AI read job `104945197026` from run `35140205383`. The responsive step timed out waiting for Create Ticket after direct entry at `/tickets/new`. No new runtime change was required beyond the uncommitted unconditional AuthApp entry fix; rerunning `npm --prefix client run test:responsive` passed 5/5. Assertions/timeouts were not weakened, and no remote rerun or push was performed.
+
+User requested that local `feat/lab3-user-migration` continue from PR #40 after resolving conflicts on GitHub. AI fetched origin, confirmed local merge `10fa732` already includes `d3aa8c3` via `6163547`, and found that the web resolution reintroduced the legacy conditional app entry point. AI restored unconditional AuthApp routing, expanded real-browser direct-entry/reload coverage, and updated the handoff/API/evidence wording. Local verification: server 188/188, client 80/80, auth browser 1/1, live E2E 6/6, both lint/build passed. No commit, push or remote PR update was performed. Human review and hosted CI on the next pushed SHA remain required.
+
 - **Developer:** [L0u1sss](https://github.com/L0u1sss)
 - **LLM/agent used:** OpenAI Codex
 - **Current scope:** Lab 3 engineering contract and Issue #30 authentication foundation
@@ -25,7 +31,7 @@
 ## Important Decisions I Retained or Changed
 
 - Issue #30 prompt: implement authentication using the approved Lab 3 contract, then continue. Codex added User/Session storage, Argon2id, auth endpoints, session/password-change rules, auth UI, isolated API/browser tests and setup instructions. Local validation was performed with tests and lint/build commands; it is not peer approval.
-- The implementation explicitly stages User/Session and the `/login` → `/change-password` → `/account` flow in #30. Existing Requester data migration, legacy transport removal and Ticket-route activation remain in #31. The full Lab 3 cutover is not claimed complete.
+- Historical #30 decision: the implementation explicitly stages User/Session and the `/login` → `/change-password` → `/account` flow in #30. Existing Requester data migration, legacy transport removal and Ticket-route activation remain in #31. The full Lab 3 cutover is not claimed complete.
 - Corrected a UI test timeout by supplying the long Unicode boundary value as one input change, and fixed Logout failure handling so the Retry action survives account-shell unmounting.
 
 - Retained the labsheet requirement to replace the Development Requester selector with authenticated identity.
@@ -51,3 +57,13 @@ AI ช่วยลดเวลาการแตก labsheet ที่ยาว�
 Prompt: fix review `5226584204` locally. AI normalized auth entry-point trailing slashes, changed the limiter to count credential failures only, shared the safe error response between router and reusable guard, and added regression tests. AI also documented the unresolved Issue #30 selector-cutover dependency and stacked PR #42 workflow without changing GitHub, switching branches, committing, or pushing. Local results: server 226/226, client 96/96, auth browser 1/1; see tests.md for scope. Human review must confirm the issue-boundary wording, perform the remote base/description updates and rerun hosted CI after integration. No peer approval or new hosted result is claimed.
 
 หลังแต่ละ implementation PR ให้เพิ่มเฉพาะ prompt ที่มีผลต่อ design/code/test อย่างมีนัยสำคัญ พร้อมบันทึกสิ่งที่ผู้พัฒนาตรวจสอบหรือแก้เอง Final submission เลือก 6–10 prompts ที่เป็นตัวแทน ไม่จำเป็นต้องคัดลอก transcript ทั้งหมด และต้อง sync exact final SHA/CI กับ [tests.md](./tests.md) และ [reviewer.md](./reviewer.md)
+
+## Issue #31 implementation disclosure
+
+User request: implement Issue #31 using the Lab 3 reference. AI read the issue and existing contract, reused local authentication commit `6d39f49`, and implemented transactional Requester migration, session-only Ticket/Attachment identity, role guards, selector removal, account navigation and test/README updates. No remote push or approval was performed.
+
+Verification used isolated PostgreSQL schemas, populated migration/collision cases, real-cookie ownership tests, preserved Ticket/Attachment component regressions and live browser flows. Tests detected the Prisma RESTRICT error shape, retired-selector expectations and a mobile Logout touch target; these were corrected rather than marking failed tests passed. Screenshots now go to Lab 3 evidence so historical Lab 2 screenshots are not overwritten. Test counts changed because obsolete selector tests were replaced, not because all Lab 3 requirements are finished.
+
+Team decision requiring review: migrated local-lab users receive the documented shared initial fixture password and forced change, not production password delivery. ID/email collisions fail instead of merging accounts. Workflow/staff/admin operations remain out of #31 scope; see `identity-migration.md` and `tests.md` for exact evidence.
+
+Final contract comparison caught the Lab 2 foreign-owner `403` versus Lab 3 non-disclosing `404 NOT_FOUND` difference. The implementation and regression expectations were updated together. Error correlation IDs, direct My Tickets query preservation and explicit Forbidden screens for Requester access to Staff/Admin routes were also verified. A flaky redirect assertion was changed to wait for the asynchronous route effect, not to relax the expected destination.

@@ -78,7 +78,7 @@ export default function AuthForm({mode}:{mode:"login"|"change"}) {
 
 export function LogoutButton({disabled=false}:{disabled?:boolean}) {
   const auth=useAuth();const [busy,setBusy]=useState(false);const [error,setError]=useState("");
-  return <div><button type="button" disabled={disabled || busy} onClick={()=>{
+  return <div><button className="zen-button" type="button" disabled={disabled || busy} onClick={()=>{
     setBusy(true);setError("");
     void auth.logout().catch(()=>setError("Unable to confirm logout. Retry logout to invalidate the server session.")).finally(()=>setBusy(false));
   }}>{busy?"Signing out…":error?"Retry logout":"Logout"}</button>{error && <p role="alert">{error}</p>}</div>;

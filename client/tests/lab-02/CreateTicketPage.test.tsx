@@ -1,10 +1,10 @@
+import { mockRequesterSession } from "../auth-fixture.js";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App.js";
 import * as api from "../../src/api.js";
 import {
-  REQUESTER_STORAGE_KEY,
   RequesterProvider,
 } from "../../src/context/RequesterContext.js";
 
@@ -54,8 +54,7 @@ function deferred<T>() {
 async function renderCreateTicket(
   metadataResult: Promise<api.TicketMetadata> = Promise.resolve(metadata),
 ) {
-  window.sessionStorage.setItem(REQUESTER_STORAGE_KEY, String(requester.id));
-  vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
+  mockRequesterSession(requester);
   vi.spyOn(api, "getTicketMetadata").mockReturnValue(metadataResult);
   render(
     <RequesterProvider>
@@ -134,12 +133,11 @@ describe("Create Ticket page", () => {
   });
 
   it("retains entered text through metadata failure and Retry", async () => {
-    vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
+    mockRequesterSession(requester);
     const metadataSpy = vi
       .spyOn(api, "getTicketMetadata")
       .mockRejectedValueOnce(new Error("database secret"))
       .mockResolvedValueOnce(metadata);
-    window.sessionStorage.setItem(REQUESTER_STORAGE_KEY, "1");
     const user = userEvent.setup();
     render(
       <RequesterProvider>

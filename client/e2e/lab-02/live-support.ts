@@ -34,36 +34,35 @@ export const pdfFixture = {
   buffer: Buffer.from("%PDF-1.4\n% TokTickIT Lab 2 E2E fixture\n%%EOF\n"),
 };
 
-export async function getActiveRequesters(
-  request: APIRequestContext,
-): Promise<LiveRequester[]> {
-  const response = await request.get(`${apiUrl}/api/requesters`);
+const sessions = new Map<number, string>();
+const origin = process.env.E2E_CLIENT_URL ?? "http://127.0.0.1:4174";
+const initialPassword = "Lab3-Initial-password1!";
+const changedPassword = "Lab3-E2E-changed-password2!";
+export async function requesterByEmail(request: APIRequestContext, email: string): Promise<LiveRequester> {
+  let response = await request.post(`${apiUrl}/api/auth/login`, { headers: { Origin: origin, Cookie: "" }, data: { email, password: changedPassword } });
+  if (response.status() === 401) response = await request.post(`${apiUrl}/api/auth/login`, { headers: { Origin: origin, Cookie: "" }, data: { email, password: initialPassword } });
   expect(response.status()).toBe(200);
-  return (await response.json()) as LiveRequester[];
+  let user = (await response.json()).user;
+  if (user.mustChangePassword) {
+    response = await request.post(`${apiUrl}/api/auth/change-password`, { headers: { Origin: origin }, data: { currentPassword: initialPassword, newPassword: changedPassword, confirmPassword: changedPassword } });
+    expect(response.status()).toBe(200); user = (await response.json()).user;
+  }
+  const state = await request.storageState();
+  const token = state.cookies.find(c => c.name === "toktickit_session");
+  expect(token).toBeDefined(); sessions.set(user.id, `toktickit_session=${token!.value}`);
+  return user as LiveRequester;
 }
-
-export async function requesterByEmail(
-  request: APIRequestContext,
-  email: string,
-): Promise<LiveRequester> {
-  const requester = (await getActiveRequesters(request)).find((item) => item.email === email);
-  expect(requester, `Expected seeded requester ${email}`).toBeDefined();
-  return requester!;
-}
-
 export function requesterHeaders(requesterId: number) {
-  return { "x-requester-id": String(requesterId) };
+  const cookie = sessions.get(requesterId);
+  if (!cookie) throw new Error("Authenticate the test account first.");
+  return { Cookie: cookie, Origin: origin };
 }
-
-export async function selectRequester(
-  page: Page,
-  requester: LiveRequester,
-): Promise<void> {
-  await page.goto("/requester-selection");
-  const selector = page.getByLabel("Development Requester", { exact: true });
-  await expect(selector).toBeEnabled();
-  await selector.selectOption(String(requester.id));
-  await page.getByRole("button", { name: "Continue" }).click();
+// Retained helper name for Lab 2 regression; this now signs in, never selects an ID.
+export async function selectRequester(page: Page, requester: LiveRequester): Promise<void> {
+  await page.goto("/login");
+  await page.getByLabel("Email", { exact: false }).fill(requester.email);
+  await page.getByLabel("Password", { exact: false }).fill(changedPassword);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Create Ticket" })).toBeVisible();
   await expect(page.getByText(requester.displayName, { exact: true }).first()).toBeVisible();
 }
@@ -95,7 +94,7 @@ export async function createTicketViaApi(
     requestedPriority: "LOW" | "MEDIUM" | "HIGH";
   }> = {},
 ): Promise<LiveTicket> {
-  const metadataResponse = await request.get(`${apiUrl}/api/metadata`);
+  const metadataResponse = await request.get(`${apiUrl}/api/metadata`, { headers: requesterHeaders(requester.id) });
   expect(metadataResponse.status()).toBe(200);
   const metadata = (await metadataResponse.json()) as {
     categories: Array<{ id: number }>;

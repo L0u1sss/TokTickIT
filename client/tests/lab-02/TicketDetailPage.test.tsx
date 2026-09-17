@@ -1,10 +1,10 @@
+import { mockRequesterSession } from "../auth-fixture.js";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App.js";
 import * as api from "../../src/api.js";
 import {
-  REQUESTER_STORAGE_KEY,
   RequesterProvider,
 } from "../../src/context/RequesterContext.js";
 
@@ -62,9 +62,8 @@ function renderDetail() {
 describe("Requester Ticket Detail", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
-    window.sessionStorage.setItem(REQUESTER_STORAGE_KEY, "12");
     window.history.replaceState({}, "", "/tickets/145");
-    vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
+    mockRequesterSession(requester);
     vi.spyOn(api, "getTicketDetail").mockResolvedValue(ticket);
   });
 

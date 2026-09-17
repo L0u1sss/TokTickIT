@@ -17,6 +17,14 @@ vi.mock("../../src/ticket-service.js", () => ({
   createTicket: mocks.createTicket,
 }));
 
+vi.mock("../../src/auth-service.js", async (original) => {
+  const actual = await original<typeof import("../../src/auth-service.js")>();
+  return { ...actual, authenticate: async (_db: unknown, token?: string) => {
+    const actor = token ? await mocks.requesterFindFirst() : null;
+    if (!actor) throw new (await import("../../src/errors.js")).ApiError(401, "AUTHENTICATION_REQUIRED", "Sign in to continue.");
+    return { user: { ...actor, role: "REQUESTER", mustChangePassword: false } };
+  }};
+});
 import { app } from "../../src/app.js";
 
 const body = {
@@ -62,7 +70,7 @@ describe("POST /api/tickets", () => {
   it("creates for the validated requester and returns Location", async () => {
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send(body);
 
     expect(response.status).toBe(201);
@@ -83,7 +91,7 @@ describe("POST /api/tickets", () => {
     mocks.createTicket.mockResolvedValue({ status: 200, replayed: true, ticket });
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send(body);
     expect(response.status).toBe(200);
     expect(response.headers.location).toBe("/api/tickets/145");
@@ -96,8 +104,8 @@ describe("POST /api/tickets", () => {
       let operation = request(app).post("/api/tickets").send(body);
       if (header !== undefined) operation = operation.set("x-requester-id", header);
       const response = await operation;
-      expect(response.status).toBe(400);
-      expect(response.body.error.code).toBe("INVALID_REQUESTER_CONTEXT");
+      expect(response.status).toBe(401);
+      expect(response.body.error.code).toBe("AUTHENTICATION_REQUIRED");
       expect(mocks.createTicket).not.toHaveBeenCalled();
     },
   );
@@ -106,16 +114,16 @@ describe("POST /api/tickets", () => {
     mocks.requesterFindFirst.mockResolvedValue(null);
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", "99")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send(body);
-    expect(response.status).toBe(400);
-    expect(response.body.error.code).toBe("INVALID_REQUESTER_CONTEXT");
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe("AUTHENTICATION_REQUIRED");
   });
 
   it("returns field details and creates nothing for invalid body fields", async () => {
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send({ ...body, summary: "x", requestedPriority: "CRITICAL" });
     expect(response.status).toBe(400);
     expect(response.body.error).toMatchObject({
@@ -131,11 +139,11 @@ describe("POST /api/tickets", () => {
   it("returns INVALID_JSON for malformed JSON", async () => {
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .set("content-type", "application/json")
       .send('{"summary":');
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({
+    expect(response.body).toMatchObject({
       error: {
         code: "INVALID_JSON",
         message: "The request body must contain valid JSON.",
@@ -147,10 +155,10 @@ describe("POST /api/tickets", () => {
     mocks.createTicket.mockRejectedValue(duplicateRequestConflict());
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send(body);
     expect(response.status).toBe(409);
-    expect(response.body).toEqual({
+    expect(response.body).toMatchObject({
       error: {
         code: "DUPLICATE_REQUEST_CONFLICT",
         message: "clientRequestId was already used for a different request.",
@@ -166,12 +174,13 @@ describe("POST /api/tickets", () => {
     );
     const response = await request(app)
       .post("/api/tickets")
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .send(body);
     expect(response.status).toBe(500);
     expect(response.body.error).toEqual({
       code: "INTERNAL_ERROR",
       message: "The request could not be completed.",
+      requestId: response.headers["x-request-id"],
     });
     expect(response.text).not.toContain("secret");
   });

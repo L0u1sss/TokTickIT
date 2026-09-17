@@ -33,7 +33,7 @@ const { PrismaClient } = await import("@prisma/client");
 const prisma = new PrismaClient();
 
 try {
-  const requester = await prisma.requesterUser.update({
+  const requester = await prisma.user.update({
     where: { email },
     data: { isActive: requestedState === "active" },
     select: { id: true },

@@ -31,7 +31,7 @@ describe("Create Ticket API client", () => {
     await expect(getTicketMetadata()).resolves.toEqual(metadata);
     expect(fetchMock).toHaveBeenCalledWith(
       "http://localhost:3000/api/metadata",
-      { signal: undefined },
+      expect.objectContaining({ signal: undefined, credentials: "include", cache: "no-store" }),
     );
   });
 

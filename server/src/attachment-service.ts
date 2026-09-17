@@ -46,9 +46,9 @@ export async function requireOwnedTicket(
     where: { id: ticketId },
     select: { id: true, requesterId: true },
   });
-  if (!ticket) throw new ApiError(404, "TICKET_NOT_FOUND", "Ticket not found.");
+  if (!ticket) throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
   if (ticket.requesterId !== requester.id) {
-    throw new ApiError(403, "TICKET_FORBIDDEN", "You do not have access to this ticket.");
+    throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
   }
   return ticket;
 }
@@ -109,10 +109,10 @@ export async function downloadOwnedAttachment(
     where: { id: attachmentId, ticketId },
   });
   if (!attachment) {
-    throw new ApiError(404, "ATTACHMENT_NOT_FOUND", "Attachment not found.");
+    throw new ApiError(404, "NOT_FOUND", "Attachment not found.");
   }
   if (attachment.removedAt) {
-    throw new ApiError(404, "ATTACHMENT_NOT_AVAILABLE", "Attachment is not available.");
+    throw new ApiError(404, "NOT_FOUND", "Attachment is not available.");
   }
   const selectedStorage = storage ?? (await import("./attachment-storage.js")).localAttachmentStorage;
   const bytes = await selectedStorage.read(attachment.storageKey);
@@ -136,10 +136,10 @@ export async function removeOwnedAttachment(
     where: { id: attachmentId, ticketId },
   });
   if (!attachment) {
-    throw new ApiError(404, "ATTACHMENT_NOT_FOUND", "Attachment not found.");
+    throw new ApiError(404, "NOT_FOUND", "Attachment not found.");
   }
   if (attachment.removedAt) {
-    throw new ApiError(404, "ATTACHMENT_NOT_AVAILABLE", "Attachment is not available.");
+    throw new ApiError(404, "NOT_FOUND", "Attachment is not available.");
   }
   const removed = await prisma.attachment.update({
     where: { id: attachmentId },

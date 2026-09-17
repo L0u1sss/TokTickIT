@@ -117,7 +117,7 @@ describe("Attachment service", () => {
     attachmentFindFirst.mockResolvedValue({ ...activeRow, removedAt: new Date() });
     await expect(
       downloadOwnedAttachment(prisma, requester, 145, 51, storage),
-    ).rejects.toMatchObject({ status: 404, code: "ATTACHMENT_NOT_AVAILABLE" });
+    ).rejects.toMatchObject({ status: 404, code: "NOT_FOUND" });
     expect(storage.read).toHaveBeenCalledTimes(1);
   });
 
@@ -145,14 +145,14 @@ describe("Attachment service", () => {
     });
   });
 
-  it("uses 403 for a foreign parent and 404 for missing/wrong-ticket children", async () => {
+  it("uses 404 for a foreign parent and 404 for missing/wrong-ticket children", async () => {
     ticketFindUnique.mockResolvedValueOnce({ id: 145, requesterId: 27 });
     await expect(
       downloadOwnedAttachment(prisma, requester, 145, 51, storage),
-    ).rejects.toMatchObject({ status: 403, code: "TICKET_FORBIDDEN" });
+    ).rejects.toMatchObject({ status: 404, code: "NOT_FOUND" });
     attachmentFindFirst.mockResolvedValueOnce(null);
     await expect(
       removeOwnedAttachment(prisma, requester, 145, 99, "No longer required."),
-    ).rejects.toMatchObject({ status: 404, code: "ATTACHMENT_NOT_FOUND" });
+    ).rejects.toMatchObject({ status: 404, code: "NOT_FOUND" });
   });
 });

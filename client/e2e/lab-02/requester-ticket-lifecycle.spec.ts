@@ -85,7 +85,7 @@ test("E2E-01 requester ticket and attachment lifecycle uses the live stack", asy
     { headers: requesterHeaders(requester.id) },
   );
   expect(blockedDownload.status()).toBe(404);
-  expect((await blockedDownload.json()).error.code).toBe("ATTACHMENT_NOT_AVAILABLE");
+  expect((await blockedDownload.json()).error.code).toBe("NOT_FOUND");
 
   const repeatedRemoval = await request.patch(
     `${apiUrl}/api/tickets/${ticketId}/attachments/${attachment!.id}/remove`,

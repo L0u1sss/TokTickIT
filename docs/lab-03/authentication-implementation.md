@@ -1,6 +1,10 @@
 # Issue #30 — Authentication implementation and handoff
 
-## Scope and dependency on Issue #31
+## Historical Issue #30 baseline
+
+Integration update (2026-09-17): this branch includes reviewed #40 head `d3aa8c3` through `lab3-staging` merge `6163547` and #42 merge `10fa732`. The workflow instructions below were written while #40 was open; they are historical, not an instruction to retarget the now-dependent PR back to the authentication branch. #42 can remain based on `lab3-staging`. All browser paths now enter AuthApp; the historical `isAuthPath` split is no longer used by main.tsx. Issue #30 closure still requires the #31 cutover to be merged and verified.
+
+> Current behavior has moved to Issue #31: see [identity migration and authorization](identity-migration.md). The staged `/account` flow and legacy-selector statements below describe only baseline `6d39f49`, not the current branch.
 
 Issue [#30](https://github.com/L0u1sss/TokTickIT/issues/30) implements Login, current user, mandatory password change, Logout, an authentication guard and the auth screens/account shell. The approved contract is PR #39 at `03b5b718`; implementation started from merged `lab3-staging` commit `db281f2` on `feat/lab3-authentication`.
 
@@ -43,7 +47,7 @@ Issue #30 is **partial**, not complete: PR #40 delivers the authentication found
 - Logout deletes the presented session and clears the cookie, including repeated/missing-session calls. UI hides account content immediately and retains a Retry logout state on network failure. Auth responses use `Cache-Control: no-store`.
 - UI includes busy states, password visibility controls, required markers, blur/submit validation, focusable error summary and links to fields. Password input has no native UTF-16 `maxLength`; validation counts code points. Password fields clear after a submission; email remains available for retry.
 
-## Local setup
+## Historical #30 setup (use the linked #31 instructions on the current branch)
 
 From `server`, configure `DATABASE_URL`, `TEST_DATABASE_URL`, `CLIENT_ORIGIN=http://localhost:5173` and `NODE_ENV=development` in `.env`. The browser origin must match exactly (including hostname and port).
 

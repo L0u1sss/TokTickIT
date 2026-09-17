@@ -54,6 +54,10 @@
 
 ## Implementation Review Log
 
+### Issue #31 local implementation (not a peer review)
+
+Branch `feat/lab3-user-migration` reuses authentication baseline `6d39f49`. Local migration/session/role/Requester regression results are in [tests.md Section 7](tests.md#7-current-local-verification--issue-31). Final response commit, hosted CI and actual peer verdict are pending. No reviewer or approval is inferred from local tests. Initial-password local-only decision and collision handling should be included in the next peer review; see [identity-migration.md](identity-migration.md).
+
 เพิ่มหนึ่งแถวต่อ implementation PR หลัง review จริง โดยอ้าง exact PR, reviewed SHA, finding, response commit และ final verdict
 
 | Issue / PR | Reviewed SHA | Focus | Findings / response | Verdict |

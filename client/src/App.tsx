@@ -3,7 +3,6 @@ import AppHeader from "./components/AppHeader.js";
 import CreateTicketPage from "./components/CreateTicketPage.js";
 import MyTicketsPage from "./components/MyTicketsPage.js";
 import TicketDetailPage from "./components/TicketDetailPage.js";
-import RequesterSelection from "./components/RequesterSelection.js";
 import { useRequester } from "./context/RequesterContext.js";
 
 export const CREATE_TICKET_PATH = "/tickets/new";
@@ -14,39 +13,10 @@ function isTicketDetailPath(path: string) {
   return /^\/tickets\/[^/]+$/.test(path) && path !== CREATE_TICKET_PATH;
 }
 
-function enterCreateTicketRoute() {
-  if (window.location.pathname !== CREATE_TICKET_PATH) {
-    window.history.replaceState({}, "", CREATE_TICKET_PATH);
-  }
-}
-
-function enterRequesterSelectionRoute() {
-  if (window.location.pathname !== REQUESTER_SELECTION_PATH) {
-    window.history.replaceState({}, "", REQUESTER_SELECTION_PATH);
-  }
-}
-
 export default function App() {
   const { currentRequester } = useRequester();
-  const [intendedPath, setIntendedPath] = useState(() =>
-    window.location.pathname === MY_TICKETS_PATH || isTicketDetailPath(window.location.pathname)
-      ? `${window.location.pathname}${window.location.search}`
-      : CREATE_TICKET_PATH,
-  );
-
-  if (!currentRequester) {
-    return <RequesterGate onContinue={() => { setIntendedPath(CREATE_TICKET_PATH); enterCreateTicketRoute(); }} />;
-  }
-
-  return <RequesterApplication key={currentRequester.id} intendedPath={intendedPath} />;
-}
-
-function RequesterGate({ onContinue }: { onContinue: () => void }) {
-  useEffect(() => {
-    enterRequesterSelectionRoute();
-  }, []);
-
-  return <RequesterSelection onContinue={onContinue} />;
+  if (!currentRequester) return null;
+  return <RequesterApplication key={currentRequester.id} intendedPath={CREATE_TICKET_PATH} />;
 }
 
 function RequesterApplication({ intendedPath }: { intendedPath: string }) {
