@@ -98,7 +98,7 @@
 
 ### 5.4 Comments and notes
 
-- **BR-25:** Public Comment ยาว 1–2,000 Unicode code points หลัง trim และ Internal Note ยาว 1–4,000; empty/whitespace-only ถูกปฏิเสธ
+- **BR-25:** Public Comment และ Internal Note ยาว 1–2,000 Unicode code points หลัง trim; empty/whitespace-only ถูกปฏิเสธ
 - **BR-26:** Public Comments และ Internal Notes เป็น append-only ไม่มี edit/deleteใน Lab 3; author และ `createdAt` มาจาก backend
 - **BR-27:** เนื้อหาจัดเก็บ/คืนเป็น plain text และ render เป็น text ไม่ใช้ unsanitized HTML
 - **BR-28:** Public Comment มองเห็นได้โดย Requester เจ้าของ Ticket, IT Staff และ Administrator; Internal Note มองเห็นเฉพาะ IT Staff และ Administrator และต้องไม่ปรากฏใน requester response, count หรือ error detail

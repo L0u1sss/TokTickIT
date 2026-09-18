@@ -144,7 +144,7 @@ model InternalNote {
   id        Int      @id @default(autoincrement())
   ticketId  Int
   authorId  Int
-  content   String   @db.VarChar(4000)
+  content   String   @db.VarChar(2000)
   createdAt DateTime @default(now())
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Cascade)

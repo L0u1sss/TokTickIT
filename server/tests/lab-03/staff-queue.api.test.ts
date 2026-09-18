@@ -22,8 +22,12 @@ beforeAll(async () => {
     if (i === 0) await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "LOW", updatedAt: new Date("2026-09-01") } });
     tickets.push(ticket.id);
   }
+  await db.publicComment.create({ data: { ticketId: tickets[0], authorId: ids[1], content: "Public history entry" } });
+  await db.internalNote.create({ data: { ticketId: tickets[0], authorId: ids[1], content: "Private history entry" } });
 });
 afterAll(async () => {
+  await db.publicComment.deleteMany({ where: { ticket: { requesterId: { in: ids } } } });
+  await db.internalNote.deleteMany({ where: { ticket: { requesterId: { in: ids } } } });
   await db.ticket.deleteMany({ where: { requesterId: { in: ids } } });
   await db.session.deleteMany({ where: { userId: { in: ids } } }); await db.user.deleteMany({ where: { id: { in: ids } } });
   if (categoryId) await db.category.delete({ where: { id: categoryId } });
@@ -156,6 +160,8 @@ describe("staff queue API", () => {
     expect(returned).toContain(ids[1]); expect(returned).toContain(ids[2]); expect(returned).not.toContain(ids[0]); expect(returned).not.toContain(ids[3]);
     const detail = await request(app).get(`/api/staff/tickets/${tickets[0]}`).set("Cookie", cookies[1]);
     expect(detail.body.description).toBe("Private ticket detail"); expect(detail.body.owner.id).toBe(ids[1]);
+    expect(detail.body.publicComments).toEqual([expect.objectContaining({ content: "Public history entry", author: expect.objectContaining({ id: ids[1] }), createdAt: expect.any(String) })]);
+    expect(detail.body.internalNotes).toEqual([expect.objectContaining({ content: "Private history entry", author: expect.objectContaining({ id: ids[1] }), createdAt: expect.any(String) })]);
     expect((await request(app).get("/api/staff/tickets/2147483647").set("Cookie", cookies[1])).status).toBe(404);
   });
   it.each(["LOW", "MEDIUM", "HIGH"])("copies %s Requested Priority on creation and replay", async requestedPriority => {
@@ -192,5 +198,18 @@ describe("staff queue API", () => {
       const result = await get(); expect(result.status).toBe(500); expect(result.body.error.code).toBe("INTERNAL_ERROR");
       expect(JSON.stringify(result.body)).not.toContain("private database");
     } finally { spy.mockRestore(); }
+  });
+  it("requires a matching CSRF token for Staff mutations", async () => {
+    const detail = await request(app).get(`/api/staff/tickets/${tickets[1]}`).set("Cookie", cookies[1]);
+    const setCookies = detail.headers["set-cookie"];
+    const csrfCookie = (Array.isArray(setCookies) ? setCookies : []).find(value => value.startsWith("toktickit_csrf="));
+    expect(csrfCookie).toBeDefined();
+    const csrfToken = csrfCookie!.split(";", 1)[0].slice("toktickit_csrf=".length);
+    const path = `/api/staff/tickets/${tickets[1]}/claim`;
+    expect((await request(app).post(path).set("Cookie", cookies[1]).set("Origin", "http://localhost:5173").send({})).status).toBe(403);
+    expect((await request(app).post(path).set("Cookie", `${cookies[1]}; ${csrfCookie!.split(";", 1)[0]}`).set("Origin", "http://localhost:5173").set("X-CSRF-Token", "invalid").send({})).status).toBe(403);
+    const accepted = await request(app).post(path).set("Cookie", `${cookies[1]}; ${csrfCookie!.split(";", 1)[0]}`).set("Origin", "http://localhost:5173").set("X-CSRF-Token", csrfToken).send({});
+    expect(accepted.status).toBe(200);
+    expect(accepted.body.owner.id).toBe(ids[1]);
   });
 });

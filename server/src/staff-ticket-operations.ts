@@ -114,6 +114,7 @@ const ticketDetailInclude = {
   owner: { select: userSelect }, lastOwner: { select: userSelect },
   attachments: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true, removedAt: true, removalReason: true } },
   publicComments: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { author: { select: userSelect } } },
+  internalNotes: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { author: { select: userSelect } } },
 } satisfies Prisma.TicketInclude;
 
 export async function getStaffTicketDetail(prisma: PrismaClient, ticketId: number) {
@@ -135,6 +136,7 @@ export async function getStaffTicketDetail(prisma: PrismaClient, ticketId: numbe
       downloadable: attachment.removedAt === null,
     })),
     publicComments: ticket.publicComments.map(comment => ({ ...comment, createdAt: comment.createdAt.toISOString() })),
+    internalNotes: ticket.internalNotes.map(note => ({ ...note, createdAt: note.createdAt.toISOString() })),
   };
 }
 
@@ -171,4 +173,4 @@ staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) 
 staffTicketOperationsRouter.get("/tickets/:id/comments", route(async (req, res) => { const ticket = await getStaffTicketDetail(getPrisma(), parsePositivePathId(req.params.id, "id")); res.json({ items: ticket.publicComments }); }));
 staffTicketOperationsRouter.post("/tickets/:id/comments", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, parseContent(req.body, 2000), false))));
 staffTicketOperationsRouter.get("/tickets/:id/internal-notes", route(async (req, res) => { const ticketId = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), ticketId); const items = await getPrisma().internalNote.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { author: { select: userSelect } } }); res.json({ items: items.map(item => ({ ...item, createdAt: item.createdAt.toISOString() })) }); }));
-staffTicketOperationsRouter.post("/tickets/:id/internal-notes", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, parseContent(req.body, 4000), true))));
+staffTicketOperationsRouter.post("/tickets/:id/internal-notes", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, parseContent(req.body, 2000), true))));

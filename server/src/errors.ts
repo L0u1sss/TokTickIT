@@ -28,7 +28,8 @@ export type ApiErrorCode =
   | "TICKET_ALREADY_ASSIGNED"
   | "INVALID_ASSIGNEE"
   | "TICKET_NOT_ASSIGNABLE"
-  | "INVALID_STATUS_TRANSITION";
+  | "INVALID_STATUS_TRANSITION"
+  | "CSRF_TOKEN_INVALID";
 
 export interface ErrorDetail {
   field: string;

@@ -1,0 +1,1 @@
+ALTER TABLE "InternalNote" ALTER COLUMN "content" TYPE VARCHAR(2000);
