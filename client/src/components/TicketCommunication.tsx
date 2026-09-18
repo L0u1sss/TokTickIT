@@ -39,7 +39,7 @@ export function CommunicationSection({ ticketId, staff = false, internal = false
   return <section className={`communication-section ${internal ? "communication-internal" : "communication-public"}`} aria-label={`${title}s`}>
     <h3>{title}s</h3><p>{internal ? "Private — visible only to IT Staff and Administrator." : "Shared with the Requester, IT Staff and Administrator."} Entries cannot be edited or deleted.</p>
     {loading && <p role="status">Loading entries…</p>}
-    {error && <p role="alert">{error} <button type="button" onClick={() => setRevision(v => v + 1)}>Reload entries</button></p>}
+    {error && <p role="alert">{error} <button className="zen-button secondary-button" type="button" onClick={() => setRevision(v => v + 1)}>Reload entries</button></p>}
     {!loading && !error && items.length === 0 && <p>No entries yet.</p>}
     {items.map(item => <article key={item.id}><strong>{item.author.displayName}</strong> <span>{item.author.role}</span> <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time><p className="communication-content">{item.content}</p></article>)}
     <form onSubmit={event => { event.preventDefault(); void post(); }}>
