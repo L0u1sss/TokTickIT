@@ -359,6 +359,7 @@ describe("Lab 2 database integration contract", () => {
           "description",
           "id",
           "itPriority",
+          "lastOwnerId",
           "ownerId",
           "relatedSystemId",
           "requestedPriority",
@@ -816,6 +817,7 @@ describe("Lab 2 database integration contract", () => {
     );
     const expectedForeignKeyNames = [
       "Ticket_ownerId_fkey",
+      "Ticket_lastOwnerId_fkey",
       "Ticket_requesterId_fkey",
       "Ticket_categoryId_fkey",
       "Ticket_relatedSystemId_fkey",
