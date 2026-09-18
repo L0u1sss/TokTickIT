@@ -8,6 +8,16 @@ type Ticket = { id: number; ticketNumber: string; summary: string; category: { n
   publicComments?: Array<{ id: number; content: string; createdAt: string; author: Person }> };
 type Queue = { items: Ticket[]; pagination: { page: number; pageSize: number; totalItems: number; totalPages: number } };
 const statuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
+const statusTransitions: Record<string, string[]> = {
+  NEW: ["OPEN", "CANCELLED"],
+  OPEN: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  WAITING_FOR_REQUESTER: ["IN_PROGRESS", "RESOLVED", "CANCELLED"],
+  RESOLVED: ["REOPENED", "CLOSED"],
+  REOPENED: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  CLOSED: ["REOPENED"],
+  CANCELLED: ["REOPENED"],
+};
 const priorities = ["LOW", "MEDIUM", "HIGH"];
 const label = (value: string) => ({ updatedAt: "Last Updated", createdAt: "Created Date", ticketNumber: "Ticket Number", itPriority: "IT Priority", asc: "Ascending", desc: "Descending" }[value]
   ?? value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
@@ -97,6 +107,7 @@ export default function StaffTicketQueue() {
     await runOperation(`tickets/${pathname.split("/").pop()}/${kind}`, "POST", { content: content.trim() });
     clear();
   };
+  const allowedStatusOptions = detail ? [detail.status, ...(statusTransitions[detail.status] ?? [])] : [];
   return <main id="main-content" tabIndex={-1} className="requester-page"><section className="requester-card staff-queue">
     <h1>{isDetail ? "Ticket Detail" : "Ticket Queue"}</h1>
     {isDetail ? <a href="/staff/tickets" onClick={e => { e.preventDefault(); reset(); }}>Back to Ticket Queue</a> : <>
@@ -128,7 +139,7 @@ export default function StaffTicketQueue() {
         <button type="button" disabled={saving || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", {})}>Claim Ticket</button>
         <label>Ticket Owner<select aria-label="Ticket Owner" disabled={saving} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value) }); }}><option value="">Unassigned</option>{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
         <label>IT Priority<select aria-label="IT Priority" disabled={saving} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
-        <label>Status<select aria-label="Status" disabled={saving} value={detail.status} onChange={event => void runOperation(`tickets/${detail.id}/status`, "PATCH", { status: event.target.value })}>{statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+        <label>Status<select aria-label="Status" disabled={saving} value={detail.status} onChange={event => void runOperation(`tickets/${detail.id}/status`, "PATCH", { status: event.target.value })}>{allowedStatusOptions.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
       </div>
       <h3>Description</h3><p className="staff-description">{detail.description}</p><p>Related system: {detail.relatedSystem?.name}</p>
       <section aria-labelledby="public-comments-heading"><h3 id="public-comments-heading">Public Comments</h3><textarea aria-label="Public Comment" value={comment} maxLength={2000} onChange={event => setComment(event.target.value)} /><button type="button" disabled={saving} onClick={() => void submitCommunication("comments", comment, () => setComment(""))}>Post Public Comment</button>{detail.publicComments?.map(item => <p key={item.id}><strong>{item.author.displayName}</strong> {item.content}</p>)}</section>

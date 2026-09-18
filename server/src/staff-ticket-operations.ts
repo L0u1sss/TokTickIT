@@ -14,12 +14,16 @@ const transitions: Record<Status, readonly Status[]> = {
   WAITING_FOR_REQUESTER: ["IN_PROGRESS", "RESOLVED", "CANCELLED"],
   RESOLVED: ["REOPENED", "CLOSED"],
   REOPENED: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
-  CLOSED: [],
-  CANCELLED: [],
+  CLOSED: ["REOPENED"],
+  CANCELLED: ["REOPENED"],
 };
 
 export function permittedStatusTransition(current: Status, next: Status) {
   return transitions[current].includes(next);
+}
+
+export function permittedNextStatuses(current: Status): readonly Status[] {
+  return transitions[current];
 }
 
 function bodyObject(body: unknown): Record<string, unknown> {

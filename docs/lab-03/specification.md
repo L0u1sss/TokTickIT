@@ -150,8 +150,8 @@ Contract นี้ใช้ทางเลือกที่ labsheet อนุ�
 | `WAITING_FOR_REQUESTER` | `IN_PROGRESS`, `RESOLVED`, `CANCELLED` |
 | `RESOLVED` | `REOPENED`, `CLOSED` |
 | `REOPENED` | `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED` |
-| `CLOSED` | none |
-| `CANCELLED` | none |
+| `CLOSED` | `REOPENED` |
+| `CANCELLED` | `REOPENED` |
 
 การ claim/assign ไม่เปลี่ยน status อัตโนมัติ เพื่อให้ operation แต่ละอย่างตรวจสอบและสื่อสารผลได้ชัดเจน
 
