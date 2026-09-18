@@ -30,6 +30,92 @@ afterAll(async () => {
   if (relatedSystemId) await db.relatedSystem.delete({ where: { id: relatedSystemId } }); await db.$disconnect();
 });
 const get = (query = "", user = 1) => request(app).get(`/api/staff/tickets?search=${marker}${query}`).set("Cookie", cookies[user]);
+
+describe("ownerId=me authenticated identity isolation", () => {
+  const identityMarker = randomUUID();
+  const actors: Array<{ id: number; cookie: string }> = [];
+  const assignments: Array<{ id: number; ownerId: number | null }> = [];
+  let identityCategoryId: number, identitySystemId: number;
+
+  beforeAll(async () => {
+    // Real persisted sessions exercise the auth middleware for both operational roles.
+    // This fixture has its own requester/search marker, independent of the original queue.
+    for (const [index, role] of (["REQUESTER", "IT_STAFF", "ADMINISTRATOR", "IT_STAFF"] as const).entries()) {
+      const actor = await db.user.create({ data: { displayName: `Identity actor ${index} ${identityMarker}`,
+        email: `identity-${index}-${identityMarker}@example.test`, role, passwordHash: "locked", mustChangePassword: false } });
+      actors.push({ id: actor.id, cookie: await cookieForUser(db, actor.id) });
+    }
+    identityCategoryId = (await db.category.create({ data: { name: `Identity ${identityMarker}` } })).id;
+    identitySystemId = (await db.relatedSystem.create({ data: { name: `Identity ${identityMarker}` } })).id;
+    for (const [index, ownerId] of [actors[1].id, actors[1].id, actors[2].id, null].entries()) {
+      const ticket = await db.ticket.create({ data: {
+        ticketNumber: `TKT-2096-${String(actors[0].id * 4 + index).padStart(6, "0")}`, clientRequestId: randomUUID(),
+        summary: `Identity isolation ${identityMarker}`, description: "Separate staff and administrator assignments from unassigned tickets.",
+        requestedPriority: "HIGH", itPriority: "HIGH", requesterId: actors[0].id, ownerId,
+        categoryId: identityCategoryId, relatedSystemId: identitySystemId,
+      } });
+      assignments.push({ id: ticket.id, ownerId });
+    }
+  });
+
+  afterAll(async () => {
+    const actorIds = actors.map(actor => actor.id);
+    await db.ticket.deleteMany({ where: { requesterId: { in: actorIds } } });
+    await db.session.deleteMany({ where: { userId: { in: actorIds } } });
+    await db.user.deleteMany({ where: { id: { in: actorIds } } });
+    if (identityCategoryId) await db.category.delete({ where: { id: identityCategoryId } });
+    if (identitySystemId) await db.relatedSystem.delete({ where: { id: identitySystemId } });
+  });
+
+  const mine = (actorIndex: number, suffix = "") => request(app)
+    .get(`/api/staff/tickets?search=${identityMarker}&ownerId=me&sortBy=ticketNumber&sortOrder=asc${suffix}`)
+    .set("Cookie", actors[actorIndex].cookie);
+
+  const assertOwnAssignments = (response: { status: number; body: { items: Array<{ id: number; owner: { id: number } | null }>; pagination: { totalItems: number } } }, actorIndex: number) => {
+    const expected = assignments.filter(ticket => ticket.ownerId === actors[actorIndex].id);
+    expect(response.status).toBe(200);
+    expect(response.body.items.map(ticket => ({ id: ticket.id, ownerId: ticket.owner?.id ?? null }))).toEqual(expected);
+    expect(response.body.pagination.totalItems).toBe(expected.length);
+  };
+
+  it.each([[1, "Staff A"], [2, "Administrator B"], [3, "Staff C without assignments"]] as const)(
+    "resolves me using the session for %s (%s), excluding other owners and unassigned tickets", async (actorIndex, label) => {
+      void label;
+      assertOwnAssignments(await mine(actorIndex), actorIndex);
+    },
+  );
+
+  it.each([1, 2, 3])("ignores spoofed requester/user headers for authenticated actor %s", async actorIndex => {
+    const otherOwner = actorIndex === 1 ? actors[2] : actors[1];
+    const response = await mine(actorIndex)
+      .set("x-requester-id", String(otherOwner.id))
+      .set("x-user-id", String(otherOwner.id))
+      .set("x-owner-id", String(otherOwner.id));
+    assertOwnAssignments(response, actorIndex);
+  });
+
+  it.each([
+    [1, "requesterId"], [2, "requesterId"], [1, "userId"], [2, "userId"],
+    [1, "ownerId"], [2, "ownerId"], [1, "ownerId[id]"], [2, "ownerId[id]"],
+  ] as const)("rejects client identity override %s / %s instead of reinterpreting me", async (actorIndex, field) => {
+    const otherOwner = actorIndex === 1 ? actors[2] : actors[1];
+    const response = await mine(actorIndex, `&${encodeURIComponent(field)}=${otherOwner.id}`);
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("INVALID_QUERY");
+    expect(response.body).not.toHaveProperty("items");
+  });
+
+  it.each([1, 2])("rejects duplicate ownerId even when me is the last value for actor %s", async actorIndex => {
+    const otherOwner = actorIndex === 1 ? actors[2] : actors[1];
+    const response = await request(app)
+      .get(`/api/staff/tickets?search=${identityMarker}&ownerId=${otherOwner.id}&ownerId=me`)
+      .set("Cookie", actors[actorIndex].cookie);
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("INVALID_QUERY");
+    expect(response.body).not.toHaveProperty("items");
+  });
+});
+
 describe("staff queue API", () => {
   it("enforces session and roles for queue, assignees and details", async () => {
     for (const path of ["/api/staff/tickets", "/api/staff/assignees", `/api/staff/tickets/${tickets[0]}`]) {
