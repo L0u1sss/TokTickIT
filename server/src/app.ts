@@ -12,6 +12,7 @@ import { createTicket } from "./ticket-service.js";
 import { parseTicketListQuery } from "./ticket-query.js";
 import { listTickets } from "./ticket-list-service.js";
 import { staffQueueRouter } from "./staff-queue.js";
+import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
 import { parsePositivePathId } from "./path-contract.js";
 import { getOwnedTicketDetail } from "./ticket-detail-service.js";
 import {
@@ -69,6 +70,7 @@ app.use("/api/metadata", requireRole("REQUESTER"));
 app.use("/api/staff", requireRole("IT_STAFF", "ADMINISTRATOR"));
 app.use("/api/admin", requireRole("ADMINISTRATOR"));
 app.use(express.json());
+app.use("/api/staff", staffTicketOperationsRouter);
 app.use("/api/staff", staffQueueRouter);
 
 // ---------------------------------------------------------------------------

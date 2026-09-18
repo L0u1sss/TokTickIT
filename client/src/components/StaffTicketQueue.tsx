@@ -4,7 +4,8 @@ import { useAuth } from "../context/AuthContext.js";
 type Person = { id: number; displayName: string; email: string };
 type Ticket = { id: number; ticketNumber: string; summary: string; category: { name: string };
   requester: Person; owner: Person | null; requestedPriority: string; itPriority: string; status: string;
-  createdAt: string; updatedAt: string; description?: string; relatedSystem?: { name: string } };
+  createdAt: string; updatedAt: string; description?: string; relatedSystem?: { name: string };
+  publicComments?: Array<{ id: number; content: string; createdAt: string; author: Person }> };
 type Queue = { items: Ticket[]; pagination: { page: number; pageSize: number; totalItems: number; totalPages: number } };
 const statuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
 const priorities = ["LOW", "MEDIUM", "HIGH"];
@@ -17,6 +18,14 @@ async function get<T>(path: string, signal: AbortSignal): Promise<T> {
     const body = await response.json().catch(() => ({}));
     throw new QueueError(body.error?.code ?? "FAILURE");
   }
+  return response.json() as Promise<T>;
+}
+async function mutate<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/api/staff/${path}`, {
+    method, credentials: "include", cache: "no-store", headers: body ? { "content-type": "application/json" } : undefined,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) { const data = await response.json().catch(() => ({})); throw new QueueError(data.error?.code ?? "FAILURE"); }
   return response.json() as Promise<T>;
 }
 function TicketFields({ ticket }: { ticket: Ticket }) {
@@ -39,6 +48,8 @@ export default function StaffTicketQueue() {
   const [error, setError] = useState(""), [loading, setLoading] = useState(true);
   const [owners, setOwners] = useState<Person[]>([]), [ownerError, setOwnerError] = useState(false);
   const [ownerRevision, setOwnerRevision] = useState(0);
+  const [saving, setSaving] = useState(false), [operationMessage, setOperationMessage] = useState("");
+  const [operationError, setOperationError] = useState(""), [comment, setComment] = useState(""), [note, setNote] = useState("");
   const pathname = location.split("?")[0], search = location.includes("?") ? location.slice(location.indexOf("?")) : "";
   const isDetail = pathname !== "/staff/tickets";
   useEffect(() => {
@@ -75,6 +86,17 @@ export default function StaffTicketQueue() {
     {!fallback && <option value="">All</option>}{options.map(value => <option key={value} value={value}>{label(value)}</option>)}
   </select></label>;
   const page = (number: number) => { const next = new URLSearchParams(search); next.set("page", String(number)); navigate(`/staff/tickets?${next}`); };
+  const runOperation = async (path: string, method: string, body?: unknown) => {
+    setSaving(true); setOperationError(""); setOperationMessage("");
+    try { await mutate(path, method, body); setOperationMessage("Saved successfully."); setRevision(value => value + 1); }
+    catch (operation) { setOperationError(operation instanceof QueueError ? operation.code : "Unable to save changes."); }
+    finally { setSaving(false); }
+  };
+  const submitCommunication = async (kind: "comments" | "internal-notes", content: string, clear: () => void) => {
+    if (!content.trim()) { setOperationError("Comment or note cannot be empty."); return; }
+    await runOperation(`tickets/${pathname.split("/").pop()}/${kind}`, "POST", { content: content.trim() });
+    clear();
+  };
   return <main id="main-content" tabIndex={-1} className="requester-page"><section className="requester-card staff-queue">
     <h1>{isDetail ? "Ticket Detail" : "Ticket Queue"}</h1>
     {isDetail ? <a href="/staff/tickets" onClick={e => { e.preventDefault(); reset(); }}>Back to Ticket Queue</a> : <>
@@ -100,7 +122,18 @@ export default function StaffTicketQueue() {
     {loading && <p role="status">Loading tickets…</p>}
     {error && <div role="alert"><p>{error === "FORBIDDEN" ? "Forbidden: You do not have access to this screen." : error === "INVALID_QUERY" ? "Invalid queue query. Reset filters to continue." : error === "NOT_FOUND" ? "Ticket not found." : "Unable to load tickets. Try again."}</p>
       {error === "FORBIDDEN" ? <a href="/">Return to your home</a> : error === "INVALID_QUERY" ? <button onClick={reset}>Reset filters</button> : <button onClick={() => setRevision(n => n + 1)}>Retry</button>}</div>}
-    {!loading && !error && detail && <article><h2>{detail.ticketNumber}: {detail.summary}</h2><TicketFields ticket={detail} /><h3>Description</h3><p className="staff-description">{detail.description}</p><p>Related system: {detail.relatedSystem?.name}</p></article>}
+    {!loading && !error && detail && <article><h2>{detail.ticketNumber}: {detail.summary}</h2><TicketFields ticket={detail} /><h3>Operational actions</h3>
+      {operationMessage && <p role="status">{operationMessage}</p>}{operationError && <p role="alert">Unable to save: {operationError}</p>}
+      <div className="staff-operation-controls">
+        <button type="button" disabled={saving || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", {})}>Claim Ticket</button>
+        <label>Ticket Owner<select aria-label="Ticket Owner" disabled={saving} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value) }); }}><option value="">Unassigned</option>{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
+        <label>IT Priority<select aria-label="IT Priority" disabled={saving} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+        <label>Status<select aria-label="Status" disabled={saving} value={detail.status} onChange={event => void runOperation(`tickets/${detail.id}/status`, "PATCH", { status: event.target.value })}>{statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+      </div>
+      <h3>Description</h3><p className="staff-description">{detail.description}</p><p>Related system: {detail.relatedSystem?.name}</p>
+      <section aria-labelledby="public-comments-heading"><h3 id="public-comments-heading">Public Comments</h3><textarea aria-label="Public Comment" value={comment} maxLength={2000} onChange={event => setComment(event.target.value)} /><button type="button" disabled={saving} onClick={() => void submitCommunication("comments", comment, () => setComment(""))}>Post Public Comment</button>{detail.publicComments?.map(item => <p key={item.id}><strong>{item.author.displayName}</strong> {item.content}</p>)}</section>
+      <section aria-labelledby="internal-notes-heading"><h3 id="internal-notes-heading">Internal Notes</h3><textarea aria-label="Internal Note" value={note} maxLength={4000} onChange={event => setNote(event.target.value)} /><button type="button" disabled={saving} onClick={() => void submitCommunication("internal-notes", note, () => setNote(""))}>Add Internal Note</button></section>
+    </article>}
     {!loading && !error && queue && <>
       <p role="status">{queue.pagination.totalItems} tickets · Page {queue.pagination.page} of {queue.pagination.totalPages || 1}</p>
       {queue.items.length === 0 ? <p>{filtered ? "No results match your filters." : queue.pagination.totalItems ? "No tickets on this page. Return to an earlier page." : "No tickets yet."}</p> : <>

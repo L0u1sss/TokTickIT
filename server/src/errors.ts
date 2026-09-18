@@ -24,7 +24,11 @@ export type ApiErrorCode =
   | "TICKET_NOT_FOUND"
   | "ATTACHMENT_NOT_FOUND"
   | "ATTACHMENT_NOT_AVAILABLE"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "TICKET_ALREADY_ASSIGNED"
+  | "INVALID_ASSIGNEE"
+  | "TICKET_NOT_ASSIGNABLE"
+  | "INVALID_STATUS_TRANSITION";
 
 export interface ErrorDetail {
   field: string;
