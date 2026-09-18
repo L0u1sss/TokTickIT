@@ -62,7 +62,7 @@ describe("Issue #31 disposable populated identity migration", () => {
     const [ticket] = await db.$queryRaw<Array<{ id: number }>>`INSERT INTO "Ticket" ("ticketNumber", "clientRequestId", summary, description, "requestedPriority", "requesterId", "categoryId", "relatedSystemId", "updatedAt") VALUES ('TKT-2026-000017', ${randomUUID()}::uuid, 'Legacy ticket', 'Preserved legacy description', 'HIGH', 17, ${category.id}, ${system.id}, CURRENT_TIMESTAMP) RETURNING *`;
     const attachment = await db.attachment.create({ data: { ticketId: ticket.id, originalName: "legacy.pdf", storageKey: "opaque-migration-key", sizeBytes: 10, mimeType: "application/pdf", uploadedByRequesterId: 17, removedAt: new Date(), removalReason: "Replaced", removedByRequesterId: 18 } });
     finish();
-    expect(await db.ticket.findUnique({ where: { id: ticket.id } })).toEqual({ ...ticket, itPriority: "HIGH", ownerId: null, lastOwnerId: null });
+    expect(await db.ticket.findUnique({ where: { id: ticket.id } })).toEqual({ ...ticket, itPriority: "HIGH", ownerId: null, lastOwnerId: null, problemAppearsResolvedAt: null, problemAppearsResolvedById: null });
     expect(await db.attachment.findUnique({ where: { id: attachment.id } })).toEqual(attachment);
     const user = await db.user.findUniqueOrThrow({ where: { id: 17 } });
     expect(user).toMatchObject({ displayName: "Legacy Owner", role: "REQUESTER", isActive: true, mustChangePassword: true, updatedAt: new Date("2026-01-01Z") });

@@ -94,3 +94,7 @@ Verification used isolated PostgreSQL schemas, populated migration/collision cas
 Team decision requiring review: migrated local-lab users receive the documented shared initial fixture password and forced change, not production password delivery. ID/email collisions fail instead of merging accounts. Workflow/staff/admin operations remain out of #31 scope; see `identity-migration.md` and `tests.md` for exact evidence.
 
 Final contract comparison caught the Lab 2 foreign-owner `403` versus Lab 3 non-disclosing `404 NOT_FOUND` difference. The implementation and regression expectations were updated together. Error correlation IDs, direct My Tickets query preservation and explicit Forbidden screens for Requester access to Staff/Admin routes were also verified. A flaky redirect assertion was changed to wait for the asynchronous route effect, not to relax the expected destination.
+
+## Issue #34 implementation (2026-09-19)
+
+User requested implementation of issue #34 in the local TokTickIT workspace using Lab_3_sheet.pdf. Codex read the issue, existing engineering contract and handout, completed Requester comments/resolution indication, tightened Staff communication validation, separated Internal Notes loading, and added API/UI/live-browser coverage. It checked disposable-schema migrations, Unicode limits, forged metadata, role isolation, plain-text rendering and responsive screenshots. Human peer review and integration remain pending. See [local evidence](comments-notes-implementation.md).

@@ -64,6 +64,7 @@ describe("Requester Ticket Detail", () => {
     window.sessionStorage.clear();
     window.history.replaceState({}, "", "/tickets/145");
     mockRequesterSession(requester);
+    vi.spyOn(api, "fetchAuthenticated").mockResolvedValue(new Response(JSON.stringify({ items: [] })));
     vi.spyOn(api, "getTicketDetail").mockResolvedValue(ticket);
   });
 
