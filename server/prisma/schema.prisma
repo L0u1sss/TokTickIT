@@ -94,7 +94,7 @@ model Ticket {
   summary           String        @db.VarChar(120)
   description       String        @db.VarChar(2000)
   requestedPriority Priority
-  itPriority        Priority     @default(MEDIUM)
+  itPriority        Priority
   ownerId           Int?
   owner             User?        @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   status            Status        @default(NEW)

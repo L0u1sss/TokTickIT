@@ -92,6 +92,7 @@ function validTicketData(
     summary: "Database constraint verification",
     description: "A valid description used by the database schema tests.",
     requestedPriority: Priority.MEDIUM,
+    itPriority: overrides.requestedPriority ?? Priority.MEDIUM,
     requesterId,
     categoryId,
     relatedSystemId,

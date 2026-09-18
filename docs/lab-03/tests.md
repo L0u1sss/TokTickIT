@@ -1,5 +1,28 @@
 # TokTickIT Lab 3 — Test Plan and Verification Evidence
 
+## PR #43 review correction — 2026-09-18
+
+Review [5249123058](https://github.com/L0u1sss/TokTickIT/pull/43#pullrequestreview-5249123058)
+identified a static MEDIUM default that allowed inserts to omit initial IT Priority.
+Before fixing the schema, the new integration tests reproduced the defect: a direct
+insert succeeded without IT Priority, and database metadata reported the MEDIUM default.
+
+The final schema requires explicit `itPriority`. The additive migration
+`20260918010000_require_explicit_it_priority` drops the default without rewriting existing
+rows or editing previously applied migration history. Regression coverage verifies:
+
+- API creation and replay for LOW, MEDIUM and HIGH initialize IT Priority from Requested Priority.
+- Direct SQL inserts omitting IT Priority for LOW/HIGH fail with PostgreSQL NOT NULL error 23502.
+- The final database column is NOT NULL with no default.
+- Upgrading the reviewed queue schema preserves previously adjusted IT priorities and all other Ticket fields.
+- Legacy Ticket/Attachment and queue/browser fixtures explicitly initialize priority; simulated later staff changes use updates.
+
+Local results: full server **26 files / 220 tests passed**, server build/lint and Prisma
+validate passed, and live Staff Queue browser E2E **1/1 passed**. `git diff --check`
+passed. Database checks used disposable test schemas, not the development database.
+No client product code changed; the prior client-suite result below remains historical.
+Hosted CI and reviewer approval of this correction remain pending.
+
 ## Issue #32 verification — 2026-09-18
 
 Latest local results for `feat/lab3-staff-ticket-queue`:

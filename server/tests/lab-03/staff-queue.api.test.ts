@@ -17,7 +17,10 @@ beforeAll(async () => {
   relatedSystemId = (await db.relatedSystem.create({ data: { name: marker } })).id;
   for (let i = 0; i < 3; i++) {
     const ticket = await db.ticket.create({ data: { ticketNumber: `TKT-2099-${String(ids[0] * 3 + i).padStart(6, "0")}`, clientRequestId: randomUUID(), summary: `${marker} printer ${i}`, description: "Private ticket detail", requesterId: ids[0], categoryId, relatedSystemId,
-      requestedPriority: "HIGH", itPriority: i === 0 ? "LOW" : "HIGH", status: i === 0 ? "OPEN" : "NEW", ownerId: i === 0 ? ids[1] : null, updatedAt: new Date("2026-09-01") } }); tickets.push(ticket.id);
+      requestedPriority: "HIGH", itPriority: "HIGH", status: i === 0 ? "OPEN" : "NEW", ownerId: i === 0 ? ids[1] : null, updatedAt: new Date("2026-09-01") } });
+    // Model a subsequent staff adjustment separately from initial creation.
+    if (i === 0) await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "LOW", updatedAt: new Date("2026-09-01") } });
+    tickets.push(ticket.id);
   }
 });
 afterAll(async () => {
@@ -69,11 +72,30 @@ describe("staff queue API", () => {
     expect(detail.body.description).toBe("Private ticket detail"); expect(detail.body.owner.id).toBe(ids[1]);
     expect((await request(app).get("/api/staff/tickets/2147483647").set("Cookie", cookies[1])).status).toBe(404);
   });
-  it("copies Requested Priority on creation and preserves Requester access to new statuses", async () => {
+  it.each(["LOW", "MEDIUM", "HIGH"])("copies %s Requested Priority on creation and replay", async requestedPriority => {
+    const input = { clientRequestId: randomUUID(), summary: "Priority copy regression", description: "New ticket priority must match the requested value.", requestedPriority, categoryId, relatedSystemId };
     const created = await request(app).post("/api/tickets").set("Cookie", cookies[0]).set("Origin", "http://localhost:5173")
-      .send({ clientRequestId: randomUUID(), summary: "Priority copy regression", description: "New ticket priority must match the requested value.", requestedPriority: "LOW", categoryId, relatedSystemId });
+      .send(input);
     expect(created.status).toBe(201);
-    expect(await db.ticket.findUnique({ where: { id: created.body.ticket.id } })).toMatchObject({ itPriority: "LOW", ownerId: null });
+    expect(await db.ticket.findUnique({ where: { id: created.body.ticket.id } })).toMatchObject({ requestedPriority, itPriority: requestedPriority, ownerId: null });
+    const replay = await request(app).post("/api/tickets").set("Cookie", cookies[0]).set("Origin", "http://localhost:5173").send(input);
+    expect(replay.status).toBe(200); expect(replay.body.ticket.id).toBe(created.body.ticket.id);
+    expect(await db.ticket.count({ where: { clientRequestId: input.clientRequestId } })).toBe(1);
+  });
+  it.each(["LOW", "HIGH"])("rejects direct %s inserts that omit IT Priority instead of silently defaulting", async requestedPriority => {
+    const clientRequestId = randomUUID();
+    const ticketNumber = requestedPriority === "LOW" ? "TKT-2098-999998" : "TKT-2098-999999";
+    await expect(db.$executeRaw`INSERT INTO "Ticket" ("ticketNumber", "clientRequestId", summary, description, "requestedPriority", "requesterId", "categoryId", "relatedSystemId", "updatedAt")
+      VALUES (${ticketNumber}, ${clientRequestId}::uuid, 'Missing IT Priority', 'The missing priority must reject this insert.', ${requestedPriority}::"Priority", ${ids[0]}, ${categoryId}, ${relatedSystemId}, CURRENT_TIMESTAMP)`)
+      .rejects.toMatchObject({ code: "P2010", meta: { code: "23502" } });
+    expect(await db.ticket.count({ where: { clientRequestId } })).toBe(0);
+  });
+  it("requires explicit IT Priority in the migrated database schema", async () => {
+    expect(await db.$queryRaw`SELECT column_default, is_nullable FROM information_schema.columns
+      WHERE table_schema = current_schema() AND table_name = 'Ticket' AND column_name = 'itPriority'`)
+      .toEqual([{ column_default: null, is_nullable: "NO" }]);
+  });
+  it("preserves Requester access to new statuses", async () => {
     const detail = await request(app).get(`/api/tickets/${tickets[0]}`).set("Cookie", cookies[0]);
     expect(detail.status).toBe(200); expect(detail.body.status).toBe("Open");
     expect((await request(app).get("/api/tickets").set("Cookie", cookies[0])).status).toBe(200);

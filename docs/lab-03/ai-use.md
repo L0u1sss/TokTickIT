@@ -1,5 +1,17 @@
 # Lab 3 — AI Use and Reflection
 
+## PR #43 review remediation — 2026-09-18
+
+User asked Codex to fix review 5249123058 against the Lab 3 handout. The reviewer
+identified the misleading static MEDIUM default despite correct API initialization.
+New integration checks reproduced the database behavior before remediation. The fix
+removes the Prisma default and adds a forward DROP DEFAULT migration, preserving old
+migration checksums and staff-adjusted priorities. Direct Ticket fixtures now initialize
+priority explicitly and simulate subsequent staff changes with updates. Verification
+covers LOW/MEDIUM/HIGH creation/replay, missing-priority SQL rejection, metadata and
+populated upgrade preservation. Full server 220/220, Queue E2E 1/1, server build/lint
+and Prisma validate passed locally. No GitHub message, push or approval was performed.
+
 ## Issue #32 — 2026-09-18
 
 Codex (GPT-6) implemented the IT Staff Ticket Queue from the user's linked issue,

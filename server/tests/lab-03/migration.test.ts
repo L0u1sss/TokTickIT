@@ -11,7 +11,7 @@ const admin = new PrismaClient();
 const schemas: string[] = [];
 const clients: PrismaClient[] = [];
 const migrations = readdirSync("prisma/migrations").filter(x => /^\d/.test(x)).sort();
-async function database(legacy = true) {
+async function database(legacy = true, cutoverName = "20260916010000_migrate_requester_identity") {
   const schema = "migration_test_" + randomUUID().replaceAll("-", "");
   await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`); schemas.push(schema);
   const url = new URL(process.env.TEST_DATABASE_URL!); url.searchParams.set("schema", schema);
@@ -20,7 +20,8 @@ async function database(legacy = true) {
     env: { ...process.env, DATABASE_URL: url.toString() }, stdio: ["pipe", "pipe", "pipe"],
     input: readFileSync(resolve("prisma/migrations", name, "migration.sql")),
   });
-  const cutover = migrations.indexOf("20260916010000_migrate_requester_identity");
+  const cutover = migrations.indexOf(cutoverName);
+  if (cutover < 0) throw new Error(`Migration not found: ${cutoverName}`);
   for (const name of migrations.slice(0, legacy ? cutover : undefined)) execute(name);
   return { db, finish: () => { for (const name of migrations.slice(cutover)) execute(name); } };
 }
@@ -32,6 +33,26 @@ afterAll(async () => {
 });
 
 describe("Issue #31 disposable populated identity migration", () => {
+  it("upgrades the reviewed queue schema without rewriting existing IT priorities", async () => {
+    const { db, finish } = await database(true, "20260918010000_require_explicit_it_priority");
+    await seedDatabase(db);
+    const requester = await db.user.findUniqueOrThrow({ where: { email: "jennifer.a@example.com" } });
+    const category = await db.category.findFirstOrThrow();
+    const relatedSystem = await db.relatedSystem.findFirstOrThrow();
+    const tickets = [];
+    for (const [index, requestedPriority] of (["LOW", "HIGH"] as const).entries()) {
+      const ticket = await db.ticket.create({ data: { ticketNumber: `TKT-2097-00000${index + 1}`, clientRequestId: randomUUID(),
+        summary: "Existing queue ticket", description: "Preserve existing priority decisions on upgrade.", requestedPriority, itPriority: requestedPriority,
+        requesterId: requester.id, categoryId: category.id, relatedSystemId: relatedSystem.id } });
+      // Represent a later staff priority decision; migration must not undo it.
+      tickets.push(await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "MEDIUM" } }));
+    }
+    finish();
+    expect(await db.ticket.findMany({ orderBy: { id: "asc" } })).toEqual(tickets);
+    expect(await db.$queryRaw`SELECT column_default FROM information_schema.columns
+      WHERE table_schema = current_schema() AND table_name = 'Ticket' AND column_name = 'itPriority'`)
+      .toEqual([{ column_default: null }]);
+  }, 60000);
   it("preserves requester IDs, activation, timestamps and all Ticket/Attachment audit fields", async () => {
     const { db, finish } = await database();
     await db.$executeRaw`INSERT INTO "RequesterUser" (id,"displayName",email,"isActive","updatedAt") VALUES (17,'Legacy Owner','legacy@example.test',true,'2026-01-01'),(18,'Inactive Owner','inactive@example.test',false,'2026-01-01')`;

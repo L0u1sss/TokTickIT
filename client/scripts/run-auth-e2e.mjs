@@ -50,11 +50,15 @@ try{
     const requester = await db.user.findUniqueOrThrow({ where: { email: "auth-browser@example.test" } });
     const category = await db.category.create({ data: { name: "Hardware" } });
     const system = await db.relatedSystem.create({ data: { name: "Office services" } });
-    for (let i = 1; i <= 23; i++) await db.ticket.create({ data: {
+    for (let i = 1; i <= 23; i++) {
+      const ticket = await db.ticket.create({ data: {
       ticketNumber: `TKT-2026-${String(i).padStart(6, "0")}`, clientRequestId: randomUUID(), summary: i === 23 ? "Printer on floor 3 is offline" : `Office workstation ${i} needs support`,
       description: "The office printer cannot be reached from the shared network.", requesterId: requester.id, categoryId: category.id, relatedSystemId: system.id,
-      requestedPriority: "HIGH", itPriority: i % 2 ? "HIGH" : "MEDIUM", status: i % 2 ? "OPEN" : "NEW", ownerId: i % 2 ? staff.id : null,
+      requestedPriority: "HIGH", itPriority: "HIGH", status: i % 2 ? "OPEN" : "NEW", ownerId: i % 2 ? staff.id : null,
     } });
+      // Represent an existing staff adjustment after correct priority initialization.
+      if (i % 2 === 0) await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "MEDIUM" } });
+    }
   }
   const api=start(path.join(server,"node_modules/tsx/dist/cli.mjs"),[path.join(server,"src/index.ts")],server,
     {DATABASE_URL:isolated.toString(),CLIENT_ORIGIN:clientUrl,PORT:apiPort,NODE_ENV:"test"},"ignore");

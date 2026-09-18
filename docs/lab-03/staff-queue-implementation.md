@@ -27,6 +27,11 @@ The queue links to a read-only staff detail screen as the integration point for 
 - The migration backfills IT Priority from Requested Priority, adds a nullable restrictive
   owner relation, extends the status enum and replaces Lab 2's NEW-only check. The
   authenticated create service explicitly copies priority for all newly submitted tickets.
+- PR #43 review correction: `itPriority` is required with no Prisma/database default.
+  Every approved creation path supplies the requested priority explicitly. Missing values
+  fail instead of silently becoming MEDIUM. The follow-up migration drops the old default
+  without rewriting existing priority decisions or altering applied migration history.
+  Queue/browser fixtures model later staff priority changes as separate updates.
 - The read-only detail endpoint exposes description and related system in addition to
   queue fields. Attachments, assignment/status mutations, comments and notes are #33 work.
 - Desktop groups related values into six labelled columns; below 1024px the same data

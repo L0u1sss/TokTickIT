@@ -22,6 +22,11 @@ Before starting this version, apply the additive migration from `server` with
 The migration preserves existing Tickets/Attachments, initializes IT Priority
 from Requested Priority, and adds optional ownership and Lab 3 status values.
 
+PR #43's follow-up migration removes the static IT Priority default. All Ticket
+creation code must explicitly copy Requested Priority to `itPriority`; omitted values
+are rejected. Apply pending migrations even if the original queue migration already ran.
+Existing priority values are preserved, including later staff adjustments.
+
 Run `node client/scripts/run-auth-e2e.mjs --staff-queue` from the repository root
 for an isolated live queue test and responsive screenshots. It requires the
 existing `TEST_DATABASE_URL` configuration and creates its own disposable schema.
