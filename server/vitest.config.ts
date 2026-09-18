@@ -9,6 +9,7 @@ export default defineConfig({
           environment: "node",
           include: ["tests/**/*.test.ts"],
           exclude: [
+            "tests/lab-03/staff-queue.api.test.ts",
             "tests/lab-03/migration.test.ts",
             "tests/lab-03/authorization.api.test.ts",
             "tests/lab-03/auth.api.test.ts",
@@ -25,6 +26,7 @@ export default defineConfig({
           name: "database",
           environment: "node",
           include: [
+            "tests/lab-03/staff-queue.api.test.ts",
             "tests/lab-03/migration.test.ts",
             "tests/lab-03/authorization.api.test.ts",
             "tests/lab-03/auth.api.test.ts",
