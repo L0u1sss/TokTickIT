@@ -2,6 +2,7 @@ import { render, screen, cleanup, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AuthApp from "../../src/AuthApp.js";
+vi.mock("../../src/components/StaffTicketQueue.js", () => ({ default: () => <h1>Ticket Queue</h1> }));
 const identity={id:1,displayName:"Person",email:"person@example.test",role:"IT_STAFF",mustChangePassword:false};
 afterEach(()=>{cleanup();vi.unstubAllGlobals();sessionStorage.clear();window.history.replaceState({},"","/");});
 describe("UI-03 authentication shell subset",()=>{

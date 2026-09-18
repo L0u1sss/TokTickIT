@@ -20,8 +20,9 @@ async function database(legacy = true) {
     env: { ...process.env, DATABASE_URL: url.toString() }, stdio: ["pipe", "pipe", "pipe"],
     input: readFileSync(resolve("prisma/migrations", name, "migration.sql")),
   });
-  for (const name of migrations.slice(0, legacy ? -1 : undefined)) execute(name);
-  return { db, finish: () => execute(migrations.at(-1)!) };
+  const cutover = migrations.indexOf("20260916010000_migrate_requester_identity");
+  for (const name of migrations.slice(0, legacy ? cutover : undefined)) execute(name);
+  return { db, finish: () => { for (const name of migrations.slice(cutover)) execute(name); } };
 }
 beforeAll(async () => { await admin.$connect(); });
 afterAll(async () => {
@@ -36,10 +37,11 @@ describe("Issue #31 disposable populated identity migration", () => {
     await db.$executeRaw`INSERT INTO "RequesterUser" (id,"displayName",email,"isActive","updatedAt") VALUES (17,'Legacy Owner','legacy@example.test',true,'2026-01-01'),(18,'Inactive Owner','inactive@example.test',false,'2026-01-01')`;
     const category = await db.category.create({ data: { name: "Migration Category" } });
     const system = await db.relatedSystem.create({ data: { name: "Migration System" } });
-    const ticket = await db.ticket.create({ data: { ticketNumber: "TKT-2026-000017", clientRequestId: randomUUID(), summary: "Legacy ticket", description: "Preserved legacy description", requestedPriority: "HIGH", requesterId: 17, categoryId: category.id, relatedSystemId: system.id } });
+    // Use legacy SQL so this fixture does not depend on columns added after Lab 2.
+    const [ticket] = await db.$queryRaw<Array<{ id: number }>>`INSERT INTO "Ticket" ("ticketNumber", "clientRequestId", summary, description, "requestedPriority", "requesterId", "categoryId", "relatedSystemId", "updatedAt") VALUES ('TKT-2026-000017', ${randomUUID()}::uuid, 'Legacy ticket', 'Preserved legacy description', 'HIGH', 17, ${category.id}, ${system.id}, CURRENT_TIMESTAMP) RETURNING *`;
     const attachment = await db.attachment.create({ data: { ticketId: ticket.id, originalName: "legacy.pdf", storageKey: "opaque-migration-key", sizeBytes: 10, mimeType: "application/pdf", uploadedByRequesterId: 17, removedAt: new Date(), removalReason: "Replaced", removedByRequesterId: 18 } });
     finish();
-    expect(await db.ticket.findUnique({ where: { id: ticket.id } })).toEqual(ticket);
+    expect(await db.ticket.findUnique({ where: { id: ticket.id } })).toEqual({ ...ticket, itPriority: "HIGH", ownerId: null });
     expect(await db.attachment.findUnique({ where: { id: attachment.id } })).toEqual(attachment);
     const user = await db.user.findUniqueOrThrow({ where: { id: 17 } });
     expect(user).toMatchObject({ displayName: "Legacy Owner", role: "REQUESTER", isActive: true, mustChangePassword: true, updatedAt: new Date("2026-01-01Z") });

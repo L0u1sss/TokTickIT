@@ -15,6 +15,36 @@
   font-synthesis: none;
 }
 
+.requester-card.staff-queue { width: min(100%, 80rem); min-width: 0; padding: clamp(1rem, 3vw, 2rem); }
+.staff-table th:first-child { width: 25%; }
+.staff-table th:last-child { width: 10%; }
+.staff-filters fieldset { border: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.staff-filters label { display: grid; gap: .4rem; font-weight: 600; }
+.staff-filters input, .staff-filters select { width: 100%; min-width: 0; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; background: white; }
+.staff-search { grid-column: 1 / -1; }
+.staff-queue button { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--zen-primary); border-radius: .4rem; color: var(--zen-primary); background: white; }
+.staff-queue button:disabled { opacity: .55; }
+.staff-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.staff-table th, .staff-table td { padding: .8rem .5rem; text-align: left; vertical-align: top; border-bottom: 1px solid #cadbd0; overflow-wrap: anywhere; }
+.staff-table th { background: var(--zen-pale); }
+.staff-badge { display: inline-block; padding: .2rem .5rem; border-radius: .4rem; background: var(--zen-pale); color: #195635; font-size: .85rem; }
+.staff-badge.priority-high { color: #842020; background: #ffe8e8; }
+.staff-badge.priority-medium { color: #785000; background: #fff4d6; }
+.staff-cards { display: none; }
+.staff-ticket-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.staff-ticket-fields dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
+.staff-ticket-fields dt { font-weight: 600; }
+.staff-pagination { display: flex; gap: 1rem; margin-top: 1.5rem; }
+.staff-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 1023px) {
+  .staff-table { display: none; }
+  .staff-cards { display: grid; gap: 1rem; }
+  .staff-cards article { border: 1px solid #cadbd0; border-radius: .6rem; padding: 1rem; overflow-wrap: anywhere; }
+  .staff-cards a { display: inline-block; padding: .65rem 0; }
+  .staff-filters fieldset { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) { .staff-filters fieldset, .staff-ticket-fields { grid-template-columns: minmax(0, 1fr); } }
+
 .auth-field { display: grid; gap: .4rem; margin-block: 1rem; }
 .auth-field input { width: 100%; min-width: 0; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; }
 .auth-field button { justify-self: start; }

@@ -357,6 +357,8 @@ describe("Lab 2 database integration contract", () => {
           "createdAt",
           "description",
           "id",
+          "itPriority",
+          "ownerId",
           "relatedSystemId",
           "requestedPriority",
           "requesterId",
@@ -408,6 +410,13 @@ describe("Lab 2 database integration contract", () => {
       { enumName: "Priority", enumValue: "MEDIUM" },
       { enumName: "Priority", enumValue: "HIGH" },
       { enumName: "Status", enumValue: "NEW" },
+      { enumName: "Status", enumValue: "OPEN" },
+      { enumName: "Status", enumValue: "IN_PROGRESS" },
+      { enumName: "Status", enumValue: "WAITING_FOR_REQUESTER" },
+      { enumName: "Status", enumValue: "RESOLVED" },
+      { enumName: "Status", enumValue: "CLOSED" },
+      { enumName: "Status", enumValue: "REOPENED" },
+      { enumName: "Status", enumValue: "CANCELLED" },
     ]);
   });
 
@@ -602,12 +611,12 @@ describe("Lab 2 database integration contract", () => {
           invalidStatusData.summary,
           invalidStatusData.description,
           "LOW",
-          "OPEN",
+          "UNKNOWN_STATUS",
           invalidStatusData.requesterId,
           invalidStatusData.categoryId,
           invalidStatusData.relatedSystemId,
         ),
-      ["invalid input value for enum", "OPEN"],
+      ["invalid input value for enum", "UNKNOWN_STATUS"],
     );
   });
 
@@ -805,6 +814,7 @@ describe("Lab 2 database integration contract", () => {
       foreignKeys.map((foreignKey) => [foreignKey.constraintName, foreignKey]),
     );
     const expectedForeignKeyNames = [
+      "Ticket_ownerId_fkey",
       "Ticket_requesterId_fkey",
       "Ticket_categoryId_fkey",
       "Ticket_relatedSystemId_fkey",

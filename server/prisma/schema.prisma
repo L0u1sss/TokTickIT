@@ -15,6 +15,13 @@ enum Priority {
 
 enum Status {
   NEW
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_REQUESTER
+  RESOLVED
+  CLOSED
+  REOPENED
+  CANCELLED
 }
 
 enum UserRole {
@@ -37,6 +44,7 @@ model User {
   updatedAt          DateTime  @updatedAt
   sessions           Session[]
   tickets             Ticket[]
+  assignedTickets     Ticket[] @relation("TicketOwner")
   uploadedAttachments Attachment[] @relation("AttachmentUploader")
   removedAttachments  Attachment[] @relation("AttachmentRemover")
 
@@ -86,6 +94,9 @@ model Ticket {
   summary           String        @db.VarChar(120)
   description       String        @db.VarChar(2000)
   requestedPriority Priority
+  itPriority        Priority     @default(MEDIUM)
+  ownerId           Int?
+  owner             User?        @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   status            Status        @default(NEW)
   requesterId       Int
   categoryId        Int
@@ -98,6 +109,8 @@ model Ticket {
   attachments       Attachment[]
 
   @@index([requesterId])
+  @@index([ownerId])
+  @@index([updatedAt, id])
   @@index([categoryId])
   @@index([relatedSystemId])
   @@index([requesterId, createdAt(sort: Desc)])

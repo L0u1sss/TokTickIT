@@ -1,5 +1,20 @@
 # Lab 3 — AI Use and Reflection
 
+## Issue #32 — 2026-09-18
+
+Codex (GPT-6) implemented the IT Staff Ticket Queue from the user's linked issue,
+the Lab 3 handout text and the repository API/UI specification. The pre-implementation
+test plan is recorded in `staff-queue-implementation.md`. Work includes an additive
+data migration, strict queue API, active assignees, responsive UI, read-only detail
+integration and automated tests. No additional agents were used.
+
+Verification exposed the legacy NEW-only database constraint, migration fixtures
+that assumed the newest migration was always identity cutover, a narrow desktop
+card and ambiguous browser label lookup. These were corrected, with passing
+results recorded in `tests.md`. Existing Lab 2 checks were updated only where the
+Lab 3 schema deliberately extends the earlier contract. No peer review, remote
+push, merge or hosted CI result is claimed.
+
 ## Integration follow-up — 2026-09-17
 
 CI diagnosis follow-up: AI read job `104945197026` from run `35140205383`. The responsive step timed out waiting for Create Ticket after direct entry at `/tickets/new`. No new runtime change was required beyond the uncommitted unconditional AuthApp entry fix; rerunning `npm --prefix client run test:responsive` passed 5/5. Assertions/timeouts were not weakened, and no remote rerun or push was performed.

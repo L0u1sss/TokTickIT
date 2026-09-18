@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext.js";
 import AuthForm, { LogoutButton } from "./components/AuthForm.js";
 import App from "./App.js";
+import StaffTicketQueue from "./components/StaffTicketQueue.js";
 
 export function AuthScreens() {
   const {user,loading,error,logoutError,refresh,logout}=useAuth();
@@ -9,7 +10,7 @@ export function AuthScreens() {
   const home = user?.role === "REQUESTER" ? "/tickets/new" : user?.role === "ADMINISTRATOR" ? "/admin/users" : "/staff/tickets";
   const location = window.location.pathname;
   const permitted = user?.role === "REQUESTER" ? /^\/tickets(?:\/[^/]+)?$/.test(location)
-    : user?.role === "ADMINISTRATOR" ? ["/admin/users", "/staff/tickets"].includes(location) : location === "/staff/tickets";
+    : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
   const forbidden = Boolean(user && !user.mustChangePassword && (
     (location.startsWith("/admin/") && user.role !== "ADMINISTRATOR") ||
     (location.startsWith("/staff/") && user.role === "REQUESTER")
@@ -33,10 +34,10 @@ export function AuthScreens() {
       <nav aria-label="Main navigation"><a href="/staff/tickets" aria-current={path === "/staff/tickets" ? "page" : undefined}>Ticket Queue</a>{user.role === "ADMINISTRATOR" && <a href="/admin/users" aria-current={path === "/admin/users" ? "page" : undefined}>User Management</a>}</nav>
       <div className="requester-menu"><strong>{user.displayName}</strong><span>{user.role.replaceAll("_"," ")}</span><LogoutButton/></div>
     </div></header>
-    <main id="main-content" tabIndex={-1} className="requester-page"><section className="requester-card">
+    {path.startsWith("/staff/tickets") ? <StaffTicketQueue /> : <main id="main-content" tabIndex={-1} className="requester-page"><section className="requester-card">
       <h1 ref={heading} tabIndex={-1}>{path === "/admin/users" ? "User Management" : "Ticket Queue"}</h1>
       <p>This screen is planned for the corresponding Lab 3 feature issue. No operational actions are available yet.</p>
-    </section></main>
+    </section></main>}
   </div>;
 }
 

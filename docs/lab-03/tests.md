@@ -1,5 +1,35 @@
 # TokTickIT Lab 3 — Test Plan and Verification Evidence
 
+## Issue #32 verification — 2026-09-18
+
+Latest local results for `feat/lab3-staff-ticket-queue`:
+
+| Command (repository root) | Result |
+|---|---|
+| `npm --prefix server run test:isolated` | 26 files, 213 tests passed |
+| `npm --prefix client test -- --maxWorkers=2` | 15 files, 88 tests passed |
+| `node client/scripts/run-auth-e2e.mjs --staff-queue` | 1 live browser flow passed |
+| `npm --prefix server run build` / `npm --prefix client run build` | Both passed |
+| `npm --prefix server run lint` / `npm --prefix client run lint` | Both passed |
+
+Queue scope covers AC-08, applicable AC-17 feedback, and AC-18 responsive/keyboard
+behavior. `server/tests/lab-03/staff-queue.api.test.ts` also verifies direct role denial,
+inactive-session denial, safe database failures, priority initialization, assignees,
+read-only details and Requester regression with extended statuses. Populated migration
+tests verify original Ticket/Attachment fields and copied IT Priority survive migration.
+
+Screenshots: [desktop](../../artifacts/lab-03/screenshots/staff-queue/desktop.png),
+[tablet](../../artifacts/lab-03/screenshots/staff-queue/tablet.png),
+[tablet results](../../artifacts/lab-03/screenshots/staff-queue/tablet-results.png),
+[mobile](../../artifacts/lab-03/screenshots/staff-queue/mobile.png),
+[mobile results](../../artifacts/lab-03/screenshots/staff-queue/mobile-results.png).
+Desktop and mobile result images were visually inspected; the browser asserts no
+horizontal page overflow at all three sizes and keyboard focus on the Status control.
+
+This is local evidence, not hosted CI or peer approval. Full E2E-02 staff operations
+and administrator management remain later issues. Implementation boundaries and the
+test plan recorded before coding are in [staff-queue-implementation.md](staff-queue-implementation.md).
+
 > สถานะ: ผล local ล่าสุดหลังรวม PR #40 อยู่ด้านล่าง; Section 6–7 เป็นประวัติการทดสอบก่อนแก้ integration รอบนี้
 
 ## Post-merge integration verification — 2026-09-17
@@ -43,7 +73,7 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | UT-02 | Unit | BR-04, BR-06, AC-03 | Password Unicode length, classes, trim, confirmation, reuse | exact policy enforced | `server/tests/lab-03/password-policy.test.ts` | Pass — #30 password-policy unit tests plus API confirmation/reuse/rotation tests |
 | UT-03 | Unit | BR-20–BR-22, AC-11 | Every status transition pair | only matrix transitions allowed | `server/tests/lab-03/status-transition.test.ts` | Planned |
 | UT-04 | Unit | BR-25, BR-27, BR-34 | Comment/note whitespace, Unicode boundaries, plain text | exact limits; HTML not executed | `server/tests/lab-03/content-validation.test.ts` | Planned |
-| UT-05 | Unit | FR-07, AC-08 | Queue query parse/defaults/tie-breaker | strict validated query | `server/tests/lab-03/staff-queue-query.test.ts` | Planned |
+| UT-05 | Unit | FR-07, AC-08 | Queue query parse/defaults/tie-breaker | strict validated query | `server/tests/lab-03/staff-query.test.ts` | Pass — local Issue #32 verification |
 | DB-01 | Integration | FR-17, AC-07 | Fresh Lab 3 migration/schema/FKs/indexes/enums | clean deploy passes | `server/tests/lab-03/migration.test.ts` | Partial — User/Session and identity/FK migration passed; full workflow schema remains later issues |
 | DB-02 | Integration | FR-17, AC-07 | Populated Lab 2 requester/ticket/attachment migration | IDs/counts/ownership preserved | `server/tests/lab-03/migration.test.ts` | Pass — #31 populated migration preserves IDs, Ticket/Attachment contents and restrictive FKs |
 | DB-03 | Integration | BR-19, AC-07 | Ticket status/owner/IT Priority backfill | NEW preserved; owner null; IT=requested | `server/tests/lab-03/migration.test.ts` | Planned |
@@ -60,10 +90,10 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | API-08 | Security | BR-11–BR-14, AC-05 | Cross-role direct API matrix | 403/404 as contract; no data leak | `server/tests/lab-03/authorization.api.test.ts` | Partial — requester/staff/admin namespace role guards passed; operational cross-role matrix awaits future handlers |
 | API-09 | Regression | FR-05, AC-06 | Supplied requesterId/header cannot switch identity | own data only; protected fields rejected/ignored | `server/tests/lab-03/authorization.api.test.ts` | Pass — #31 real-cookie tests prove forged header cannot change ownership and protected body field is rejected |
 | API-10 | Regression | FR-05, AC-06–AC-07 | Lab 2 create/list/detail/attachments under session | prior behavior passes with auth | `server/tests/lab-03/requester-regression.api.test.ts` | Pass — authenticated Ticket/Attachment regression suites and six live browser flows |
-| API-11 | API | FR-07, AC-08 | Queue search across defined fields | only matching shared Tickets | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
-| API-12 | API | FR-07, AC-08 | Queue filters individually/combined | correct status/priorities/owner rows | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
-| API-13 | API | FR-07, AC-08 | Sort, tie-break, page metadata/boundaries | deterministic page results | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
-| API-14 | API | FR-07, AC-08 | Invalid/unknown/duplicate query | 400; no silent fallback | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
+| API-11 | API | FR-07, AC-08 | Queue search across defined fields | only matching shared Tickets | `server/tests/lab-03/staff-queue.api.test.ts` | Pass — local Issue #32 verification |
+| API-12 | API | FR-07, AC-08 | Queue filters individually/combined | correct status/priorities/owner rows | `server/tests/lab-03/staff-queue.api.test.ts` | Pass — local Issue #32 verification |
+| API-13 | API | FR-07, AC-08 | Sort, tie-break, page metadata/boundaries | deterministic page results | `server/tests/lab-03/staff-queue.api.test.ts` | Pass — local Issue #32 verification |
+| API-14 | API | FR-07, AC-08 | Invalid/unknown/duplicate query | 400; no silent fallback | `server/tests/lab-03/staff-queue.api.test.ts` | Pass — local Issue #32 verification |
 | API-15 | API | FR-08, AC-05 | Staff Ticket Detail and attachment continuity | permitted complete detail; 404 missing | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | API-16 | API | FR-09, AC-09 | Claim unassigned and conflict/concurrency | owner set once; 409 conflict | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | API-17 | API | BR-16, BR-18, BR-36, AC-10 | Assign/reassign eligible staff/admin, terminal/bad target and races | valid persists; invalid/conflicting 409 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
@@ -84,12 +114,12 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | UI-02 | UI | FR-02, AC-03, AC-17 | Password rules/change/Logout/focus | forced flow cannot bypass | `client/tests/lab-03/ChangePassword.test.tsx` | Pass — #30 Change Password component tests and auth browser flow |
 | UI-03 | UI | FR-04, AC-04–AC-05 | Role shell nav/direct route/logout incl. Admin queue access | correct nav; forbidden protected | `client/tests/lab-03/AppAuthorization.test.tsx` | Partial — role entry/navigation, Logout and Requester screens passed; staff/admin operational screens remain planned |
 | UI-04 | Regression | FR-05–FR-06, AC-06, AC-12, AC-14 | No selector; own Ticket/comment and status-aware resolution UI | authenticated requester flow works; terminal action absent | `client/tests/lab-03/RequesterRegression.test.tsx` | Planned |
-| UI-05 | UI | FR-07, AC-08, AC-17 | Queue controls/URL/states/metadata retry | strict query and recoverable feedback | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
+| UI-05 | UI | FR-07, AC-08, AC-17 | Queue controls/URL/states/metadata retry | strict query and recoverable feedback | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Pass — local Issue #32 verification |
 | UI-06 | UI | FR-08–FR-12, AC-09–AC-14, AC-17, AC-19 | Staff detail controls/conflicts, active/final owner, Attachment download, comments/notes | role-safe operational flows and exact staff download route | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | UI-07 | UI | FR-13–FR-15, AC-15–AC-17 | User list/create/edit/password/safety feedback | minimal admin workflow accessible | `client/tests/lab-03/UserManagement.test.tsx` | Planned |
 | UI-08 | UI/Security | BR-27–BR-28, AC-12–AC-13 | Malicious comment/note content rendering | rendered as text; notes remain private | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | RV-01 | Browser | AC-18 | Login/Change Password at 3 viewports + 200% | no overflow/clipping; keyboard usable | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
-| RV-02 | Browser | AC-18 | Staff Queue table/card representation | readable/usable all viewports | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
+| RV-02 | Browser | AC-18 | Staff Queue table/card representation | readable/usable all viewports | `client/e2e/lab-03/staff-queue.spec.ts` | Pass — live desktop/tablet/mobile |
 | RV-03 | Browser | AC-18 | Staff Detail comments/notes/actions | no confusion/overlap; focus works | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
 | RV-04 | Browser | AC-18 | User Management list/forms/dialogs | responsive cards/forms/focus | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |
 | A11Y-01 | Browser | AC-18 | axe, landmarks, names, contrast, live regions | no serious/critical violations | `e2e/lab-03/responsive-accessibility.spec.ts` | Planned |

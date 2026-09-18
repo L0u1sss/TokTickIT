@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { loadEnvFile } from "node:process";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 
 const client= fileURLToPath(new URL("../",import.meta.url));
@@ -24,6 +24,7 @@ const db=new PrismaClient({datasources:{db:{url:isolated.toString()}}});
 const apiPort=process.env.AUTH_E2E_API_PORT ?? "3101",webPort=process.env.AUTH_E2E_CLIENT_PORT ?? "4175";
 const apiUrl=`http://127.0.0.1:${apiPort}`,clientUrl=`http://127.0.0.1:${webPort}`;
 const password="Aa1!"+randomBytes(16).toString("hex");
+const staffQueue = process.argv.includes("--staff-queue");
 const children=[];
 function start(entry,args,cwd,env,stdio="inherit"){
   const child=spawn(process.execPath,[entry,...args],{cwd,env:{...process.env,...env},stdio,windowsHide:true});
@@ -44,11 +45,22 @@ try{
   await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);created=true;
   await run(path.join(server,"node_modules/prisma/build/index.js"),["migrate","deploy"],server,{DATABASE_URL:isolated.toString()});
   await db.user.create({data:{displayName:"Auth Browser User",email:"auth-browser@example.test",role:"REQUESTER",passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:true}});
+  if (staffQueue) {
+    const staff = await db.user.create({ data: { displayName: "Mali IT Staff", email: "queue-browser@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
+    const requester = await db.user.findUniqueOrThrow({ where: { email: "auth-browser@example.test" } });
+    const category = await db.category.create({ data: { name: "Hardware" } });
+    const system = await db.relatedSystem.create({ data: { name: "Office services" } });
+    for (let i = 1; i <= 23; i++) await db.ticket.create({ data: {
+      ticketNumber: `TKT-2026-${String(i).padStart(6, "0")}`, clientRequestId: randomUUID(), summary: i === 23 ? "Printer on floor 3 is offline" : `Office workstation ${i} needs support`,
+      description: "The office printer cannot be reached from the shared network.", requesterId: requester.id, categoryId: category.id, relatedSystemId: system.id,
+      requestedPriority: "HIGH", itPriority: i % 2 ? "HIGH" : "MEDIUM", status: i % 2 ? "OPEN" : "NEW", ownerId: i % 2 ? staff.id : null,
+    } });
+  }
   const api=start(path.join(server,"node_modules/tsx/dist/cli.mjs"),[path.join(server,"src/index.ts")],server,
     {DATABASE_URL:isolated.toString(),CLIENT_ORIGIN:clientUrl,PORT:apiPort,NODE_ENV:"test"},"ignore");
   const web=start(path.join(client,"node_modules/vite/bin/vite.js"),["--host","127.0.0.1","--port",webPort,"--strictPort"],client,{VITE_API_URL:apiUrl},"ignore");
   await Promise.all([ready(apiUrl+"/api/health",api.child),ready(clientUrl,web.child)]);
-  await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test","e2e/lab-03/authentication.spec.ts","--config","playwright.live.config.ts"],client,
+  await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test",staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts","--config","playwright.live.config.ts"],client,
     {E2E_CLIENT_URL:clientUrl,E2E_API_URL:apiUrl,E2E_AUTH_PASSWORD:password});
 }catch(error){console.error(error instanceof Error?error.message:"Auth E2E failed.");process.exitCode=1;}
 finally{
