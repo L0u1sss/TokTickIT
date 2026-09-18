@@ -45,6 +45,9 @@ model User {
   sessions           Session[]
   tickets             Ticket[]
   assignedTickets     Ticket[] @relation("TicketOwner")
+  lastOwnedTickets    Ticket[] @relation("TicketLastOwner")
+  publicComments      PublicComment[]
+  internalNotes       InternalNote[]
   uploadedAttachments Attachment[] @relation("AttachmentUploader")
   removedAttachments  Attachment[] @relation("AttachmentRemover")
 
@@ -97,6 +100,8 @@ model Ticket {
   itPriority        Priority
   ownerId           Int?
   owner             User?        @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  lastOwnerId       Int?
+  lastOwner         User?        @relation("TicketLastOwner", fields: [lastOwnerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   status            Status        @default(NEW)
   requesterId       Int
   categoryId        Int
@@ -107,9 +112,12 @@ model Ticket {
   category          Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   attachments       Attachment[]
+  publicComments    PublicComment[]
+  internalNotes     InternalNote[]
 
   @@index([requesterId])
   @@index([ownerId])
+  @@index([lastOwnerId])
   @@index([updatedAt, id])
   @@index([categoryId])
   @@index([relatedSystemId])
@@ -118,6 +126,30 @@ model Ticket {
   @@index([requesterId, requestedPriority, createdAt(sort: Desc)])
   @@index([requesterId, categoryId, createdAt(sort: Desc)])
   @@index([requesterId, relatedSystemId, createdAt(sort: Desc)])
+}
+
+model PublicComment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  content   String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([ticketId, createdAt, id])
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  content   String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([ticketId, createdAt, id])
 }
 
 model Attachment {

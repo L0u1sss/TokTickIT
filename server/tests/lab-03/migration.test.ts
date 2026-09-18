@@ -39,16 +39,16 @@ describe("Issue #31 disposable populated identity migration", () => {
     const requester = await db.user.findUniqueOrThrow({ where: { email: "jennifer.a@example.com" } });
     const category = await db.category.findFirstOrThrow();
     const relatedSystem = await db.relatedSystem.findFirstOrThrow();
-    const tickets = [];
+    const tickets: Array<{ id: number; requestedPriority: string; itPriority: string; summary: string; description: string }> = [];
     for (const [index, requestedPriority] of (["LOW", "HIGH"] as const).entries()) {
-      const ticket = await db.ticket.create({ data: { ticketNumber: `TKT-2097-00000${index + 1}`, clientRequestId: randomUUID(),
-        summary: "Existing queue ticket", description: "Preserve existing priority decisions on upgrade.", requestedPriority, itPriority: requestedPriority,
-        requesterId: requester.id, categoryId: category.id, relatedSystemId: relatedSystem.id } });
+      const [ticket] = await db.$queryRaw<Array<{ id: number; requestedPriority: string; itPriority: string; summary: string; description: string }>>`INSERT INTO "Ticket" ("ticketNumber", "clientRequestId", "summary", "description", "requestedPriority", "itPriority", "requesterId", "categoryId", "relatedSystemId", "updatedAt") VALUES (${`TKT-2097-00000${index + 1}`}, ${randomUUID()}::uuid, 'Existing queue ticket', 'Preserve existing priority decisions on upgrade.', ${requestedPriority}::"Priority", ${requestedPriority}::"Priority", ${requester.id}, ${category.id}, ${relatedSystem.id}, CURRENT_TIMESTAMP) RETURNING "id", "requestedPriority", "itPriority", "summary", "description"`;
       // Represent a later staff priority decision; migration must not undo it.
-      tickets.push(await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "MEDIUM" } }));
+      await db.$executeRaw`UPDATE "Ticket" SET "itPriority" = 'MEDIUM'::"Priority" WHERE id = ${ticket.id}`;
+      tickets.push({ ...ticket, itPriority: "MEDIUM" });
     }
     finish();
-    expect(await db.ticket.findMany({ orderBy: { id: "asc" } })).toEqual(tickets);
+    const upgraded = await db.ticket.findMany({ orderBy: { id: "asc" }, select: { id: true, requestedPriority: true, itPriority: true, summary: true, description: true } });
+    expect(upgraded).toEqual(tickets);
     expect(await db.$queryRaw`SELECT column_default FROM information_schema.columns
       WHERE table_schema = current_schema() AND table_name = 'Ticket' AND column_name = 'itPriority'`)
       .toEqual([{ column_default: null }]);
@@ -62,7 +62,7 @@ describe("Issue #31 disposable populated identity migration", () => {
     const [ticket] = await db.$queryRaw<Array<{ id: number }>>`INSERT INTO "Ticket" ("ticketNumber", "clientRequestId", summary, description, "requestedPriority", "requesterId", "categoryId", "relatedSystemId", "updatedAt") VALUES ('TKT-2026-000017', ${randomUUID()}::uuid, 'Legacy ticket', 'Preserved legacy description', 'HIGH', 17, ${category.id}, ${system.id}, CURRENT_TIMESTAMP) RETURNING *`;
     const attachment = await db.attachment.create({ data: { ticketId: ticket.id, originalName: "legacy.pdf", storageKey: "opaque-migration-key", sizeBytes: 10, mimeType: "application/pdf", uploadedByRequesterId: 17, removedAt: new Date(), removalReason: "Replaced", removedByRequesterId: 18 } });
     finish();
-    expect(await db.ticket.findUnique({ where: { id: ticket.id } })).toEqual({ ...ticket, itPriority: "HIGH", ownerId: null });
+    expect(await db.ticket.findUnique({ where: { id: ticket.id } })).toEqual({ ...ticket, itPriority: "HIGH", ownerId: null, lastOwnerId: null });
     expect(await db.attachment.findUnique({ where: { id: attachment.id } })).toEqual(attachment);
     const user = await db.user.findUniqueOrThrow({ where: { id: 17 } });
     expect(user).toMatchObject({ displayName: "Legacy Owner", role: "REQUESTER", isActive: true, mustChangePassword: true, updatedAt: new Date("2026-01-01Z") });

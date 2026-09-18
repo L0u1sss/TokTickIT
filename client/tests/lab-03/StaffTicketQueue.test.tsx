@@ -60,4 +60,16 @@ describe("Staff Ticket Queue", () => {
     await screen.findByText("Printer offline"); expect(window.location.pathname).toBe("/staff/tickets/1");
     await userEvent.click(screen.getByRole("link", { name: "Back to Ticket Queue" })); await screen.findByText(/21 tickets/);
   });
+  it("confirms important status changes and sends the CSRF header", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const fetch = vi.fn(async (url: string, init?: RequestInit) => { void init; return response(url.endsWith("assignees") ? { items: [] } : url.endsWith("/1") ? { ...ticket, description: "Printer offline", relatedSystem: { name: "Office" } } : result); });
+    vi.stubGlobal("fetch", fetch); Object.defineProperty(document, "cookie", { configurable: true, value: "toktickit_csrf=test-token" });
+    render(<StaffTicketQueue />); await screen.findByText(/21 tickets/);
+    await userEvent.click(screen.getAllByRole("link", { name: /View ticket/ })[0]); await screen.findByText("Printer offline");
+    await userEvent.selectOptions(screen.getByLabelText("Status"), "RESOLVED");
+    expect(confirm).toHaveBeenCalled(); expect(fetch.mock.calls.some(([, init]) => init?.method === "PATCH")).toBe(false);
+    confirm.mockReturnValue(true); await userEvent.selectOptions(screen.getByLabelText("Status"), "RESOLVED");
+    await waitFor(() => expect(fetch.mock.calls.some(([, init]) => init?.method === "PATCH" && new Headers(init.headers).get("X-CSRF-Token") === "test-token")).toBe(true));
+    confirm.mockRestore();
+  });
 });

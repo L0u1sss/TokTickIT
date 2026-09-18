@@ -14,6 +14,7 @@
 - Protected requests ใช้ cookie `toktickit_session`; client ส่ง `credentials: "include"`
 - ทุก browser request ที่ใช้ unsafe method ต้องส่ง `Origin` ตรง configured client origin รวม `POST /api/auth/login`; missing/unapproved Origin คืน `403 ORIGIN_NOT_ALLOWED` ก่อน credential/body validation
 - Response ห้ามมี `password`, `passwordHash`, session token/hash หรือ Internal Notes สำหรับ Requester
+- Authenticated Staff mutations use a readable `toktickit_csrf` cookie plus matching `X-CSRF-Token` header; missing or mismatched tokens return `403 CSRF_TOKEN_INVALID`.
 - Endpoint เดิมของ Lab 2 คง path เดิม แต่ไม่ใช้ `x-requester-id`; identity มาจาก session ตาม BR-12
 
 ### 1.1 Authentication precedence
@@ -341,7 +342,7 @@ POST /api/staff/tickets/:id/internal-notes
 
 - GET `200 { "items": InternalNote[] }` เรียง `createdAt asc, id asc`
 - POST body `{ "content": "..." }`; `201 InternalNote`
-- content 1–4,000 code points, append-only, author/time จาก server
+- content 1–2,000 Unicode code points after trim, append-only, author/time จาก server
 - Requester เรียก staff path → `403` ก่อนอ่าน Ticket/note; note ไม่มีใน requester payload ใด
 
 ## 6. Administrator APIs
