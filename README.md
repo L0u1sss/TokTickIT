@@ -11,7 +11,30 @@ Issue #31 เปลี่ยน Ticket/Attachment API ให้ใช้ session
 
 สำหรับฐาน local Lab เท่านั้น: หลัง `prisma migrate deploy` และ `prisma db seed` ใช้ `jennifer.a@example.com`, `staff.one@example.com` หรือ `admin@example.com` กับ initial password `Lab3-Initial-password1!` แล้วเปลี่ยนรหัสผ่านก่อนใช้งาน บัญชีเดิมที่เปลี่ยนรหัสผ่านแล้วจะไม่ถูก reset โดย seed ส่วนหน้าปฏิบัติงาน Staff/Admin ยังเป็นงาน issue ถัดไป
 
+## Lab 3 IT Staff Ticket Queue — Issue #32
+
+IT Staff and Administrators can open `/staff/tickets` to search, filter, sort and
+paginate the shared queue. Desktop uses a table; tablet/mobile use cards. The
+queue opens read-only Ticket Detail; operational actions remain issue #33.
+
+Before starting this version, apply the additive migration from `server` with
+`npx prisma migrate deploy` and regenerate the client with `npx prisma generate`.
+The migration preserves existing Tickets/Attachments, initializes IT Priority
+from Requested Priority, and adds optional ownership and Lab 3 status values.
+
+PR #43's follow-up migration removes the static IT Priority default. All Ticket
+creation code must explicitly copy Requested Priority to `itPriority`; omitted values
+are rejected. Apply pending migrations even if the original queue migration already ran.
+Existing priority values are preserved, including later staff adjustments.
+
+Run `node client/scripts/run-auth-e2e.mjs --staff-queue` from the repository root
+for an isolated live queue test and responsive screenshots. It requires the
+existing `TEST_DATABASE_URL` configuration and creates its own disposable schema.
+See [implementation and scope](docs/lab-03/staff-queue-implementation.md) and
+[verification evidence](docs/lab-03/tests.md).
+
 ## Tech Stack
+
 * **Frontend:** React + TypeScript + Vite
 * **Backend:** Node.js + Express + TypeScript
 * **Database & ORM:** PostgreSQL + Prisma

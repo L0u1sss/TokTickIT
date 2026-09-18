@@ -1,0 +1,15 @@
+ALTER TYPE "Status" ADD VALUE 'OPEN';
+ALTER TYPE "Status" ADD VALUE 'IN_PROGRESS';
+ALTER TYPE "Status" ADD VALUE 'WAITING_FOR_REQUESTER';
+ALTER TYPE "Status" ADD VALUE 'RESOLVED';
+ALTER TYPE "Status" ADD VALUE 'CLOSED';
+ALTER TYPE "Status" ADD VALUE 'REOPENED';
+ALTER TYPE "Status" ADD VALUE 'CANCELLED';
+ALTER TABLE "Ticket" DROP CONSTRAINT "Ticket_status_check";
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_status_check" CHECK ("status"::text IN ('NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'REOPENED', 'CANCELLED'));
+ALTER TABLE "Ticket" ADD COLUMN "itPriority" "Priority", ADD COLUMN "ownerId" INTEGER;
+UPDATE "Ticket" SET "itPriority" = "requestedPriority";
+ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL, ALTER COLUMN "itPriority" SET DEFAULT 'MEDIUM';
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+CREATE INDEX "Ticket_ownerId_idx" ON "Ticket"("ownerId");
+CREATE INDEX "Ticket_updatedAt_id_idx" ON "Ticket"("updatedAt", "id");

@@ -32,7 +32,7 @@ export interface TicketDetail {
   summary: string;
   description: string;
   requestedPriority: RequestedPriority;
-  status: "New";
+  status: string;
   requester: Requester;
   category: Category;
   relatedSystem: RelatedSystem;
@@ -59,7 +59,7 @@ export interface TicketSummary {
   ticketNumber: string;
   summary: string;
   requestedPriority: RequestedPriority;
-  status: "New";
+  status: string;
   category: Category;
   relatedSystem: RelatedSystem;
   activeAttachmentCount: number;

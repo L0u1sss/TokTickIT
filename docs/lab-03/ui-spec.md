@@ -69,6 +69,11 @@ Issue #31 integration note: all app entries now use session authentication; Requ
 
 ## 5. IT Staff Ticket Queue
 
+Implemented in issue #32. Desktop uses six columns grouping ticket/summary,
+category/requester, both priorities, status/owner, both dates and the detail action.
+Below 1024px, cards use labelled definition lists. The queue's detail link opens
+a read-only screen; operational controls remain issue #33.
+
 ### 5.1 Information architecture
 
 - Page title, short queue purpose และ optional simple count

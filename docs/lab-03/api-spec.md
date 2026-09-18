@@ -214,6 +214,10 @@ POST /api/tickets/:id/problem-appears-resolved
 
 ### 5.1 Ticket Queue
 
+Issue #32 implements sections 5.1 and 5.2. Page is capped at 21,474,836 to keep
+SQL offsets within integer bounds. Priority/status sorts follow enum declaration
+order, with ID as the tie-breaker. See [implementation notes](staff-queue-implementation.md).
+
 ```http
 GET /api/staff/tickets?search=printer&status=OPEN&requestedPriority=HIGH&itPriority=MEDIUM&ownerId=unassigned&sortBy=updatedAt&sortOrder=desc&page=1&pageSize=20
 ```
@@ -267,6 +271,10 @@ GET /api/staff/assignees
 คืน `200 { "items": UserSummary[] }` เฉพาะ active `IT_STAFF` หรือ `ADMINISTRATOR` เรียง `displayName asc, id asc` สำหรับ owner filter/assignment
 
 ### 5.3 Staff Ticket Detail
+
+Issue #32 provides a read-only drill-down with queue fields, `description` and
+`relatedSystem`. The expanded detail contract below (including attachments,
+resolution indicators, owner history and comments) remains issue #33 scope.
 
 ```http
 GET /api/staff/tickets/:id

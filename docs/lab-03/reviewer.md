@@ -10,6 +10,14 @@
 
 ## Pull Requests I Authored
 
+PR #43 remediation: [Chxtamos requested changes](https://github.com/L0u1sss/TokTickIT/pull/43#pullrequestreview-5249123058)
+on reviewed head `8010379a2a2da35a4d0e4336515acd10f64ce738`: static MEDIUM default violates
+initial IT Priority copying. Local changes remove the Prisma default, add a forward migration
+to drop the database default, make fixture creation explicit, and verify LOW/MEDIUM/HIGH
+API initialization plus direct-insert rejection and upgrade preservation. Full server
+220/220 and Queue E2E 1/1 pass; see `tests.md`. Response commit, hosted CI for the
+correction and peer re-review are pending; no approval is claimed.
+
 | PR | Scope | Reviewer | Verdict / evidence |
 |---|---|---|---|
 | [#39](https://github.com/L0u1sss/TokTickIT/pull/39) | Issue #29 engineering contract and traceability | [Tanaboonnnnn](https://github.com/Tanaboonnnnn) | [Changes requested on `b8e0412`](https://github.com/L0u1sss/TokTickIT/pull/39#pullrequestreview-5210534997); local remediation awaits re-review |

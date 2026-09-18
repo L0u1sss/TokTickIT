@@ -79,8 +79,7 @@ describe("Issue #31 authenticated Requester cutover", () => {
   it("guards staff/admin namespaces and retires account enumeration", async () => {
     expect((await request(app).get("/api/staff/tickets").set("Cookie", cookies[0])).status).toBe(403);
     expect((await request(app).get("/api/admin/users").set("Cookie", cookies[2])).status).toBe(403);
-    // Feature handlers are intentionally implemented in later issues.
-    expect((await request(app).get("/api/staff/tickets").set("Cookie", cookies[2])).status).toBe(404);
+    expect((await request(app).get("/api/staff/tickets").set("Cookie", cookies[2])).status).toBe(200);
     expect((await request(app).get("/api/admin/users").set("Cookie", cookies[3])).status).toBe(404);
     expect((await request(app).get("/api/requesters").set("Cookie", cookies[0])).status).toBe(404);
   });
