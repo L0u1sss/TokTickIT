@@ -35,7 +35,7 @@ test("administrator: live create/edit/reset, security, responsive reflow and key
   await dialog.getByLabel("Role", { exact: true }).selectOption("IT_STAFF");
   await dialog.getByLabel("Initial password", { exact: true }).fill(initial);
   await dialog.getByRole("button", { name: "Save user" }).click();
-  await expect(page.getByRole("status")).toContainText("User saved");
+  await expect(page.getByRole("status").filter({ hasText: "User saved" })).toBeVisible();
   await page.getByLabel("Search name or email").fill("NIRAN@");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByRole("button", { name: "Edit Niran Support" })).toBeVisible();
@@ -58,7 +58,7 @@ test("administrator: live create/edit/reset, security, responsive reflow and key
   await page.getByLabel("Initial password", { exact: true }).fill(replacement);
   await page.getByLabel("Confirm initial password", { exact: true }).fill(replacement);
   await page.getByRole("button", { name: "Confirm new initial password" }).click();
-  await expect(page.getByRole("status")).toContainText("must change it at next login");
+  await expect(page.getByRole("status").filter({ hasText: "must change it at next login" })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
   await page.getByRole("button", { name: "Edit Mali Administrator" }).click();
   await expect(page.getByLabel("Active", { exact: true })).toBeDisabled();
