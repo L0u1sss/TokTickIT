@@ -1,4 +1,5 @@
 import express, { NextFunction, Request, Response } from "express";
+import { userManagementRouter } from "./user-management.js";
 import cors from "cors";
 import { createAuthRouter, requireAuthentication } from "./auth-routes.js";
 import multer from "multer";
@@ -71,7 +72,9 @@ app.use("/api/metadata", requireRole("REQUESTER"));
 app.use("/api/staff", requireRole("IT_STAFF", "ADMINISTRATOR"));
 app.use("/api/staff", requireStaffCsrf);
 app.use("/api/admin", requireRole("ADMINISTRATOR"));
+app.use("/api/admin", requireStaffCsrf);
 app.use(express.json());
+app.use("/api/admin", userManagementRouter);
 app.use("/api/tickets", requesterCommunicationsRouter);
 app.use("/api/staff", staffTicketOperationsRouter);
 app.use("/api/staff", staffQueueRouter);

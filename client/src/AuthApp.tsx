@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext.js";
 import AuthForm, { LogoutButton } from "./components/AuthForm.js";
 import App from "./App.js";
 import StaffTicketQueue from "./components/StaffTicketQueue.js";
+import UserManagement from "./components/UserManagement.js";
 
 export function AuthScreens() {
   const {user,loading,error,logoutError,refresh,logout}=useAuth();
@@ -31,13 +32,10 @@ export function AuthScreens() {
     <a className="skip-link" href="#main-content">Skip to main content</a>
     <header className="app-header"><div className="app-header-inner">
       <span className="app-brand">TokTickIT <strong>IT Service Desk</strong></span>
-      <nav aria-label="Main navigation"><a href="/staff/tickets" aria-current={path === "/staff/tickets" ? "page" : undefined}>Ticket Queue</a>{user.role === "ADMINISTRATOR" && <a href="/admin/users" aria-current={path === "/admin/users" ? "page" : undefined}>User Management</a>}</nav>
+      <nav className="app-navigation" aria-label="Main navigation"><a className={`app-navigation-link${path.startsWith("/staff/tickets") ? " active" : ""}`} href="/staff/tickets" aria-current={path === "/staff/tickets" ? "page" : undefined}>Ticket Queue</a>{user.role === "ADMINISTRATOR" && <a className={`app-navigation-link${path === "/admin/users" ? " active" : ""}`} href="/admin/users" aria-current={path === "/admin/users" ? "page" : undefined}>User Management</a>}</nav>
       <div className="requester-menu"><strong>{user.displayName}</strong><span>{user.role.replaceAll("_"," ")}</span><LogoutButton/></div>
     </div></header>
-    {path.startsWith("/staff/tickets") ? <StaffTicketQueue /> : <main id="main-content" tabIndex={-1} className="requester-page"><section className="requester-card">
-      <h1 ref={heading} tabIndex={-1}>{path === "/admin/users" ? "User Management" : "Ticket Queue"}</h1>
-      <p>This screen is planned for the corresponding Lab 3 feature issue. No operational actions are available yet.</p>
-    </section></main>}
+    {path.startsWith("/staff/tickets") ? <StaffTicketQueue /> : <UserManagement />}
   </div>;
 }
 

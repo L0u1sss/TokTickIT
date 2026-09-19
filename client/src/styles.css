@@ -1375,6 +1375,27 @@ a:focus-visible {
   }
 }
 
+/* Administrator account management follows the shared Zen Green shell. */
+.admin-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; justify-content: space-between; }
+.admin-users .btn-primary, .admin-dialog .btn-primary { --bs-btn-bg: var(--zen-primary); --bs-btn-border-color: var(--zen-primary); --bs-btn-hover-bg: #005530; --bs-btn-hover-border-color: #005530; --bs-btn-active-bg: #005530; --bs-btn-active-border-color: #005530; --bs-btn-disabled-bg: var(--zen-primary); --bs-btn-disabled-border-color: var(--zen-primary); }
+.admin-users > .requester-card { width: min(100%, 80rem); min-width: 0; }
+.admin-filters { margin: 1.5rem 0; align-items: end; justify-content: start; }
+.admin-filters label { flex: 1 1 14rem; }
+.admin-users .btn, .admin-dialog .btn, .admin-users input, .admin-users select, .admin-dialog input:not([type=checkbox]), .admin-dialog select { min-height: 44px; }
+.admin-table { table-layout: fixed; }
+.admin-table th, .admin-table td, .admin-cards li { overflow-wrap: anywhere; }
+.admin-cards { display: none; list-style: none; padding: 0; }
+.admin-cards li { border: 1px solid var(--border-color, #d9e5dc); border-radius: 12px; padding: 1rem; margin-block: 1rem; }
+.admin-cards h2 { font-size: 1.2rem; }
+.admin-dialog { width: min(36rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; padding: 1.5rem; border: 1px solid #c9dace; border-radius: 16px; color: #243b2e; background: #fff; }
+.admin-dialog::backdrop { background: rgb(15 35 23 / 45%); }
+.admin-dialog label { display: block; margin-top: 1rem; }
+.admin-dialog p { overflow-wrap: anywhere; }
+.admin-dialog fieldset { min-width: 0; }
+.admin-active { display: flex !important; align-items: center; gap: .6rem; min-height: 44px; }
+.admin-dialog .admin-toolbar { margin-top: 1.5rem; }
+@media (max-width: 1023px) { .admin-table { display: none; } .admin-cards { display: block; } }
+@media (max-width: 480px) { .admin-filters > *, .admin-dialog .admin-toolbar > * { width: 100%; } .admin-dialog { padding: 1rem; } }
 .communication-section { margin-block: 1.5rem; padding: 1rem; border: 2px solid #538064; border-radius: 12px; min-width: 0; }
 .communication-internal { background: #fff8e6; border-color: #94722a; }
 .communication-public { background: #f2f8f3; }

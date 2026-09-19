@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:auth:e2e": "node scripts/run-auth-e2e.mjs",
+    "test:admin:e2e": "node scripts/run-auth-e2e.mjs --user-management",
     "test:responsive": "node scripts/run-responsive-tests.mjs",
     "test:e2e": "node scripts/run-live-e2e.mjs"
   },

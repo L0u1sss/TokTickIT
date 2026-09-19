@@ -95,6 +95,19 @@ Team decision requiring review: migrated local-lab users receive the documented 
 
 Final contract comparison caught the Lab 2 foreign-owner `403` versus Lab 3 non-disclosing `404 NOT_FOUND` difference. The implementation and regression expectations were updated together. Error correlation IDs, direct My Tickets query preservation and explicit Forbidden screens for Requester access to Staff/Admin routes were also verified. A flaky redirect assertion was changed to wait for the asynchronous route effect, not to relax the expected destination.
 
+## Issue #35 implementation
+
+User request: implement issue #35 in the local TokTickIT repository using
+`Lab_3_sheet.pdf`. AI read the issue, PDF and existing API/UI/business contract,
+implemented account management and its shared assignment/account transaction lock,
+and added API, UI and live browser tests. The first verification found a stale
+generated Prisma Client, an outdated placeholder API expectation, and keyboard
+focus escaping the dialog; these were corrected and the affected checks rerun.
+Tests also drove safe malformed-list handling and password confirmation behavior.
+
+Evidence and limitations: [user-management.md](user-management.md). The browser
+run uses fictional accounts in a disposable test schema. No personal reflection,
+peer approval, hosted CI result, commit, push or merge is claimed.
 ## Issue #34 implementation (2026-09-19)
 
 User requested implementation of issue #34 in the local TokTickIT workspace using Lab_3_sheet.pdf. Codex read the issue, existing engineering contract and handout, completed Requester comments/resolution indication, tightened Staff communication validation, separated Internal Notes loading, and added API/UI/live-browser coverage. It checked disposable-schema migrations, Unicode limits, forged metadata, role isolation, plain-text rendering and responsive screenshots. Human peer review and integration remain pending. See [local evidence](comments-notes-implementation.md).
