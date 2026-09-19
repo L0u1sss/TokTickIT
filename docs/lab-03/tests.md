@@ -8,7 +8,10 @@ checks in the populated migration suite. Local results: server **300/300**,
 client **105/105**, live Requester browser flows **7/7**, responsive browser
 checks **6/6**, and server/client lint/build passed. The live runner includes the
 new flow in the existing CI command. See [plan, traceability and evidence](requester-regression.md).
-Hosted CI, peer approval and final-main evidence for this change remain pending.
+Hosted CI passed for implementation commit `14829ad34c3426dcc90d84a6e29ef103286da7de`:
+[CI run #53 (35459809701)](https://github.com/L0u1sss/TokTickIT/actions/runs/35459809701)
+completed with conclusion `success`. This documentation-only correction records
+that exact-commit result; peer re-review/approval and final-main integration remain pending.
 Older sections below describe their historical verification scope.
 
 ## PR #43 review correction — 2026-09-18

@@ -71,5 +71,12 @@ flow separately exercises those controls. No new 200% zoom evidence is claimed.
 
 The handout was consulted through its existing adjacent `Lab_3_sheet.txt`
 extraction, together with the repository specification/API/UI contract.
-Hosted CI for these changes, peer approval, and final-main integration remain
-pending; these local results do not establish completion of the full Lab 3 product.
+
+Hosted CI for implementation commit
+`14829ad34c3426dcc90d84a6e29ef103286da7de` completed successfully:
+[CI run #53 (35459809701)](https://github.com/L0u1sss/TokTickIT/actions/runs/35459809701).
+This evidence applies to that exact commit; this documentation-only correction
+addresses [PR #47 review 5256940080](https://github.com/L0u1sss/TokTickIT/pull/47#pullrequestreview-5256940080)
+and does not change the regression implementation.
+Peer re-review/approval and final-main integration remain pending. Passing CI
+does not establish completion of the full Lab 3 product.
