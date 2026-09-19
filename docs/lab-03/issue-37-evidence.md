@@ -36,8 +36,9 @@ limited scope and do not substitute for a manual accessibility audit.
 
 Local verification completed on 2026-09-20 from branch
 `test/lab3-e2e-responsive-accessibility`, after integrating `origin/lab3-staging`
-at `96eee02` (the merged PR #47 base). The exact PR HEAD is
-`2ead97e9c0cc4c31b081a682557539f90d2c136e`.
+at `96eee02` (the merged PR #47 base). The implementation commit is
+`2ead97e9c0cc4c31b081a682557539f90d2c136e`; the current exact PR HEAD is
+`8169178c4d1e5ebd7c21d7a9e4fe69d97390e6a7`.
 
 | Evidence | Command / location | Actual result |
 |---|---|---|
@@ -55,5 +56,7 @@ at `96eee02` (the merged PR #47 base). The exact PR HEAD is
 
 All database-backed browser and server runs used disposable PostgreSQL test
 schemas. Hosted CI run [#56](https://github.com/L0u1sss/TokTickIT/actions/runs/35462563413)
-completed successfully on the exact PR HEAD `2ead97e`. Peer review/approval and
-final-main integration remain pending.
+completed successfully for the implementation commit `2ead97e`. The current
+exact PR HEAD is `8169178c4d1e5ebd7c21d7a9e4fe69d97390e6a7`, and hosted CI run
+#57 completed successfully for that documentation correction. Peer
+review/approval and final-main integration remain pending.

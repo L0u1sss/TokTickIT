@@ -13,8 +13,12 @@ browser workflows, **7 Requester live workflows**, **6 responsive tests**, and b
 packages' lint/build checks. Full outputs and screenshots are linked in the evidence
 document. Axe checks cover Login, Change Password, Staff Queue, Staff Detail, User
 Management and the create-user dialog at four viewport sizes. 720×450 is a reflow
-equivalent, not a recorded browser-zoom operation. Hosted CI, peer approval and
-final-main evidence remain pending; earlier results below are historical.
+equivalent, not a recorded browser-zoom operation.
+
+Hosted verification is complete for the implementation commit `2ead97e` in CI
+run #56 and for the current exact PR HEAD `8169178` in CI run #57. Peer
+approval and final-main integration remain pending; earlier results below are
+historical.
 
 ## Issue #36 Requester regression — 2026-09-20
 
