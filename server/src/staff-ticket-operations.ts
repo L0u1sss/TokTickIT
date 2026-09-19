@@ -4,6 +4,7 @@ import { getPrisma } from "./prisma.js";
 import { ApiError, toErrorResponse, validationError } from "./errors.js";
 import { parsePositivePathId } from "./path-contract.js";
 import { localAttachmentStorage } from "./attachment-storage.js";
+import { lockUserManagement } from "./user-management.js";
 
 const staffRoles = ["IT_STAFF", "ADMINISTRATOR"] as const;
 const userSelect = { id: true, displayName: true, email: true, role: true } as const;
@@ -69,6 +70,7 @@ async function requireEligibleOwner(prisma: PrismaClient, ownerId: number) {
 
 export async function claimTicket(prisma: PrismaClient, ticketId: number, actorId: number) {
   return prisma.$transaction(async (transaction) => {
+    await lockUserManagement(transaction);
     const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true, ownerId: true } });
     if (!ticket) throw notFound();
     if (ticket.status === "CLOSED" || ticket.status === "CANCELLED") throw new ApiError(409, "TICKET_NOT_ASSIGNABLE", "Closed or cancelled Tickets cannot be assigned.");
@@ -76,18 +78,19 @@ export async function claimTicket(prisma: PrismaClient, ticketId: number, actorI
     await requireEligibleOwner(transaction as unknown as PrismaClient, actorId);
     const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { ownerId: actorId }, select: { owner: { select: userSelect }, updatedAt: true } });
     return { owner: updated.owner, updatedAt: updated.updatedAt.toISOString() };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  });
 }
 
 export async function assignTicket(prisma: PrismaClient, ticketId: number, ownerId: number) {
-  const owner = await requireEligibleOwner(prisma, ownerId);
   return prisma.$transaction(async (transaction) => {
+    await lockUserManagement(transaction);
+    const owner = await requireEligibleOwner(transaction as unknown as PrismaClient, ownerId);
     const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true } });
     if (!ticket) throw notFound();
     if (ticket.status === "CLOSED" || ticket.status === "CANCELLED") throw new ApiError(409, "TICKET_NOT_ASSIGNABLE", "Closed or cancelled Tickets cannot be assigned.");
     const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { ownerId: owner.id }, select: { owner: { select: userSelect }, updatedAt: true } });
     return { owner: updated.owner, updatedAt: updated.updatedAt.toISOString() };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  });
 }
 
 export async function updateTicketPriority(prisma: PrismaClient, ticketId: number, itPriority: Priority) {

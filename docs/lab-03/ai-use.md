@@ -94,3 +94,17 @@ Verification used isolated PostgreSQL schemas, populated migration/collision cas
 Team decision requiring review: migrated local-lab users receive the documented shared initial fixture password and forced change, not production password delivery. ID/email collisions fail instead of merging accounts. Workflow/staff/admin operations remain out of #31 scope; see `identity-migration.md` and `tests.md` for exact evidence.
 
 Final contract comparison caught the Lab 2 foreign-owner `403` versus Lab 3 non-disclosing `404 NOT_FOUND` difference. The implementation and regression expectations were updated together. Error correlation IDs, direct My Tickets query preservation and explicit Forbidden screens for Requester access to Staff/Admin routes were also verified. A flaky redirect assertion was changed to wait for the asynchronous route effect, not to relax the expected destination.
+
+## Issue #35 implementation
+
+User request: implement issue #35 in the local TokTickIT repository using
+`Lab_3_sheet.pdf`. AI read the issue, PDF and existing API/UI/business contract,
+implemented account management and its shared assignment/account transaction lock,
+and added API, UI and live browser tests. The first verification found a stale
+generated Prisma Client, an outdated placeholder API expectation, and keyboard
+focus escaping the dialog; these were corrected and the affected checks rerun.
+Tests also drove safe malformed-list handling and password confirmation behavior.
+
+Evidence and limitations: [user-management.md](user-management.md). The browser
+run uses fictional accounts in a disposable test schema. No personal reflection,
+peer approval, hosted CI result, commit, push or merge is claimed.

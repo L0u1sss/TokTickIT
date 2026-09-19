@@ -93,6 +93,10 @@ jobs:
         run: npm run test:auth:e2e
         working-directory: client
 
+      - name: Run administrator browser suite
+        run: npm run test:admin:e2e
+        working-directory: client
+
       - name: Run responsive browser suite
         run: npm run test:responsive
         working-directory: client

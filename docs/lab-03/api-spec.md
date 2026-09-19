@@ -347,6 +347,12 @@ POST /api/staff/tickets/:id/internal-notes
 
 ## 6. Administrator APIs
 
+Implemented locally for issue #35 in `server/src/user-management.ts`.
+Mutation requests require approved Origin and the existing `toktickit_csrf`
+cookie / `X-CSRF-Token` pair; GET initializes the cookie. Role changes and
+deactivation revoke target sessions, as does initial-password replacement.
+See [transaction protocol and evidence](user-management.md).
+
 ทุก endpoint ในหัวข้อนี้อนุญาต `ADMINISTRATOR` เท่านั้น
 
 ### 6.1 List/search users

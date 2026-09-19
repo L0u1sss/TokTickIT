@@ -26,7 +26,7 @@ it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted naviga
   window.history.replaceState({}, "", "/");
   vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
     url.endsWith("/api/auth/me") ? { user: { id: 1, displayName: "Session User", email: "user@example.test", role, mustChangePassword: false } }
-    : { categories: [], relatedSystems: [] }
+    : { categories: [], relatedSystems: [], items: [] }
   )))));
   render(<AuthApp />);
   await screen.findByRole("button", { name: "Logout" });

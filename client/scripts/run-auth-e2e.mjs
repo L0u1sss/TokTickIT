@@ -25,6 +25,7 @@ const apiPort=process.env.AUTH_E2E_API_PORT ?? "3101",webPort=process.env.AUTH_E
 const apiUrl=`http://127.0.0.1:${apiPort}`,clientUrl=`http://127.0.0.1:${webPort}`;
 const password="Aa1!"+randomBytes(16).toString("hex");
 const staffQueue = process.argv.includes("--staff-queue");
+const userManagement = process.argv.includes("--user-management");
 const children=[];
 function start(entry,args,cwd,env,stdio="inherit"){
   const child=spawn(process.execPath,[entry,...args],{cwd,env:{...process.env,...env},stdio,windowsHide:true});
@@ -45,6 +46,7 @@ try{
   await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);created=true;
   await run(path.join(server,"node_modules/prisma/build/index.js"),["migrate","deploy"],server,{DATABASE_URL:isolated.toString()});
   await db.user.create({data:{displayName:"Auth Browser User",email:"auth-browser@example.test",role:"REQUESTER",passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:true}});
+  if (userManagement) await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
   if (staffQueue) {
     const staff = await db.user.create({ data: { displayName: "Mali IT Staff", email: "queue-browser@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     const requester = await db.user.findUniqueOrThrow({ where: { email: "auth-browser@example.test" } });
@@ -64,7 +66,7 @@ try{
     {DATABASE_URL:isolated.toString(),CLIENT_ORIGIN:clientUrl,PORT:apiPort,NODE_ENV:"test"},"ignore");
   const web=start(path.join(client,"node_modules/vite/bin/vite.js"),["--host","127.0.0.1","--port",webPort,"--strictPort"],client,{VITE_API_URL:apiUrl},"ignore");
   await Promise.all([ready(apiUrl+"/api/health",api.child),ready(clientUrl,web.child)]);
-  await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test",staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts","--config","playwright.live.config.ts"],client,
+  await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test",userManagement ? "e2e/lab-03/user-administration.spec.ts" : staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts","--config","playwright.live.config.ts"],client,
     {E2E_CLIENT_URL:clientUrl,E2E_API_URL:apiUrl,E2E_AUTH_PASSWORD:password});
 }catch(error){console.error(error instanceof Error?error.message:"Auth E2E failed.");process.exitCode=1;}
 finally{

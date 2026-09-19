@@ -1,0 +1,76 @@
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import UserManagement from "../../src/components/UserManagement.js";
+import { adminRequest } from "../../src/admin-api.js";
+import { AuthError } from "../../src/auth-api.js";
+const refresh = vi.fn();
+vi.mock("../../src/context/AuthContext.js", () => ({ useAuth: () => ({ user: { id: 1, role: "ADMINISTRATOR" }, refresh }) }));
+vi.mock("../../src/admin-api.js", () => ({ adminRequest: vi.fn() }));
+const account = { id: 1, displayName: "Mali Admin", email: "mali@example.test", role: "ADMINISTRATOR", isActive: true, mustChangePassword: false };
+beforeAll(() => { HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); }; });
+afterEach(() => { cleanup(); vi.resetAllMocks(); });
+const load = async () => { vi.mocked(adminRequest).mockResolvedValue({ items: [account] }); render(<UserManagement />); await screen.findByRole("table"); };
+describe("Administrator user management", () => {
+  it("shows fields, searches by name/email and one role, clears filters", async () => {
+    await load(); const table = screen.getByRole("table");
+    for (const label of ["Name", "Email", "Role", "Status", "Action"]) expect(within(table).getByRole("columnheader", { name: label })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Search name or email"), "Mali");
+    await userEvent.selectOptions(screen.getByLabelText("Filter by role"), "ADMINISTRATOR");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    await waitFor(() => expect(adminRequest).toHaveBeenLastCalledWith("users?search=Mali&role=ADMINISTRATOR", "GET", undefined, expect.any(AbortSignal)));
+    await userEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    await waitFor(() => expect(adminRequest).toHaveBeenLastCalledWith("users", "GET", undefined, expect.any(AbortSignal)));
+  });
+  it("creates one role with an initial password and clears the sensitive form on success", async () => {
+    await load(); await userEvent.click(screen.getByRole("button", { name: "Create user" }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.type(within(dialog).getByLabelText("Name"), "New person");
+    await userEvent.type(within(dialog).getByLabelText("Email"), "new@example.test");
+    await userEvent.type(within(dialog).getByLabelText("Initial password"), "Initial-Password123!");
+    vi.mocked(adminRequest).mockResolvedValueOnce({ ...account, id: 2 });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save user" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(adminRequest).toHaveBeenCalledWith("users", "POST", { displayName: "New person", email: "new@example.test", role: "REQUESTER", isActive: true, initialPassword: "Initial-Password123!" });
+    expect(screen.getByRole("status")).toHaveTextContent("User saved");
+  });
+  it("keeps safe conflict feedback, clears password, allows retry and cancel", async () => {
+    await load(); await userEvent.click(screen.getByRole("button", { name: "Create user" }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.type(within(dialog).getByLabelText("Name"), "New person");
+    await userEvent.type(within(dialog).getByLabelText("Email"), "mali@example.test");
+    await userEvent.type(within(dialog).getByLabelText("Initial password"), "Initial-Password123!");
+    vi.mocked(adminRequest).mockRejectedValueOnce(new AuthError(409, "EMAIL_ALREADY_EXISTS", "This email address is already in use.", { email: "Choose a different email." }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save user" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("already in use");
+    expect(within(dialog).getByLabelText("Initial password")).toHaveValue("");
+    expect(within(dialog).getByLabelText("Name")).toHaveValue("New person");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Create user" })).toHaveFocus());
+  });
+  it("prevents self-deactivation and confirms a separate password reset", async () => {
+    await load(); await userEvent.click(within(screen.getByRole("table")).getByRole("button", { name: "Edit Mali Admin" }));
+    expect(screen.getByLabelText("Active", { exact: true })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Set new initial password" }));
+    await userEvent.type(screen.getByLabelText("Initial password", { exact: true }), "New-Password123!");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm new initial password" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Passwords must match");
+    await userEvent.type(screen.getByLabelText("Confirm initial password"), "New-Password123!");
+    vi.mocked(adminRequest).mockResolvedValueOnce({ user: account });
+    await userEvent.click(screen.getByRole("button", { name: "Confirm new initial password" }));
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    expect(adminRequest).toHaveBeenCalledWith("users/1/initial-password", "POST", { initialPassword: "New-Password123!" });
+  });
+  it("distinguishes failed loading, retry, empty results and forbidden access", async () => {
+    vi.mocked(adminRequest).mockRejectedValueOnce(new Error("secret database trace"));
+    render(<UserManagement />); expect(await screen.findByRole("alert")).toHaveTextContent("Unable to load users");
+    expect(screen.queryByText("secret database trace")).not.toBeInTheDocument();
+    vi.mocked(adminRequest).mockResolvedValueOnce({ items: [] });
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("No users yet");
+    vi.mocked(adminRequest).mockRejectedValueOnce(new AuthError(403, "FORBIDDEN", "Forbidden"));
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    await screen.findByRole("heading", { name: "Forbidden" });
+    expect(screen.queryByRole("button", { name: "Create user" })).not.toBeInTheDocument();
+  });
+});

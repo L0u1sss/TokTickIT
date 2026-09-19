@@ -274,3 +274,19 @@ Screenshots: `docs/lab-03/evidence/requester-regression/{create-ticket,my-ticket
 Test-count changes from #30 are intentional: mutable Development Requester selection/header tests were superseded by authenticated identity/role/Logout tests. Existing Ticket/Attachment business behavior remains tested. `API-09` and `API-10` are implemented in the authorization file plus migrated Lab 2 regression files rather than a separate `requester-regression.api.test.ts`.
 
 Scope and initial-password limitation: [identity-migration.md](identity-migration.md). Workflow columns/status backfill (DB-03), comments/notes, staff operations and Administrator CRUD remain subsequent issues; do not mark the whole Lab 3 contract complete.
+
+## Issue #35 local verification — Administrator User Management
+
+See [user-management.md](user-management.md) for the implementation, AC/BR mapping,
+commands, exact baseline SHA and evidence limitations. Local working-tree results:
+server 248/248 across 28 files; client 94/94 across 16 files; real Admin browser
+1/1. The seven Admin API tests were rerun successfully after adding transactional
+create authorization rechecks. Server/client lint and builds passed.
+
+New tests are `server/tests/lab-03/users-admin.api.test.ts`,
+`client/tests/lab-03/UserManagement.test.tsx` and
+`client/e2e/lab-03/user-administration.spec.ts`. Run the latter using
+`npm --prefix client run test:admin:e2e`; it is also wired into CI.
+Screenshots are in `artifacts/lab-03/screenshots/user-management/` (three required
+viewports plus half-width CSS reflow, not actual browser zoom automation).
+Hosted CI, peer review and final-main evidence remain pending.
