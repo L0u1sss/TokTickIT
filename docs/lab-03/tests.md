@@ -275,6 +275,24 @@ Test-count changes from #30 are intentional: mutable Development Requester selec
 
 Scope and initial-password limitation: [identity-migration.md](identity-migration.md). Workflow columns/status backfill (DB-03), comments/notes, staff operations and Administrator CRUD remain subsequent issues; do not mark the whole Lab 3 contract complete.
 
+## Issue #35 local verification — Administrator User Management
+
+See [user-management.md](user-management.md) for the implementation, AC/BR mapping,
+commands, exact baseline SHA and evidence limitations. Local working-tree results:
+server 248/248 across 28 files; client 94/94 across 16 files; real Admin browser
+1/1. The seven Admin API tests were rerun successfully after adding transactional
+create authorization rechecks. Server/client lint and builds passed.
+
+New tests are `server/tests/lab-03/users-admin.api.test.ts`,
+`client/tests/lab-03/UserManagement.test.tsx` and
+`client/e2e/lab-03/user-administration.spec.ts`. Run the latter using
+`npm --prefix client run test:admin:e2e`; it is also wired into CI.
+Screenshots are in `artifacts/lab-03/screenshots/user-management/` (three required
+viewports plus half-width CSS reflow, not actual browser zoom automation).
+Hosted CI run #50 passed on exact HEAD `c52eb67b826ce21bd8b0f4c36c124c1f5cd92f18`
+([run 35457772298](https://github.com/L0u1sss/TokTickIT/actions/runs/35457772298)),
+including the Administrator browser suite, server/client tests, E2E, lint and builds.
+Peer review/approval and final-main evidence remain pending.
 ## Issue #34 hosted verification (2026-09-19)
 
 The existing planned UT-04 and API-20–23 are now implemented. Shared UI component checks are in `client/tests/lab-03/TicketCommunication.test.tsx`; the focused live collaboration flow is `client/e2e/lab-03/comments-notes.spec.ts`. These cover the comments/notes/indication portions of UI-04, UI-06, UI-08, RV-03 and E2E-02; other portions remain separately scoped. Server 276/276, client 100/100 and focused browser 1/1 passed. See [implementation and evidence](comments-notes-implementation.md). Hosted CI for implementation commit `ee4d86f853a86fbf4da745fae4add28c9d351931` passed in [run 35443014989](https://github.com/L0u1sss/TokTickIT/actions/runs/35443014989): server 276/276, client 100/100, Comments/Notes browser 1/1, Staff Queue browser 1/1, responsive 6/6, and server/client lint/build passed. This evidence applies to that exact implementation commit; this documentation update does not change implementation. Peer re-review/approval: **Pending**.

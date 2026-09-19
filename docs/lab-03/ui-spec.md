@@ -136,6 +136,12 @@ Editable fieldsใช้ form surface/amber cue ส่วน source/requester fi
 
 ## 7. Administrator User Management
 
+Implemented locally for issue #35. See [implementation and verification](user-management.md).
+The create/edit/reset forms use native modal dialogs with an explicit keyboard
+focus loop. Password reset additionally requires matching confirmation. Role
+changes and deactivation revoke target sessions; self-account changes refresh
+the shell. Desktop table becomes cards below 1024 CSS pixels.
+
 หน้าเดียวประกอบด้วย toolbar + user list + create/edit dialogหรือ panel
 
 ### 7.1 User list
