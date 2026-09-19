@@ -2,6 +2,8 @@
 
 เอกสารนี้เป็นต้นฉบับสำหรับ PDF submission ของ Issue [#38](https://github.com/L0u1sss/TokTickIT/issues/38) และอ้างอิงเอกสารประกอบการสอน `Lab_3_sheet.pdf` โดยแยกหลักฐานที่ตรวจแล้วออกจากหลักฐานที่ยังรอ final `main` หรือ peer approval อย่างชัดเจน
 
+เอกสารนี้เป็น pre-main release-preparation evidence เท่านั้น การอ้างอิง Issue #38 ใน PR ต้องเป็น non-closing reference จนกว่า final `main`, peer approval, Kanban completion และ submission PDF จะได้รับการตรวจครบถ้วน
+
 ## Release Snapshot
 
 | Item | Current evidence | Status |
@@ -49,7 +51,6 @@ Local verification was rerun on release-branch commit `96eee028`:
 | `npm --prefix server test -- --run tests/lab-03` | 11 files, 156 tests passed |
 | Focused client Lab 3 tests | 5 files, 26 tests passed |
 | `npm --prefix server run lint` and `npm --prefix server run build` | Passed |
-| `npm --prefix client run lint` and `npm --prefix client run build` | Passed |
 | `npm --prefix client run lint` and `npm --prefix client run build` | Passed |
 
 These are local release-branch results, not final-`main` or hosted-CI evidence. The final PDF must replace or supplement them with the exact final `main` SHA, CI run URL and result.
