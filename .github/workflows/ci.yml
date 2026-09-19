@@ -103,6 +103,10 @@ jobs:
         run: node scripts/run-auth-e2e.mjs --staff-queue
         working-directory: client
 
+      - name: Run staff workflow browser suite
+        run: npm run test:staff:e2e
+        working-directory: client
+
       - name: Run comments and notes browser suite
         run: node scripts/run-auth-e2e.mjs --communications
         working-directory: client
@@ -130,3 +134,13 @@ jobs:
       - name: Build client
         run: npm run build
         working-directory: client
+
+      - name: Upload Lab 3 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab-03-browser-evidence
+          path: |
+            artifacts/lab-03/screenshots/
+            client/test-results/
+          if-no-files-found: ignore

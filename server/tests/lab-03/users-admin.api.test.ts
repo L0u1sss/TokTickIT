@@ -69,6 +69,27 @@ describe("Issue #35 administrator account APIs", () => {
     expect((await write("patch", "/api/admin/users/2147483647", { isActive: false })).status).toBe(404);
     expect((await request(app).delete(`/api/admin/users/${ids[3]}`).set("Origin", "http://localhost:5173").set("Cookie", `${cookies[2]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf)).status).toBe(404);
   });
+  it("allows one concurrent normalized email creation and returns a safe conflict", async () => {
+    const email = `race-${marker}@example.test`;
+    const input = { displayName: "Concurrent account", email, role: "REQUESTER", isActive: true, initialPassword: password };
+    const results = await Promise.all([write("post", "/api/admin/users", input), write("post", "/api/admin/users", { ...input, email: email.toUpperCase() })]);
+    const winner = results.find(result => result.status === 201);
+    if (winner) ids.push(winner.body.id);
+    expect(results.map(result => result.status).sort()).toEqual([201, 409]);
+    expect(results.find(result => result.status === 409)!.body.error.code).toBe("EMAIL_ALREADY_EXISTS");
+    expect(await db.user.count({ where: { email } })).toBe(1);
+  });
+  it("returns correlated safe errors when user listing fails", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const query = vi.spyOn(db.user, "findMany").mockRejectedValueOnce(new Error("private database password"));
+    try {
+      const result = await request(app).get("/api/admin/users").set("Cookie", cookies[2]);
+      expect(result.status).toBe(500); expect(result.body.error.code).toBe("INTERNAL_ERROR");
+      expect(result.body.error.requestId).toBe(result.headers["x-request-id"]);
+      expect(log).toHaveBeenCalledWith("Request failed", result.body.error.requestId);
+      expect(JSON.stringify([result.body, log.mock.calls])).not.toContain("private database password");
+    } finally { query.mockRestore(); log.mockRestore(); }
+  });
   it("reset revokes sessions and requires the new initial password to be changed", async () => {
     const oldCookie = await cookieForUser(db, ids[3]);
     const reset = await write("post", `/api/admin/users/${ids[3]}/initial-password`, { initialPassword: password });

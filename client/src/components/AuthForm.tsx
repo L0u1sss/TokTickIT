@@ -65,10 +65,10 @@ export default function AuthForm({mode}:{mode:"login"|"change"}) {
             aria-invalid={Boolean(errors[field])} aria-describedby={[errors[field]?`error-${field}`:"",mode==="change" && field==="newPassword"?"password-rules":""].filter(Boolean).join(" ") || undefined}
             onChange={e=>setValues(previous=>({...previous,[field]:e.target.value}))}
             onBlur={()=>setErrors(previous=>({...previous,[field]:validate(field,values[field])}))}/>
-          {field!=="email" && <button type="button" disabled={busy} aria-pressed={Boolean(visible[field])} onClick={()=>setVisible(previous=>({...previous,[field]:!previous[field]}))}>{visible[field]?"Hide":"Show"} {label}</button>}
+          {field!=="email" && <button className="zen-button secondary-button" type="button" disabled={busy} aria-pressed={Boolean(visible[field])} onClick={()=>setVisible(previous=>({...previous,[field]:!previous[field]}))}>{visible[field]?"Hide":"Show"} {label}</button>}
           {errors[field] && <p id={`error-${field}`} className="auth-error">{errors[field]}</p>}
         </div>)}
-        <button className="continue-button" type="submit" disabled={busy}>{busy?(mode==="login"?"Signing in…":"Saving…"):(mode==="login"?"Sign in":"Save password")}</button>
+        <button className="zen-button continue-button" type="submit" disabled={busy}>{busy?(mode==="login"?"Signing in…":"Saving…"):(mode==="login"?"Sign in":"Save password")}</button>
       </form>
       <p role="status">{busy?"Please wait.":""}</p>
       {mode==="change" && <LogoutButton disabled={busy}/>}

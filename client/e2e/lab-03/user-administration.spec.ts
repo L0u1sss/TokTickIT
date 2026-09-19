@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { accessible } from "./evidence-support.js";
 
 test("administrator: live create/edit/reset, security, responsive reflow and keyboard dialogs", async ({ page }) => {
   if (!process.env.E2E_AUTH_PASSWORD) throw new Error("Run node scripts/run-auth-e2e.mjs --user-management");
@@ -14,12 +15,14 @@ test("administrator: live create/edit/reset, security, responsive reflow and key
   for (const [name, width, height] of [["desktop", 1440, 900], ["tablet", 834, 1112], ["mobile", 390, 844], ["reflow-200-percent", 720, 450]] as const) {
     await page.setViewportSize({ width, height });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await accessible(page);
     await page.screenshot({ path: `../artifacts/lab-03/screenshots/user-management/${name}.png`, fullPage: true });
     await page.getByRole("button", { name: "Create user", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("Name", { exact: true })).toBeFocused();
     await expect(dialog.getByRole("button", { name: "Save user" })).toBeVisible();
     expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await accessible(page);
     await page.screenshot({ path: `../artifacts/lab-03/screenshots/user-management/${name}-create.png`, fullPage: true });
     await dialog.getByRole("button", { name: "Cancel", exact: true }).focus();
     await page.keyboard.press("Tab");

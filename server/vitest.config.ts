@@ -9,6 +9,7 @@ export default defineConfig({
           environment: "node",
           include: ["tests/**/*.test.ts"],
           exclude: [
+            "tests/lab-03/staff-ticket-detail.api.test.ts",
             "tests/lab-03/requester-regression.api.test.ts",
             "tests/lab-03/users-admin.api.test.ts",
             "tests/lab-03/staff-queue.api.test.ts",
@@ -29,6 +30,7 @@ export default defineConfig({
           name: "database",
           environment: "node",
           include: [
+            "tests/lab-03/staff-ticket-detail.api.test.ts",
             "tests/lab-03/requester-regression.api.test.ts",
             "tests/lab-03/users-admin.api.test.ts",
             "tests/lab-03/staff-queue.api.test.ts",
