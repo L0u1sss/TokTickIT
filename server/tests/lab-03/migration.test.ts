@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -6,6 +6,11 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { verifyPassword } from "../../src/password.js";
 import { seedDatabase, LAB_INITIAL_PASSWORD } from "../../prisma/seed.js";
+import request from "supertest";
+
+let migratedDatabase: PrismaClient;
+vi.mock("../../src/prisma.js", () => ({ getPrisma: () => migratedDatabase }));
+import { app } from "../../src/app.js";
 
 const admin = new PrismaClient();
 const schemas: string[] = [];
@@ -68,8 +73,25 @@ describe("Issue #31 disposable populated identity migration", () => {
     expect(user).toMatchObject({ displayName: "Legacy Owner", role: "REQUESTER", isActive: true, mustChangePassword: true, updatedAt: new Date("2026-01-01Z") });
     expect(await verifyPassword(user.passwordHash, LAB_INITIAL_PASSWORD)).toBe(true);
     expect((await db.user.findUniqueOrThrow({ where: { id: 18 } })).isActive).toBe(false);
-    expect(await db.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() AND table_name='RequesterUser'`).toEqual([]);
     await expect(db.user.delete({ where: { id: 17 } })).rejects.toThrow("Ticket_requesterId_fkey");
+    // Exercise the migrated identity through real login/session/ownership APIs.
+    migratedDatabase = db;
+    const origin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+    const agent = request.agent(app);
+    const login = await agent.post("/api/auth/login").set("Origin", origin).send({ email: user.email, password: LAB_INITIAL_PASSWORD });
+    expect(login.status).toBe(200);
+    expect(login.body.user).toMatchObject({ id: 17, role: "REQUESTER", mustChangePassword: true });
+    const blocked = await agent.get(`/api/tickets/${ticket.id}`);
+    expect(blocked.status).toBe(403); expect(blocked.body.error.code).toBe("PASSWORD_CHANGE_REQUIRED");
+    const newPassword = "Migrated-requester-password2!";
+    expect((await agent.post("/api/auth/change-password").set("Origin", origin).send({ currentPassword: LAB_INITIAL_PASSWORD, newPassword, confirmPassword: newPassword })).status).toBe(200);
+    const preserved = await agent.get(`/api/tickets/${ticket.id}`);
+    expect(preserved.status).toBe(200);
+    expect(preserved.body).toMatchObject({ id: ticket.id, summary: "Legacy ticket", requester: { id: 17 } });
+    expect(preserved.body.attachments).toEqual(expect.arrayContaining([expect.objectContaining({ id: attachment.id, fileName: "legacy.pdf", isRemoved: true, downloadable: false })]));
+    expect((await agent.get("/api/tickets")).body.items.map((item: { id: number }) => item.id)).toEqual([ticket.id]);
+    expect((await request(app).post("/api/auth/login").set("Origin", origin).send({ email: "inactive@example.test", password: LAB_INITIAL_PASSWORD })).status).toBe(401);
+    expect(await db.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() AND table_name='RequesterUser'`).toEqual([]);
     const added = await db.user.create({ data: { displayName: "New", email: "new@example.test", passwordHash: user.passwordHash, role: "IT_STAFF" } });
     expect(added.id).toBeGreaterThan(18);
   }, 60000);
