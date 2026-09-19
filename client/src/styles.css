@@ -246,6 +246,7 @@ a:focus-visible {
 
 .app-shell {
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 .app-header {
