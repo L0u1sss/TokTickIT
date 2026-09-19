@@ -83,3 +83,7 @@ Branch `feat/lab3-user-migration` reuses authentication baseline `6d39f49`. Loca
 - Final hosted CI: Pending
 - All review threads resolved: No — remediation awaits response commit and peer re-review
 - Lab 3 final approval: Pending
+
+## PR #45 review remediation
+
+Review [5255696969](https://github.com/L0u1sss/TokTickIT/pull/45#pullrequestreview-5255696969) requested a shared explicit communication DTO, readable Requester status labels, resource lookup before body validation, and current CI evidence. The working-tree fixes add exact DTO assertions for all communication routes, enum-label regression tests, and missing/foreign resource precedence tests. Hosted CI for commit `1f83354e6c1acac5b86d9c0e85f65c6bf52d2d7b` passed in [run 35388712119](https://github.com/L0u1sss/TokTickIT/actions/runs/35388712119): server 269/269, client 96/96, Comments/Notes browser 1/1, Staff Queue browser 1/1, responsive 6/6, lint/build passed. This evidence applies to that commit only. Review-remediation changes need a new hosted run and peer re-review; approval remains pending.

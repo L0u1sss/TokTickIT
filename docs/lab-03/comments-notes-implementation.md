@@ -21,4 +21,9 @@ Implemented on `feat/lab3-comments-and-notes`, following Lab_3_sheet.pdf section
 
 New test files: `server/tests/lab-03/content-validation.test.ts`, `server/tests/lab-03/comments-notes.api.test.ts`, `client/tests/lab-03/TicketCommunication.test.tsx`, `client/e2e/lab-03/comments-notes.spec.ts`.
 
-These are local issue-level results. Peer approval, hosted CI, merge and whole-sprint Definition of Done remain separate release evidence.
+Hosted CI for commit `1f83354e6c1acac5b86d9c0e85f65c6bf52d2d7b` passed in [run 35388712119](https://github.com/L0u1sss/TokTickIT/actions/runs/35388712119): server 269/269, client 96/96, Comments/Notes browser 1/1, Staff Queue browser 1/1, responsive 6/6, lint/build passed. This evidence applies to that commit only. Review-remediation changes need a new hosted run and peer re-review; approval remains pending.
+
+
+### Review remediation validation (2026-09-19)
+
+Local changes addressing review 5255696969 pass server build/lint and 276/276 tests, client build/lint and 100/100 tests, and the live Comments/Notes browser flow (1/1). Added exact DTO tests for every communication role/route, resource-before-body validation tests for missing/foreign Tickets, and readable multiword status regression tests. These local changes are not covered by the earlier hosted run at 1f83354; a new hosted run and peer approval remain pending. GitHub denied the PR-description update with 403 Resource not accessible by integration; the prepared replacement is [pr-45-description.md](pr-45-description.md).

@@ -394,7 +394,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
       </a>
       <header className="ticket-detail-heading">
         <div><p className="eyebrow">Ticket Detail</p><h1>{ticket.ticketNumber}</h1></div>
-        <span className="status-badge">{ticket.status}</span>
+        <span className="status-badge">{ticket.status.replaceAll("_", " ").toLowerCase().replace(/\b\w+/g, word => word === "for" ? word : word[0].toUpperCase() + word.slice(1))}</span>
       </header>
       <div className="ticket-detail-layout">
         <section className="detail-surface ticket-detail-summary" aria-labelledby="ticket-summary-heading">

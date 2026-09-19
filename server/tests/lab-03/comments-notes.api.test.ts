@@ -75,3 +75,40 @@ it("rejects requester attempts to formally resolve/close and missing CSRF", asyn
   for (const status of ["RESOLVED", "CLOSED"]) expect((await request(app).patch(path(0, "status")).set("Cookie", cookies[0]).set("Origin", "http://localhost:5173").send({ status })).status).toBe(404);
   expect((await request(app).post(path(1, "comments")).set("Cookie", cookies[1]).set("Origin", "http://localhost:5173").send({ content: "x" })).status).toBe(403);
 });
+
+function expectCommunicationDto(value: unknown) {
+  expect(value).toEqual({
+    id: expect.any(Number), content: expect.any(String), createdAt: expect.any(String),
+    author: { id: expect.any(Number), displayName: expect.any(String), role: expect.stringMatching(/^(REQUESTER|IT_STAFF|ADMINISTRATOR)$/) },
+  });
+}
+it.each([0, 1, 2])("returns the exact communication DTO for actor %s", async actor => {
+  for (const suffix of actor === 0 ? ["comments"] : ["comments", "internal-notes"]) {
+    const created = await post(actor, suffix, { content: "Exact DTO" });
+    expect(created.status).toBe(201); expectCommunicationDto(created.body);
+    const listed = await request(app).get(path(actor, suffix)).set("Cookie", cookies[actor]);
+    expect(listed.status).toBe(200);
+    expect(listed.body.items.length).toBeGreaterThan(0);
+    listed.body.items.forEach(expectCommunicationDto);
+  }
+  if (actor !== 0) {
+    const detail = await request(app).get('/api/staff/tickets/' + ticketId).set("Cookie", cookies[actor]);
+    expect(detail.status).toBe(200);
+    expect(detail.body.publicComments.length).toBeGreaterThan(0);
+    detail.body.publicComments.forEach(expectCommunicationDto);
+  }
+});
+it.each([0, 1, 2, 3])("checks resource access before invalid body for actor %s", async actor => {
+  const suffixes = actor === 1 || actor === 2 ? ["comments", "internal-notes"] : ["comments", "problem-appears-resolved"];
+  for (const suffix of suffixes) {
+    for (const id of [ticketId, 2147483647]) {
+      const result = await request(app).post(path(actor, suffix).replace('/' + ticketId + '/', '/' + id + '/'))
+        .set("Cookie", cookies[actor] + '; toktickit_csrf=' + csrf).set("X-CSRF-Token", csrf)
+        .set("Origin", "http://localhost:5173").send({ unexpected: "invalid" });
+      const inaccessible = actor === 3 || id !== ticketId;
+      expect(result.status).toBe(inaccessible ? 404 : 400);
+      expect(result.body.error.code).toBe(inaccessible ? "NOT_FOUND" : "VALIDATION_ERROR");
+      if (inaccessible) expect(result.body.error.fieldErrors).toBeUndefined();
+    }
+  }
+});

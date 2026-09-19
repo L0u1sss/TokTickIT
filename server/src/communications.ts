@@ -6,6 +6,7 @@ import { parsePositivePathId } from "./path-contract.js";
 import { requireOwnedTicket } from "./attachment-service.js";
 
 export const authorSelect = { id: true, displayName: true, role: true } as const;
+export const communicationSelect = { id: true, content: true, createdAt: true, author: { select: authorSelect } } as const;
 export function parseContent(body: unknown) {
   if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(key => key !== "content")) {
     throw validationError([{ field: "body", issue: "Only content is accepted." }]);
@@ -17,7 +18,7 @@ export function parseContent(body: unknown) {
   return value.trim();
 }
 export async function listComments(prisma: PrismaClient, ticketId: number) {
-  return prisma.publicComment.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, content: true, createdAt: true, author: { select: authorSelect } } });
+  return prisma.publicComment.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: communicationSelect });
 }
 export const requesterCommunicationsRouter = Router();
 requesterCommunicationsRouter.route("/:id/comments").get(async (req, res, next) => {
@@ -31,16 +32,16 @@ requesterCommunicationsRouter.route("/:id/comments").get(async (req, res, next) 
     const id = parsePositivePathId(req.params.id, "id");
     await requireOwnedTicket(getPrisma(), res.locals.authenticatedUser, id);
     const content = parseContent(req.body);
-    res.status(201).json(await getPrisma().publicComment.create({ data: { ticketId: id, authorId: res.locals.authenticatedUser.id, content }, select: { id: true, content: true, createdAt: true, author: { select: authorSelect } } }));
+    res.status(201).json(await getPrisma().publicComment.create({ data: { ticketId: id, authorId: res.locals.authenticatedUser.id, content }, select: communicationSelect }));
   } catch (error) { next(error); }
 });
 requesterCommunicationsRouter.post("/:id/problem-appears-resolved", async (req, res) => {
   try {
     const id = parsePositivePathId(req.params.id, "id");
-    if (req.body != null && (typeof req.body !== "object" || Array.isArray(req.body) || Object.keys(req.body).length)) throw validationError([{ field: "body", issue: "No fields are accepted." }]);
     const result = await getPrisma().$transaction(async tx => {
       const ticket = await tx.ticket.findFirst({ where: { id, requesterId: res.locals.authenticatedUser.id } });
       if (!ticket) throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
+      if (req.body != null && (typeof req.body !== "object" || Array.isArray(req.body) || Object.keys(req.body).length)) throw validationError([{ field: "body", issue: "No fields are accepted." }]);
       if (["RESOLVED", "CLOSED", "CANCELLED"].includes(ticket.status)) throw new ApiError(409, "RESOLUTION_INDICATION_NOT_ALLOWED", "This Ticket cannot receive a resolution indication in its current status.");
       const select = { problemAppearsResolvedAt: true, problemAppearsResolvedBy: { select: authorSelect } } as const;
       if (ticket.problemAppearsResolvedAt) return tx.ticket.findUniqueOrThrow({ where: { id }, select });
