@@ -36,8 +36,8 @@ limited scope and do not substitute for a manual accessibility audit.
 
 Local verification completed on 2026-09-20 from branch
 `test/lab3-e2e-responsive-accessibility`, after integrating `origin/lab3-staging`
-at `96eee02` (the merged PR #47 base). These results are for the current
-working tree and are not hosted CI or final-main evidence.
+at `96eee02` (the merged PR #47 base). The exact PR HEAD is
+`2ead97e9c0cc4c31b081a682557539f90d2c136e`.
 
 | Evidence | Command / location | Actual result |
 |---|---|---|
@@ -54,6 +54,6 @@ working tree and are not hosted CI or final-main evidence.
 | Diff hygiene | `git diff --check` | Passed |
 
 All database-backed browser and server runs used disposable PostgreSQL test
-schemas. The local worktree still contains uncommitted implementation,
-evidence, and screenshot changes; hosted CI, final commit SHA, peer review, and
-approval remain pending.
+schemas. Hosted CI run [#56](https://github.com/L0u1sss/TokTickIT/actions/runs/35462563413)
+completed successfully on the exact PR HEAD `2ead97e`. Peer review/approval and
+final-main integration remain pending.
