@@ -83,3 +83,9 @@ Branch `feat/lab3-user-migration` reuses authentication baseline `6d39f49`. Loca
 - Final hosted CI: Pending
 - All review threads resolved: No — remediation awaits response commit and peer re-review
 - Lab 3 final approval: Pending
+
+## PR #45 review remediation
+
+Changes addressing [review 5255696969](https://github.com/L0u1sss/TokTickIT/pull/45#pullrequestreview-5255696969) were committed in `ee4d86f853a86fbf4da745fae4add28c9d351931`. They add shared explicit communication DTO projections and exact-shape tests, readable Requester status labels, and resource/ownership lookup before body validation with regression tests. [Re-review 5255769417](https://github.com/L0u1sss/TokTickIT/pull/45#pullrequestreview-5255769417) confirms these code fixes and requests evidence synchronization only. The repository evidence now references the successful hosted run above; the obsolete PR-description workaround and missing-file link have been removed. Peer re-review/approval remains **Pending**.
+
+Hosted CI for implementation commit `ee4d86f853a86fbf4da745fae4add28c9d351931` passed in [run 35443014989](https://github.com/L0u1sss/TokTickIT/actions/runs/35443014989): server 276/276, client 100/100, Comments/Notes browser 1/1, Staff Queue browser 1/1, responsive 6/6, and server/client lint/build passed. This evidence applies to that exact implementation commit; this documentation update does not change implementation. Peer re-review/approval: **Pending**.

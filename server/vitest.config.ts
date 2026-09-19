@@ -11,6 +11,7 @@ export default defineConfig({
           exclude: [
             "tests/lab-03/users-admin.api.test.ts",
             "tests/lab-03/staff-queue.api.test.ts",
+            "tests/lab-03/comments-notes.api.test.ts",
             "tests/lab-03/migration.test.ts",
             "tests/lab-03/authorization.api.test.ts",
             "tests/lab-03/auth.api.test.ts",
@@ -29,6 +30,7 @@ export default defineConfig({
           include: [
             "tests/lab-03/users-admin.api.test.ts",
             "tests/lab-03/staff-queue.api.test.ts",
+            "tests/lab-03/comments-notes.api.test.ts",
             "tests/lab-03/migration.test.ts",
             "tests/lab-03/authorization.api.test.ts",
             "tests/lab-03/auth.api.test.ts",

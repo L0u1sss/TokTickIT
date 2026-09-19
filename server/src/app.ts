@@ -12,6 +12,7 @@ import { parseTicketCreateBody } from "./ticket-contract.js";
 import { createTicket } from "./ticket-service.js";
 import { parseTicketListQuery } from "./ticket-query.js";
 import { listTickets } from "./ticket-list-service.js";
+import { requesterCommunicationsRouter } from "./communications.js";
 import { staffQueueRouter } from "./staff-queue.js";
 import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
 import { parsePositivePathId } from "./path-contract.js";
@@ -74,6 +75,7 @@ app.use("/api/admin", requireRole("ADMINISTRATOR"));
 app.use("/api/admin", requireStaffCsrf);
 app.use(express.json());
 app.use("/api/admin", userManagementRouter);
+app.use("/api/tickets", requesterCommunicationsRouter);
 app.use("/api/staff", staffTicketOperationsRouter);
 app.use("/api/staff", staffQueueRouter);
 

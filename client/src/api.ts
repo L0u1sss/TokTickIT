@@ -27,6 +27,7 @@ export interface TicketCreateInput {
 }
 
 export interface TicketDetail {
+  problemAppearsResolvedAt?: string | null;
   id: number;
   ticketNumber: string;
   summary: string;

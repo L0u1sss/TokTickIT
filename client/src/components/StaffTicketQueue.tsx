@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CommunicationSection } from "./TicketCommunication.js";
 import { useAuth } from "../context/AuthContext.js";
 
 type Person = { id: number; displayName: string; email: string };
@@ -6,6 +7,7 @@ type Communication = { id: number; content: string; createdAt: string; author: P
 type Ticket = { id: number; ticketNumber: string; summary: string; category: { name: string };
   requester: Person; owner: Person | null; requestedPriority: string; itPriority: string; status: string;
   createdAt: string; updatedAt: string; description?: string; relatedSystem?: { name: string };
+  problemAppearsResolvedAt?: string | null;
   publicComments?: Communication[]; internalNotes?: Communication[] };
 type Queue = { items: Ticket[]; pagination: { page: number; pageSize: number; totalItems: number; totalPages: number } };
 const statuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
@@ -61,7 +63,7 @@ export default function StaffTicketQueue() {
   const [owners, setOwners] = useState<Person[]>([]), [ownerError, setOwnerError] = useState(false);
   const [ownerRevision, setOwnerRevision] = useState(0);
   const [saving, setSaving] = useState(false), [operationMessage, setOperationMessage] = useState("");
-  const [operationError, setOperationError] = useState(""), [comment, setComment] = useState(""), [note, setNote] = useState("");
+  const [operationError, setOperationError] = useState("");
   const pathname = location.split("?")[0], search = location.includes("?") ? location.slice(location.indexOf("?")) : "";
   const isDetail = pathname !== "/staff/tickets";
   useEffect(() => {
@@ -104,11 +106,6 @@ export default function StaffTicketQueue() {
     catch (operation) { setOperationError(operation instanceof QueueError ? operation.code : "Unable to save changes."); }
     finally { setSaving(false); }
   };
-  const submitCommunication = async (kind: "comments" | "internal-notes", content: string, clear: () => void) => {
-    if (!content.trim()) { setOperationError("Comment or note cannot be empty."); return; }
-    await runOperation(`tickets/${pathname.split("/").pop()}/${kind}`, "POST", { content: content.trim() });
-    clear();
-  };
   const allowedStatusOptions = detail ? [detail.status, ...(statusTransitions[detail.status] ?? [])] : [];
   const changeStatus = (nextStatus: string) => {
     if (["RESOLVED", "CLOSED", "CANCELLED", "REOPENED"].includes(nextStatus) && !window.confirm(`Confirm changing this Ticket to ${label(nextStatus)}?`)) return;
@@ -148,8 +145,9 @@ export default function StaffTicketQueue() {
         <label>Status<select aria-label="Status" disabled={saving} value={detail.status} onChange={event => changeStatus(event.target.value)}>{allowedStatusOptions.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
       </div>
       <h3>Description</h3><p className="staff-description">{detail.description}</p><p>Related system: {detail.relatedSystem?.name}</p>
-      <section aria-labelledby="public-comments-heading"><h3 id="public-comments-heading">Public Comments</h3><textarea aria-label="Public Comment" value={comment} maxLength={2000} onChange={event => setComment(event.target.value)} /><button type="button" disabled={saving} onClick={() => void submitCommunication("comments", comment, () => setComment(""))}>Post Public Comment</button>{detail.publicComments?.map(item => <p key={item.id}><strong>{item.author.displayName}</strong> <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time><br />{item.content}</p>)}</section>
-      <section aria-labelledby="internal-notes-heading"><h3 id="internal-notes-heading">Internal Notes</h3><textarea aria-label="Internal Note" value={note} maxLength={2000} onChange={event => setNote(event.target.value)} /><button type="button" disabled={saving} onClick={() => void submitCommunication("internal-notes", note, () => setNote(""))}>Add Internal Note</button>{detail.internalNotes?.map(item => <p key={item.id}><strong>{item.author.displayName}</strong> <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time><br />{item.content}</p>)}</section>
+      {detail.problemAppearsResolvedAt && <p role="status">Requester reports the problem appears resolved: {new Date(detail.problemAppearsResolvedAt).toLocaleString()}</p>}
+      <CommunicationSection key={detail.id + "comments"} ticketId={detail.id} staff />
+      <CommunicationSection key={detail.id + "notes"} ticketId={detail.id} staff internal />
     </article>}
     {!loading && !error && queue && <>
       <p role="status">{queue.pagination.totalItems} tickets · Page {queue.pagination.page} of {queue.pagination.totalPages || 1}</p>

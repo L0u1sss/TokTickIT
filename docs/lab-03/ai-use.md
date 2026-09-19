@@ -108,3 +108,6 @@ Tests also drove safe malformed-list handling and password confirmation behavior
 Evidence and limitations: [user-management.md](user-management.md). The browser
 run uses fictional accounts in a disposable test schema. No personal reflection,
 peer approval, hosted CI result, commit, push or merge is claimed.
+## Issue #34 implementation (2026-09-19)
+
+User requested implementation of issue #34 in the local TokTickIT workspace using Lab_3_sheet.pdf. Codex read the issue, existing engineering contract and handout, completed Requester comments/resolution indication, tightened Staff communication validation, separated Internal Notes loading, and added API/UI/live-browser coverage. It checked disposable-schema migrations, Unicode limits, forged metadata, role isolation, plain-text rendering and responsive screenshots. Human peer review and integration remain pending. See [local evidence](comments-notes-implementation.md).

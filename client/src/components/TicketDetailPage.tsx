@@ -16,6 +16,7 @@ import {
   TicketDetail,
   uploadAttachment,
 } from "../api.js";
+import { CommunicationSection, ResolutionIndication } from "./TicketCommunication.js";
 import { useRequester } from "../context/RequesterContext.js";
 
 const maxAttachmentBytes = 5_242_880;
@@ -393,7 +394,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
       </a>
       <header className="ticket-detail-heading">
         <div><p className="eyebrow">Ticket Detail</p><h1>{ticket.ticketNumber}</h1></div>
-        <span className="status-badge">New</span>
+        <span className="status-badge">{ticket.status.replaceAll("_", " ").toLowerCase().replace(/\b\w+/g, word => word === "for" ? word : word[0].toUpperCase() + word.slice(1))}</span>
       </header>
       <div className="ticket-detail-layout">
         <section className="detail-surface ticket-detail-summary" aria-labelledby="ticket-summary-heading">
@@ -462,6 +463,8 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
           </section>
         </div>
       )}
+      <CommunicationSection key={ticket.id + "comments"} ticketId={ticket.id} />
+      <ResolutionIndication key={ticket.id + ticket.status} ticketId={ticket.id} status={ticket.status} initialAt={ticket.problemAppearsResolvedAt} />
     </main>
   );
 }

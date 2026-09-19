@@ -1,5 +1,6 @@
 import { Priority, Prisma, Status, type PrismaClient } from "@prisma/client";
 import { Router, type Request, type Response } from "express";
+import { parseContent, listComments, authorSelect, communicationSelect } from "./communications.js";
 import { getPrisma } from "./prisma.js";
 import { ApiError, toErrorResponse, validationError } from "./errors.js";
 import { parsePositivePathId } from "./path-contract.js";
@@ -42,15 +43,6 @@ function parseEnum<T extends string>(body: Record<string, unknown>, field: strin
   return value as T;
 }
 
-function parseContent(body: unknown, max: number) {
-  const value = bodyObject(body).content;
-  if (typeof value !== "string") throw validationError([{ field: "content", issue: "Must be text." }]);
-  const content = value.trim();
-  if (!content || Array.from(content).length > max) {
-    throw validationError([{ field: "content", issue: `Must contain 1-${max} characters.` }]);
-  }
-  return content;
-}
 
 function notFound() {
   return new ApiError(404, "NOT_FOUND", "Ticket not found.");
@@ -107,7 +99,7 @@ export async function updateTicketStatus(prisma: PrismaClient, ticketId: number,
     if (!ticket) throw notFound();
     if (!permittedStatusTransition(ticket.status, nextStatus)) throw new ApiError(409, "INVALID_STATUS_TRANSITION", `Cannot change status from ${ticket.status} to ${nextStatus}.`);
     const terminal = nextStatus === "CLOSED" || nextStatus === "CANCELLED";
-    const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { status: nextStatus, ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) }, select: { status: true, updatedAt: true } });
+    const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { status: nextStatus, ...(nextStatus === "REOPENED" ? { problemAppearsResolvedAt: null, problemAppearsResolvedById: null } : {}), ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) }, select: { status: true, updatedAt: true } });
     return { status: updated.status, updatedAt: updated.updatedAt.toISOString() };
   });
 }
@@ -116,8 +108,8 @@ const ticketDetailInclude = {
   requester: { select: userSelect }, category: { select: { id: true, name: true } }, relatedSystem: { select: { id: true, name: true } },
   owner: { select: userSelect }, lastOwner: { select: userSelect },
   attachments: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true, removedAt: true, removalReason: true } },
-  publicComments: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { author: { select: userSelect } } },
-  internalNotes: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { author: { select: userSelect } } },
+  publicComments: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: communicationSelect },
+  problemAppearsResolvedBy: { select: authorSelect },
 } satisfies Prisma.TicketInclude;
 
 export async function getStaffTicketDetail(prisma: PrismaClient, ticketId: number) {
@@ -139,16 +131,16 @@ export async function getStaffTicketDetail(prisma: PrismaClient, ticketId: numbe
       downloadable: attachment.removedAt === null,
     })),
     publicComments: ticket.publicComments.map(comment => ({ ...comment, createdAt: comment.createdAt.toISOString() })),
-    internalNotes: ticket.internalNotes.map(note => ({ ...note, createdAt: note.createdAt.toISOString() })),
+
   };
 }
 
-async function addCommunication(prisma: PrismaClient, ticketId: number, authorId: number, content: string, note: boolean) {
+async function addCommunication(prisma: PrismaClient, ticketId: number, authorId: number, body: unknown, note: boolean) {
   await requireTicket(prisma, ticketId);
-  const data = { ticketId, authorId, content };
-  const record = note ? await prisma.internalNote.create({ data }) : await prisma.publicComment.create({ data });
-  const author = await prisma.user.findUniqueOrThrow({ where: { id: authorId }, select: userSelect });
-  return { id: record.id, content: record.content, createdAt: record.createdAt.toISOString(), author };
+  const data = { ticketId, authorId, content: parseContent(body) };
+  return note
+    ? prisma.internalNote.create({ data, select: communicationSelect })
+    : prisma.publicComment.create({ data, select: communicationSelect });
 }
 
 export const staffTicketOperationsRouter = Router();
@@ -173,7 +165,7 @@ staffTicketOperationsRouter.patch("/tickets/:id/owner", route(async (req, res) =
 }));
 staffTicketOperationsRouter.patch("/tickets/:id/it-priority", route(async (req, res) => res.json(await updateTicketPriority(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(bodyObject(req.body), "itPriority", Object.values(Priority))))));
 staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(bodyObject(req.body), "status", Object.values(Status))))));
-staffTicketOperationsRouter.get("/tickets/:id/comments", route(async (req, res) => { const ticket = await getStaffTicketDetail(getPrisma(), parsePositivePathId(req.params.id, "id")); res.json({ items: ticket.publicComments }); }));
-staffTicketOperationsRouter.post("/tickets/:id/comments", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, parseContent(req.body, 2000), false))));
-staffTicketOperationsRouter.get("/tickets/:id/internal-notes", route(async (req, res) => { const ticketId = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), ticketId); const items = await getPrisma().internalNote.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { author: { select: userSelect } } }); res.json({ items: items.map(item => ({ ...item, createdAt: item.createdAt.toISOString() })) }); }));
-staffTicketOperationsRouter.post("/tickets/:id/internal-notes", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, parseContent(req.body, 2000), true))));
+staffTicketOperationsRouter.get("/tickets/:id/comments", route(async (req, res) => { const id = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), id); res.json({ items: await listComments(getPrisma(), id) }); }));
+staffTicketOperationsRouter.post("/tickets/:id/comments", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, req.body, false))));
+staffTicketOperationsRouter.get("/tickets/:id/internal-notes", route(async (req, res) => { const ticketId = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), ticketId); const items = await getPrisma().internalNote.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: communicationSelect }); res.json({ items: items.map(item => ({ ...item, createdAt: item.createdAt.toISOString() })) }); }));
+staffTicketOperationsRouter.post("/tickets/:id/internal-notes", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, req.body, true))));

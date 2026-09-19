@@ -64,12 +64,26 @@ describe("Requester Ticket Detail", () => {
     window.sessionStorage.clear();
     window.history.replaceState({}, "", "/tickets/145");
     mockRequesterSession(requester);
+    vi.spyOn(api, "fetchAuthenticated").mockResolvedValue(new Response(JSON.stringify({ items: [] })));
     vi.spyOn(api, "getTicketDetail").mockResolvedValue(ticket);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     window.sessionStorage.clear();
+  });
+
+  it.each([
+    ["IN_PROGRESS", "In Progress"],
+    ["WAITING_FOR_REQUESTER", "Waiting for Requester"],
+    ["REOPENED", "Reopened"],
+    ["In Progress", "In Progress"],
+  ])("renders readable status %s", async (status, label) => {
+    vi.mocked(api.getTicketDetail).mockResolvedValue({ ...ticket, status });
+    renderDetail();
+    await screen.findByRole("heading", { name: ticket.ticketNumber });
+    expect(document.querySelector(".status-badge")).toHaveTextContent(label);
+    expect(document.querySelector(".status-badge")).not.toHaveTextContent("_");
   });
 
   it("renders complete read-only owned detail and active/removed metadata", async () => {
