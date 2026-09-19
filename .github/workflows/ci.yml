@@ -97,7 +97,7 @@ jobs:
 
       - name: Run administrator browser suite
         run: npm run test:admin:e2e
-  working-directory: client
+        working-directory: client
 
       - name: Run staff queue browser suite
         run: node scripts/run-auth-e2e.mjs --staff-queue
