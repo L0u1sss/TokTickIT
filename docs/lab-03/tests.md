@@ -95,7 +95,7 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | UT-01 | Unit | BR-02, BR-34 | Email normalization/validation boundaries | canonical comparison; invalid rejected | `server/tests/lab-03/validation.test.ts` | Partial — email validation/normalization passed in #30; broader BR-34 validation remains planned |
 | UT-02 | Unit | BR-04, BR-06, AC-03 | Password Unicode length, classes, trim, confirmation, reuse | exact policy enforced | `server/tests/lab-03/password-policy.test.ts` | Pass — #30 password-policy unit tests plus API confirmation/reuse/rotation tests |
 | UT-03 | Unit | BR-20–BR-22, AC-11 | Every status transition pair | only matrix transitions allowed | `server/tests/lab-03/status-transition.test.ts` | Planned |
-| UT-04 | Unit | BR-25, BR-27, BR-34 | Comment/note whitespace, Unicode boundaries, plain text | exact limits; HTML not executed | `server/tests/lab-03/content-validation.test.ts` | Planned |
+| UT-04 | Unit | BR-25, BR-27, BR-34 | Comment/note whitespace, Unicode boundaries, plain text | exact limits; HTML not executed | `server/tests/lab-03/content-validation.test.ts` | Passed locally (#34) |
 | UT-05 | Unit | FR-07, AC-08 | Queue query parse/defaults/tie-breaker | strict validated query | `server/tests/lab-03/staff-query.test.ts` | Pass — local Issue #32 verification |
 | DB-01 | Integration | FR-17, AC-07 | Fresh Lab 3 migration/schema/FKs/indexes/enums | clean deploy passes | `server/tests/lab-03/migration.test.ts` | Partial — User/Session and identity/FK migration passed; full workflow schema remains later issues |
 | DB-02 | Integration | FR-17, AC-07 | Populated Lab 2 requester/ticket/attachment migration | IDs/counts/ownership preserved | `server/tests/lab-03/migration.test.ts` | Pass — #31 populated migration preserves IDs, Ticket/Attachment contents and restrictive FKs |
@@ -122,10 +122,10 @@ Database tests ต้องใช้ isolated disposable PostgreSQL ผ่าน
 | API-17 | API | BR-16, BR-18, BR-36, AC-10 | Assign/reassign eligible staff/admin, terminal/bad target and races | valid persists; invalid/conflicting 409 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | API-18 | API | BR-19, AC-10 | IT Priority update versus Requested Priority | IT changes; requested remains unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | API-19 | API | BR-16, BR-20–BR-22, AC-11 | All valid/invalid/terminal status changes | valid persists; terminal archives lastOwner and clears owner; invalid 409 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
-| API-20 | API | FR-11, BR-25–BR-27, AC-12 | Public Comment create/list/boundaries/order | append-only server author/time | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
-| API-21 | Security | FR-12, BR-28, AC-13 | Requester accesses note routes/payloads/counts | forbidden/no note existence or content | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
-| API-22 | API | FR-12, BR-25–BR-28 | Staff/Admin Internal Note create/list/boundaries | append-only server author/time | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
-| API-23 | API | FR-06, BR-23, AC-14 | Problem Appears Resolved allowed/disallowed statuses, replay and Reopened cycle | allowed idempotent; terminal/formal states 409; status unchanged | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
+| API-20 | API | FR-11, BR-25–BR-27, AC-12 | Public Comment create/list/boundaries/order | append-only server author/time | `server/tests/lab-03/comments-notes.api.test.ts` | Passed locally (#34) |
+| API-21 | Security | FR-12, BR-28, AC-13 | Requester accesses note routes/payloads/counts | forbidden/no note existence or content | `server/tests/lab-03/comments-notes.api.test.ts` | Passed locally (#34) |
+| API-22 | API | FR-12, BR-25–BR-28 | Staff/Admin Internal Note create/list/boundaries | append-only server author/time | `server/tests/lab-03/comments-notes.api.test.ts` | Passed locally (#34) |
+| API-23 | API | FR-06, BR-23, AC-14 | Problem Appears Resolved allowed/disallowed statuses, replay and Reopened cycle | allowed idempotent; terminal/formal states 409; status unchanged | `server/tests/lab-03/comments-notes.api.test.ts` | Passed locally (#34) |
 | API-24 | API | FR-13, AC-15 | Admin list, name/email search, role filter | correct ordered safe users | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-25 | API | FR-14, AC-15–AC-16 | Create user/one role/duplicate/invalid | 201 valid; 400/409 invalid | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | API-26 | API | FR-14, AC-15–AC-16 | Edit name/email/role/activation | permitted fields persist safely | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
@@ -274,3 +274,12 @@ Screenshots: `docs/lab-03/evidence/requester-regression/{create-ticket,my-ticket
 Test-count changes from #30 are intentional: mutable Development Requester selection/header tests were superseded by authenticated identity/role/Logout tests. Existing Ticket/Attachment business behavior remains tested. `API-09` and `API-10` are implemented in the authorization file plus migrated Lab 2 regression files rather than a separate `requester-regression.api.test.ts`.
 
 Scope and initial-password limitation: [identity-migration.md](identity-migration.md). Workflow columns/status backfill (DB-03), comments/notes, staff operations and Administrator CRUD remain subsequent issues; do not mark the whole Lab 3 contract complete.
+
+## Issue #34 hosted verification (2026-09-19)
+
+The existing planned UT-04 and API-20–23 are now implemented. Shared UI component checks are in `client/tests/lab-03/TicketCommunication.test.tsx`; the focused live collaboration flow is `client/e2e/lab-03/comments-notes.spec.ts`. These cover the comments/notes/indication portions of UI-04, UI-06, UI-08, RV-03 and E2E-02; other portions remain separately scoped. Server 276/276, client 100/100 and focused browser 1/1 passed. See [implementation and evidence](comments-notes-implementation.md). Hosted CI for implementation commit `ee4d86f853a86fbf4da745fae4add28c9d351931` passed in [run 35443014989](https://github.com/L0u1sss/TokTickIT/actions/runs/35443014989): server 276/276, client 100/100, Comments/Notes browser 1/1, Staff Queue browser 1/1, responsive 6/6, and server/client lint/build passed. This evidence applies to that exact implementation commit; this documentation update does not change implementation. Peer re-review/approval: **Pending**.
+
+
+### Review remediation validation (2026-09-19)
+
+Changes addressing [review 5255696969](https://github.com/L0u1sss/TokTickIT/pull/45#pullrequestreview-5255696969) were committed in `ee4d86f853a86fbf4da745fae4add28c9d351931`. They add shared explicit communication DTO projections and exact-shape tests, readable Requester status labels, and resource/ownership lookup before body validation with regression tests. [Re-review 5255769417](https://github.com/L0u1sss/TokTickIT/pull/45#pullrequestreview-5255769417) confirms these code fixes and requests evidence synchronization only. The repository evidence now references the successful hosted run above; the obsolete PR-description workaround and missing-file link have been removed. Peer re-review/approval remains **Pending**.

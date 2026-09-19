@@ -161,7 +161,7 @@ describe("staff queue API", () => {
     const detail = await request(app).get(`/api/staff/tickets/${tickets[0]}`).set("Cookie", cookies[1]);
     expect(detail.body.description).toBe("Private ticket detail"); expect(detail.body.owner.id).toBe(ids[1]);
     expect(detail.body.publicComments).toEqual([expect.objectContaining({ content: "Public history entry", author: expect.objectContaining({ id: ids[1] }), createdAt: expect.any(String) })]);
-    expect(detail.body.internalNotes).toEqual([expect.objectContaining({ content: "Private history entry", author: expect.objectContaining({ id: ids[1] }), createdAt: expect.any(String) })]);
+    expect(detail.body.internalNotes).toBeUndefined();
     expect((await request(app).get("/api/staff/tickets/2147483647").set("Cookie", cookies[1])).status).toBe(404);
   });
   it.each(["LOW", "MEDIUM", "HIGH"])("copies %s Requested Priority on creation and replay", async requestedPriority => {

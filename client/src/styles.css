@@ -1374,3 +1374,11 @@ a:focus-visible {
     margin-left: 0;
   }
 }
+
+.communication-section { margin-block: 1.5rem; padding: 1rem; border: 2px solid #538064; border-radius: 12px; min-width: 0; }
+.communication-internal { background: #fff8e6; border-color: #94722a; }
+.communication-public { background: #f2f8f3; }
+.communication-section textarea { display: block; width: 100%; min-height: 100px; }
+.communication-section label { display: block; }
+.communication-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+.communication-section article { border-bottom: 1px solid #b5c9b9; margin-block: 1rem; }

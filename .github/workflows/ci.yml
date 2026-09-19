@@ -3,10 +3,12 @@ name: CI
 on:
   pull_request:
     branches:
+      - main
       - lab2-staging
       - lab3-staging
   push:
     branches:
+      - main
       - lab2-staging
       - lab3-staging
 
@@ -91,6 +93,14 @@ jobs:
 
       - name: Run authentication browser suite
         run: npm run test:auth:e2e
+        working-directory: client
+
+      - name: Run staff queue browser suite
+        run: node scripts/run-auth-e2e.mjs --staff-queue
+        working-directory: client
+
+      - name: Run comments and notes browser suite
+        run: node scripts/run-auth-e2e.mjs --communications
         working-directory: client
 
       - name: Run responsive browser suite

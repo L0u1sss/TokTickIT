@@ -46,6 +46,7 @@ model User {
   tickets             Ticket[]
   assignedTickets     Ticket[] @relation("TicketOwner")
   lastOwnedTickets    Ticket[] @relation("TicketLastOwner")
+  resolutionIndications Ticket[] @relation("ResolutionActor")
   publicComments      PublicComment[]
   internalNotes       InternalNote[]
   uploadedAttachments Attachment[] @relation("AttachmentUploader")
@@ -102,6 +103,9 @@ model Ticket {
   owner             User?        @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   lastOwnerId       Int?
   lastOwner         User?        @relation("TicketLastOwner", fields: [lastOwnerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  problemAppearsResolvedAt DateTime?
+  problemAppearsResolvedById Int?
+  problemAppearsResolvedBy User? @relation("ResolutionActor", fields: [problemAppearsResolvedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   status            Status        @default(NEW)
   requesterId       Int
   categoryId        Int

@@ -218,6 +218,11 @@ async function installApiMocks(page: Page, state: MockState) {
       return;
     }
 
+    if (url.pathname === "/api/tickets/42/comments" && request.method() === "GET") {
+      await json(route, 200, { items: [] });
+      return;
+    }
+
     if (url.pathname.endsWith("/remove") && request.method() === "PATCH") {
       await json(route, 200, {
         ...activeAttachment,
@@ -492,6 +497,29 @@ test("loading, empty, error, busy, warning, and focus recovery states are explic
   state.detailDelay = 0;
   await detailRetry.click();
   await expect(page.getByRole("heading", { name: "TKT-2026-000042" })).toBeVisible();
+});
+
+test("mobile comments failure has accessible retry and recovers", async ({ page }) => {
+  await installApiMocks(page, defaultMockState());
+  let failed = true;
+  await page.route("http://localhost:3000/api/tickets/42/comments", async route => {
+    await json(route, failed ? 500 : 200, failed
+      ? errorBody("INTERNAL_ERROR", "Unable to load comments")
+      : { items: [] });
+  });
+  await page.setViewportSize(viewports[2]);
+  await startWithRequester(page, "/tickets/42");
+  const comments = page.getByRole("region", { name: "Public Comments", exact: true });
+  await expect(comments.getByRole("alert")).toContainText("Unable to load entries.");
+  await assertNoPageOverflow(page);
+  await assertMobileTouchTargets(page);
+  const retry = comments.getByRole("button", { name: "Reload entries" });
+  await retry.focus();
+  await expect(retry).toBeFocused();
+  failed = false;
+  await page.keyboard.press("Enter");
+  await expect(comments.getByText("No entries yet.")).toBeVisible();
+  await expect(comments.getByRole("alert")).toHaveCount(0);
 });
 
 test("removal dialog keyboard flow traps, dismisses, and restores focus", async ({ page }) => {

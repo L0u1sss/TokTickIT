@@ -4,6 +4,7 @@ import type { RequesterContext } from "./requester-context.js";
 import { serializeTicket } from "./ticket-service.js";
 
 export const ticketDetailInclude = Prisma.validator<Prisma.TicketInclude>()({
+  problemAppearsResolvedBy: { select: { id: true, displayName: true, role: true } },
   requester: { select: { id: true, displayName: true, email: true } },
   category: { select: { id: true, name: true } },
   relatedSystem: { select: { id: true, name: true } },
@@ -44,5 +45,5 @@ export async function getOwnedTicketDetail(
   if (!ticket) {
     throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
   }
-  return serializeTicket(ticket);
+  return { ...serializeTicket(ticket), problemAppearsResolvedAt: ticket.problemAppearsResolvedAt?.toISOString() ?? null, problemAppearsResolvedBy: ticket.problemAppearsResolvedBy };
 }
