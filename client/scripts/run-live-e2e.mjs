@@ -34,6 +34,7 @@ const serverPort = process.env.E2E_SERVER_PORT ?? "3100";
 const clientUrl = `http://127.0.0.1:${clientPort}`;
 const apiUrl = `http://127.0.0.1:${serverPort}`;
 const testFiles = [
+  "e2e/lab-03/requester-regression.spec.ts",
   "e2e/lab-02/requester-ticket-lifecycle.spec.ts",
   "e2e/lab-02/ownership-isolation.spec.ts",
   "e2e/lab-02/requester-context.spec.ts",

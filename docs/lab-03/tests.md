@@ -1,5 +1,19 @@
 # TokTickIT Lab 3 — Test Plan and Verification Evidence
 
+## Issue #36 Requester regression — 2026-09-20
+
+Added the planned `server/tests/lab-03/requester-regression.api.test.ts` (17 tests),
+`client/e2e/lab-03/requester-regression.spec.ts`, and authenticated continuity
+checks in the populated migration suite. Local results: server **300/300**,
+client **105/105**, live Requester browser flows **7/7**, responsive browser
+checks **6/6**, and server/client lint/build passed. The live runner includes the
+new flow in the existing CI command. See [plan, traceability and evidence](requester-regression.md).
+Hosted CI passed for implementation commit `14829ad34c3426dcc90d84a6e29ef103286da7de`:
+[CI run #53 (35459809701)](https://github.com/L0u1sss/TokTickIT/actions/runs/35459809701)
+completed with conclusion `success`. This documentation-only correction records
+that exact-commit result; peer re-review/approval and final-main integration remain pending.
+Older sections below describe their historical verification scope.
+
 ## PR #43 review correction — 2026-09-18
 
 Review [5249123058](https://github.com/L0u1sss/TokTickIT/pull/43#pullrequestreview-5249123058)

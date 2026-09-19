@@ -1,5 +1,17 @@
 # Lab 3 — AI Use and Reflection
 
+## Issue #36 Requester regression — 2026-09-20
+
+The user asked Codex to work in TokTickIT according to issue #36 and the Lab 3
+handout. Codex used the existing handout text extraction and repository contract,
+recorded a focused plan before implementation, added API/browser regressions,
+and extended the populated migration test through login and mandatory password
+change. No additional agents were used. Existing application behavior passed;
+changes are tests, runner registration, documentation and refreshed screenshots.
+See [verification and limitations](requester-regression.md). Local verification
+is separate from peer review and hosted CI; no approval or main-branch completion
+is claimed.
+
 ## PR #43 review remediation — 2026-09-18
 
 User asked Codex to fix review 5249123058 against the Lab 3 handout. The reviewer
