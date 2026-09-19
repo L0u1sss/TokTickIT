@@ -1378,10 +1378,12 @@ a:focus-visible {
 /* Administrator account management follows the shared Zen Green shell. */
 .admin-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; justify-content: space-between; }
 .admin-users .btn-primary, .admin-dialog .btn-primary { --bs-btn-bg: var(--zen-primary); --bs-btn-border-color: var(--zen-primary); --bs-btn-hover-bg: #005530; --bs-btn-hover-border-color: #005530; --bs-btn-active-bg: #005530; --bs-btn-active-border-color: #005530; --bs-btn-disabled-bg: var(--zen-primary); --bs-btn-disabled-border-color: var(--zen-primary); }
-.admin-users > .requester-card { width: min(100%, 80rem); min-width: 0; }
+.admin-users, .admin-users > .requester-card, .admin-dialog form, .admin-dialog fieldset { min-width: 0; }
+.admin-users > .requester-card { width: min(100%, 80rem); }
 .admin-filters { margin: 1.5rem 0; align-items: end; justify-content: start; }
 .admin-filters label { flex: 1 1 14rem; }
-.admin-users .btn, .admin-dialog .btn, .admin-users input, .admin-users select, .admin-dialog input:not([type=checkbox]), .admin-dialog select { min-height: 44px; }
+.admin-users .btn, .admin-dialog .btn, .admin-users input, .admin-users select, .admin-dialog input:not([type=checkbox]), .admin-dialog select { min-height: 44px; min-width: 0; max-width: 100%; }
+.admin-dialog input:not([type=checkbox]), .admin-dialog select { width: 100%; }
 .admin-table { table-layout: fixed; }
 .admin-table th, .admin-table td, .admin-cards li { overflow-wrap: anywhere; }
 .admin-cards { display: none; list-style: none; padding: 0; }
