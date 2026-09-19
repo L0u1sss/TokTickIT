@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { accessible } from "./evidence-support.js";
 test("staff queue: live search, ownership, pagination, detail, browser history and responsive views", async ({ page }) => {
   if (!process.env.E2E_AUTH_PASSWORD) throw new Error("Run node scripts/run-auth-e2e.mjs --staff-queue");
   await page.goto("/staff/tickets");
@@ -9,11 +10,12 @@ test("staff queue: live search, ownership, pagination, detail, browser history a
   await expect(page.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("23 tickets");
   await mkdir("../artifacts/lab-03/screenshots/staff-queue", { recursive: true });
-  for (const [name, width, height] of [["desktop", 1440, 900], ["tablet", 834, 1112], ["mobile", 390, 844]] as const) {
+  for (const [name, width, height] of [["desktop", 1440, 900], ["tablet", 834, 1112], ["mobile", 390, 844], ["reflow", 720, 450]] as const) {
     await page.setViewportSize({ width, height });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect(page.getByRole("button", { name: "Apply filters" })).toBeVisible();
     await expect(page.getByRole("link", { name: /View ticket/ }).first()).toBeVisible();
+    await accessible(page);
     await page.screenshot({ path: `../artifacts/lab-03/screenshots/staff-queue/${name}.png` });
     if (name !== "desktop") {
       await page.locator(".staff-cards article").first().scrollIntoViewIfNeeded();

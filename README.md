@@ -353,6 +353,18 @@ e2e/lab-03/
 
 ### Lab 3 local workflow
 
+Issue #37 testing evidence and the current AC-to-test mapping are in
+[tests.md](docs/lab-03/tests.md) and
+[issue-37-evidence.md](docs/lab-03/issue-37-evidence.md).
+The required browser specs are in `client/e2e/lab-03/`.
+Use `npm --prefix client run test:staff:e2e` for the full staff workflow, alongside
+`test:auth:e2e` and `test:admin:e2e` for authentication and administration.
+These runners require the documented `TEST_DATABASE_URL`, allocate disposable
+schemas, and save screenshots under `artifacts/lab-03/screenshots/`.
+Run `npm --prefix client ci` and install Playwright Chromium before the browser
+suites. They include axe accessibility checks; local passing evidence does not
+replace final-main CI or peer approval.
+
 เริ่ม feature branch จาก `lab3-staging` ซึ่งทีมสร้างจาก baseline ที่รวม Lab 2 เสร็จแล้ว:
 
 ```powershell

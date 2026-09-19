@@ -1,5 +1,19 @@
 # Lab 3 — AI Use and Reflection
 
+## Issue #37 — 2026-09-20
+
+The user asked Codex (GPT-6) to implement issue #37 in the local repository using
+`Lab_3_sheet.pdf` as the reference. One coding agent read the issue, the extracted
+handout and the original PDF's testing/deliverable pages, inspected existing suites,
+and wrote a focused plan before adding the missing tests. No sub-agents were used.
+New tests exposed missing staff attachment links, enabled terminal assignment
+controls, and undersized staff/auth controls. Fixes reuse existing API routes and
+Zen Green classes. Real PostgreSQL and browser runs, rather than mocked-only
+flows, verify the outcomes. Axe and screenshots provide bounded accessibility
+evidence, not a claim of a complete manual audit. See the
+[actual red/green outputs and limitations](issue-37-evidence.md).
+The student's personal reflection and peer approval are not fabricated here.
+
 ## Issue #36 Requester regression — 2026-09-20
 
 The user asked Codex to work in TokTickIT according to issue #36 and the Lab 3

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { screenEvidence } from "./evidence-support.js";
 
 test("E2E-01 auth foundation: login, forced change, account shell, logout and direct access",async({page})=>{
   if(!process.env.E2E_AUTH_PASSWORD)throw new Error("Use npm run test:auth:e2e to create isolated fixtures.");
@@ -8,12 +9,21 @@ test("E2E-01 auth foundation: login, forced change, account shell, logout and di
     await expect(page.getByRole("heading",{name:"Sign in"})).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
   }
+  await screenEvidence(page, "authentication/login");
+  for (const [email, password] of [["unknown@example.test", process.env.E2E_AUTH_PASSWORD], ["inactive-browser@example.test", process.env.E2E_AUTH_PASSWORD], ["auth-browser@example.test", "Incorrect-password1!"]]) {
+    await page.getByLabel("Email", { exact: false }).fill(email);
+    await page.getByLabel("Password", { exact: false }).fill(password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page.getByRole("alert")).toContainText("Unable to sign in with the provided credentials.");
+    expect((await page.request.get(`${process.env.E2E_API_URL}/api/auth/me`)).status()).toBe(401);
+  }
   await page.getByLabel("Email",{exact:false}).fill("auth-browser@example.test");
   await page.getByLabel("Password",{exact:false}).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button",{name:"Sign in",exact:true}).click();
   await expect(page).toHaveURL(/\/change-password$/);
   await page.goto("/account");
   await expect(page.getByRole("heading",{name:"Change your initial password"})).toBeVisible();
+  await screenEvidence(page, "authentication/change-password");
   await page.getByLabel("Current Password",{exact:false}).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByLabel("New Password",{exact:false}).first().fill("New-browser-password2!");
   await page.getByLabel("Confirm New Password",{exact:false}).fill("New-browser-password2!");

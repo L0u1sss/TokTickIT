@@ -19,8 +19,10 @@
 .staff-table th:first-child { width: 25%; }
 .staff-table th:last-child { width: 10%; }
 .staff-filters fieldset { border: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-.staff-filters label { display: grid; gap: .4rem; font-weight: 600; }
-.staff-filters input, .staff-filters select { width: 100%; min-width: 0; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; background: white; }
+.staff-filters label, .staff-operation-controls label { display: grid; gap: .4rem; font-weight: 600; min-width: 0; }
+.staff-filters input, .staff-filters select, .staff-operation-controls select { width: 100%; min-width: 0; min-height: 44px; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; background: white; }
+.staff-operation-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 1rem; align-items: end; margin-block: 1rem; }
+.staff-queue article, .staff-queue .communication-section a { overflow-wrap: anywhere; }
 .staff-search { grid-column: 1 / -1; }
 .staff-queue button { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--zen-primary); border-radius: .4rem; color: var(--zen-primary); background: white; }
 .staff-queue button:disabled { opacity: .55; }
