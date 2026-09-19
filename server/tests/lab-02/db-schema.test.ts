@@ -92,6 +92,7 @@ function validTicketData(
     summary: "Database constraint verification",
     description: "A valid description used by the database schema tests.",
     requestedPriority: Priority.MEDIUM,
+    itPriority: overrides.requestedPriority ?? Priority.MEDIUM,
     requesterId,
     categoryId,
     relatedSystemId,
@@ -174,7 +175,7 @@ async function seedSnapshot() {
       orderBy: { name: "asc" },
       select: { id: true, name: true, isActive: true },
     }),
-    prisma.requesterUser.findMany({
+    prisma.user.findMany({
       where: { email: { in: expectedRequesters.map(({ email }) => email) } },
       orderBy: { email: "asc" },
       select: {
@@ -209,7 +210,7 @@ async function cleanupTestRows() {
     });
   }
 
-  await prisma.requesterUser.deleteMany({
+  await prisma.user.deleteMany({
     where: { email: { contains: testMarker } },
   });
   await prisma.category.deleteMany({
@@ -252,7 +253,7 @@ beforeAll(async () => {
   await reserveUnusedTicketNumberBlock();
 
   const [requester, category, relatedSystem] = await Promise.all([
-    prisma.requesterUser.findUnique({
+    prisma.user.findUnique({
       where: { email: "jennifer.a@example.com" },
       select: { id: true },
     }),
@@ -314,7 +315,7 @@ describe("Lab 2 database integration contract", () => {
       FROM information_schema.columns
       WHERE table_schema = current_schema()
         AND table_name IN (
-          'RequesterUser',
+          'User',
           'Category',
           'RelatedSystem',
           'Ticket',
@@ -331,8 +332,8 @@ describe("Lab 2 database integration contract", () => {
 
     const expectedColumns = new Map<string, string[]>([
       [
-        "RequesterUser",
-        ["createdAt", "displayName", "email", "id", "isActive", "updatedAt"],
+        "User",
+        ["createdAt", "displayName", "email", "id", "isActive", "updatedAt", "passwordHash", "mustChangePassword", "role"],
       ],
       [
         "Category",
@@ -357,6 +358,11 @@ describe("Lab 2 database integration contract", () => {
           "createdAt",
           "description",
           "id",
+          "itPriority",
+          "lastOwnerId",
+          "problemAppearsResolvedAt",
+          "problemAppearsResolvedById",
+          "ownerId",
           "relatedSystemId",
           "requestedPriority",
           "requesterId",
@@ -408,6 +414,13 @@ describe("Lab 2 database integration contract", () => {
       { enumName: "Priority", enumValue: "MEDIUM" },
       { enumName: "Priority", enumValue: "HIGH" },
       { enumName: "Status", enumValue: "NEW" },
+      { enumName: "Status", enumValue: "OPEN" },
+      { enumName: "Status", enumValue: "IN_PROGRESS" },
+      { enumName: "Status", enumValue: "WAITING_FOR_REQUESTER" },
+      { enumName: "Status", enumValue: "RESOLVED" },
+      { enumName: "Status", enumValue: "CLOSED" },
+      { enumName: "Status", enumValue: "REOPENED" },
+      { enumName: "Status", enumValue: "CANCELLED" },
     ]);
   });
 
@@ -453,8 +466,8 @@ describe("Lab 2 database integration contract", () => {
 
   it("enforces all six unique business keys", async () => {
     await expect(
-      prisma.requesterUser.create({
-        data: {
+      prisma.user.create({
+        data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false,
           displayName: "Duplicate Jennifer",
           email: "jennifer.a@example.com",
         },
@@ -491,23 +504,23 @@ describe("Lab 2 database integration contract", () => {
   it("enforces requester, category, and related-system field checks", async () => {
     await expectDatabaseFailure(
       () =>
-        prisma.requesterUser.create({
-          data: {
+        prisma.user.create({
+          data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false,
             displayName: ` Invalid ${testMarker} `,
             email: `display-${testMarker}@db-schema.invalid`,
           },
         }),
-      "RequesterUser_displayName_check",
+      "User_displayName_check",
     );
     await expectDatabaseFailure(
       () =>
-        prisma.requesterUser.create({
-          data: {
+        prisma.user.create({
+          data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false,
             displayName: `Invalid Email ${testMarker}`,
             email: `invalid-${testMarker}@DB-SCHEMA.INVALID`,
           },
         }),
-      "RequesterUser_email_check",
+      "User_email_canonical",
     );
     await expectDatabaseFailure(
       () =>
@@ -602,12 +615,12 @@ describe("Lab 2 database integration contract", () => {
           invalidStatusData.summary,
           invalidStatusData.description,
           "LOW",
-          "OPEN",
+          "UNKNOWN_STATUS",
           invalidStatusData.requesterId,
           invalidStatusData.categoryId,
           invalidStatusData.relatedSystemId,
         ),
-      ["invalid input value for enum", "OPEN"],
+      ["invalid input value for enum", "UNKNOWN_STATUS"],
     );
   });
 
@@ -624,8 +637,8 @@ describe("Lab 2 database integration contract", () => {
 
     const [defaultRequester, defaultCategory, defaultRelatedSystem] =
       await Promise.all([
-        prisma.requesterUser.create({
-          data: {
+        prisma.user.create({
+          data: { role: "REQUESTER", passwordHash: "test-only-locked", mustChangePassword: false,
             displayName: `Default Requester ${testMarker}`,
             email: `default-${testMarker}@db-schema.invalid`,
           },
@@ -651,13 +664,13 @@ describe("Lab 2 database integration contract", () => {
       FROM information_schema.columns
       WHERE table_schema = current_schema()
         AND column_name = 'isActive'
-        AND table_name IN ('RequesterUser', 'Category', 'RelatedSystem')
+        AND table_name IN ('User', 'Category', 'RelatedSystem')
       ORDER BY table_name
     `;
     expect(activeDefaults).toEqual([
       { tableName: "Category", columnDefault: "true", isNullable: "NO" },
       { tableName: "RelatedSystem", columnDefault: "true", isNullable: "NO" },
-      { tableName: "RequesterUser", columnDefault: "true", isNullable: "NO" },
+      { tableName: "User", columnDefault: "true", isNullable: "NO" },
     ]);
 
     const [category, relatedSystem] = await Promise.all([
@@ -805,6 +818,9 @@ describe("Lab 2 database integration contract", () => {
       foreignKeys.map((foreignKey) => [foreignKey.constraintName, foreignKey]),
     );
     const expectedForeignKeyNames = [
+      "Ticket_ownerId_fkey",
+      "Ticket_lastOwnerId_fkey",
+      "Ticket_problemAppearsResolvedById_fkey",
       "Ticket_requesterId_fkey",
       "Ticket_categoryId_fkey",
       "Ticket_relatedSystemId_fkey",
@@ -833,7 +849,7 @@ describe("Lab 2 database integration contract", () => {
       WHERE contype = 'c'
         AND namespace.nspname = current_schema()
         AND relation.relname IN (
-          'RequesterUser',
+          'User',
           'Category',
           'RelatedSystem',
           'Ticket',
@@ -842,9 +858,9 @@ describe("Lab 2 database integration contract", () => {
     `;
     const checkNames = new Set(checks.map(({ constraintName }) => constraintName));
     const requiredChecks = [
-      "RequesterUser_id_check",
-      "RequesterUser_displayName_check",
-      "RequesterUser_email_check",
+      "User_id_check",
+      "User_displayName_check",
+      "User_email_check",
       "Category_id_check",
       "Category_name_check",
       "RelatedSystem_id_check",
@@ -874,7 +890,7 @@ describe("Lab 2 database integration contract", () => {
       FROM pg_indexes
       WHERE schemaname = current_schema()
         AND tablename IN (
-          'RequesterUser',
+          'User',
           'Category',
           'RelatedSystem',
           'Ticket',
@@ -888,14 +904,14 @@ describe("Lab 2 database integration contract", () => {
       ]),
     );
     const expectedIndexes: readonly [string, boolean, string][] = [
-      ["RequesterUser_email_key", true, '("email")'],
+      ["User_email_key", true, '("email")'],
       ["Category_name_key", true, '("name")'],
       ["RelatedSystem_name_key", true, '("name")'],
       ["Ticket_ticketNumber_key", true, '("ticketNumber")'],
       ["Ticket_clientRequestId_key", true, '("clientRequestId")'],
       ["Attachment_storageKey_key", true, '("storageKey")'],
       [
-        "RequesterUser_isActive_displayName_idx",
+        "User_isActive_displayName_idx",
         false,
         '("isActive", "displayName")',
       ],

@@ -21,9 +21,8 @@ type TicketSummaryRow = Prisma.TicketGetPayload<{
   select: typeof ticketSummarySelection;
 }>;
 
-function publicStatus(status: Status): "New" {
-  if (status !== "NEW") throw new Error("Unsupported ticket status");
-  return "New";
+function publicStatus(status: Status): string {
+  return status.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, character => character.toUpperCase());
 }
 
 function serializeTicketSummary(ticket: TicketSummaryRow) {

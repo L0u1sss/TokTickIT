@@ -1,4 +1,5 @@
 import { useRequester } from "../context/RequesterContext.js";
+import { LogoutButton } from "./AuthForm.js";
 
 interface AppHeaderProps {
   activePath: "/tickets" | "/tickets/new";
@@ -6,7 +7,7 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ activePath, onNavigate }: AppHeaderProps) {
-  const { currentRequester, changeRequester } = useRequester();
+  const { currentRequester } = useRequester();
 
   if (!currentRequester) {
     return null;
@@ -48,18 +49,12 @@ export default function AppHeader({ activePath, onNavigate }: AppHeaderProps) {
           </a>
         </nav>
         <div className="requester-menu">
-          <span className="context-disclaimer">Demo context</span>
+          <span className="context-disclaimer">Requester</span>
           <span className="current-requester">
-            <span className="current-requester-label">Viewing as</span>
+            <span className="current-requester-label">Signed in as</span>
             <strong>{currentRequester.displayName}</strong>
           </span>
-          <button
-            className="switch-requester-button"
-            type="button"
-            onClick={changeRequester}
-          >
-            Change Requester
-          </button>
+          <LogoutButton />
         </div>
       </div>
     </header>

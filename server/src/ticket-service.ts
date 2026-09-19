@@ -41,7 +41,7 @@ export interface TicketDetailResponse {
   summary: string;
   description: string;
   requestedPriority: Priority;
-  status: "New";
+  status: string;
   requester: RequesterContext;
   category: { id: number; name: string };
   relatedSystem: { id: number; name: string };
@@ -67,11 +67,8 @@ export interface TicketCreateResult {
   ticket: TicketDetailResponse;
 }
 
-function publicStatus(status: Status): "New" {
-  if (status !== "NEW") {
-    throw new Error("Unsupported ticket status");
-  }
-  return "New";
+function publicStatus(status: Status): string {
+  return status.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, character => character.toUpperCase());
 }
 
 export function serializeTicket(ticket: TicketWithRelations): TicketDetailResponse {
@@ -212,6 +209,7 @@ export async function createTicket(
             summary: input.summary,
             description: input.description,
             requestedPriority: input.requestedPriority,
+            itPriority: input.requestedPriority,
             status: "NEW",
             requesterId: requester.id,
             categoryId: input.categoryId,

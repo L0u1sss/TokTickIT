@@ -1,16 +1,20 @@
 import express, { NextFunction, Request, Response } from "express";
+import { userManagementRouter } from "./user-management.js";
 import cors from "cors";
+import { createAuthRouter, requireAuthentication } from "./auth-routes.js";
 import multer from "multer";
 import { getPrisma } from "./prisma.js";
 import { ApiError, toErrorResponse } from "./errors.js";
-import {
-  REQUESTER_HEADER_NAME,
-  resolveRequesterContext,
-} from "./requester-context.js";
+import type { RequesterContext } from "./requester-context.js";
+import { requireApprovedOrigin, requireRole, requireStaffCsrf } from "./authorization.js";
+import { randomUUID } from "node:crypto";
 import { parseTicketCreateBody } from "./ticket-contract.js";
 import { createTicket } from "./ticket-service.js";
 import { parseTicketListQuery } from "./ticket-query.js";
 import { listTickets } from "./ticket-list-service.js";
+import { requesterCommunicationsRouter } from "./communications.js";
+import { staffQueueRouter } from "./staff-queue.js";
+import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
 import { parsePositivePathId } from "./path-contract.js";
 import { getOwnedTicketDetail } from "./ticket-detail-service.js";
 import {
@@ -29,6 +33,11 @@ import {
 // Supertest can import `app` without opening a port. Do not merge these files.
 export const app = express();
 
+function sessionRequester(res: Response): RequesterContext {
+  const { id, displayName, email } = res.locals.authenticatedUser;
+  return { id, displayName, email };
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   // Busboy raises LIMIT_PART_COUNT when the configured count is reached, so
@@ -36,8 +45,39 @@ const upload = multer({
   limits: { fileSize: ATTACHMENT_MAX_BYTES, files: 1, fields: 0, parts: 2 },
 });
 
-app.use(cors());          // already wired: lets the Vite dev server call this API
+// Auth router checks Origin before JSON parsing, including unauthenticated Login.
+app.use("/api/auth", createAuthRouter(getPrisma));
+app.use(cors({ origin: process.env.CLIENT_ORIGIN ?? "http://localhost:5173", credentials: true, exposedHeaders: ["Content-Disposition"] }));
+app.use("/api", (req, res, next) => {
+  if (req.path === "/health") { next(); return; }
+  res.set("Cache-Control", "no-store");
+  res.locals.requestId = randomUUID();
+  res.set("X-Request-ID", res.locals.requestId);
+  const sendJson = res.json.bind(res);
+  res.json = (body) => {
+    if (body?.error && typeof body.error === "object") {
+      const error = body.error;
+      if (res.statusCode >= 500) console.error("Request failed", res.locals.requestId);
+      return sendJson({ ...body, error: { ...error, requestId: res.locals.requestId,
+        ...(Array.isArray(error.details) ? { fieldErrors: Object.fromEntries(error.details.map((detail: { field: string; issue: string }) => [detail.field, detail.issue])) } : {}),
+      } });
+    }
+    return sendJson(body);
+  };
+  requireAuthentication(getPrisma)(req, res, next);
+});
+app.use("/api", requireApprovedOrigin);
+app.use("/api/tickets", requireRole("REQUESTER"));
+app.use("/api/metadata", requireRole("REQUESTER"));
+app.use("/api/staff", requireRole("IT_STAFF", "ADMINISTRATOR"));
+app.use("/api/staff", requireStaffCsrf);
+app.use("/api/admin", requireRole("ADMINISTRATOR"));
+app.use("/api/admin", requireStaffCsrf);
 app.use(express.json());
+app.use("/api/admin", userManagementRouter);
+app.use("/api/tickets", requesterCommunicationsRouter);
+app.use("/api/staff", staffTicketOperationsRouter);
+app.use("/api/staff", staffQueueRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
@@ -63,36 +103,8 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
     });
     res.status(200).json(categories);
   } catch (err) {
-    console.error("Failed to fetch categories:", err);
-    res.status(500).json({ error: "Failed to load categories" });
-  }
-});
-
-// ---------------------------------------------------------------------------
-// Issue 14 — Active requester list
-// GET /api/requesters
-//   -> only active requesters are selectable
-//   -> expose the public requester shape expected by the client
-//   -> keep ordering deterministic when requesters share the same name
-// ---------------------------------------------------------------------------
-app.get("/api/requesters", async (_req: Request, res: Response) => {
-  try {
-    const requesters = await getPrisma().requesterUser.findMany({
-      where: { isActive: true },
-      select: { id: true, displayName: true, email: true },
-      orderBy: [{ displayName: "asc" }, { id: "asc" }],
-    });
-
-    res.status(200).json(requesters);
-  } catch {
-    // Keep database errors out of logs returned by shared/dev environments.
-    console.error("Failed to fetch requesters");
-    res.status(500).json({
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "The request could not be completed.",
-      },
-    });
+    const failure = toErrorResponse(err);
+    res.status(failure.status).json(failure.body);
   }
 });
 
@@ -131,10 +143,7 @@ app.get("/api/metadata", async (_req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 app.post("/api/tickets", async (req: Request, res: Response) => {
   try {
-    const requester = await resolveRequesterContext(
-      getPrisma(),
-      req.get(REQUESTER_HEADER_NAME),
-    );
+    const requester = sessionRequester(res);
     const input = parseTicketCreateBody(req.body);
     const result = await createTicket(getPrisma(), requester, input);
 
@@ -157,10 +166,7 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 app.get("/api/tickets", async (req: Request, res: Response) => {
   try {
-    const requester = await resolveRequesterContext(
-      getPrisma(),
-      req.get(REQUESTER_HEADER_NAME),
-    );
+    const requester = sessionRequester(res);
     const query = parseTicketListQuery(req.query);
     const result = await listTickets(getPrisma(), requester, query);
     res.status(200).json(result);
@@ -178,10 +184,7 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 app.get("/api/tickets/:id", async (req: Request, res: Response) => {
   try {
-    const requester = await resolveRequesterContext(
-      getPrisma(),
-      req.get(REQUESTER_HEADER_NAME),
-    );
+    const requester = sessionRequester(res);
     const ticketId = parsePositivePathId(req.params.id, "id");
     const ticket = await getOwnedTicketDetail(getPrisma(), requester, ticketId);
     res.status(200).json(ticket);
@@ -193,7 +196,7 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
 });
 
 type OwnedAttachmentRequest = Request & {
-  ownedRequester?: Awaited<ReturnType<typeof resolveRequesterContext>>;
+  ownedRequester?: RequesterContext;
   ownedTicketId?: number;
 };
 
@@ -203,10 +206,7 @@ async function prepareOwnedAttachmentRequest(
   next: NextFunction,
 ) {
   try {
-    const requester = await resolveRequesterContext(
-      getPrisma(),
-      req.get(REQUESTER_HEADER_NAME),
-    );
+    const requester = sessionRequester(res);
     const ticketId = parsePositivePathId(req.params.id, "id");
     await requireOwnedTicket(getPrisma(), requester, ticketId);
     req.ownedRequester = requester;
@@ -260,10 +260,7 @@ app.get(
   "/api/tickets/:id/attachments/:attId/download",
   async (req: Request, res: Response) => {
     try {
-      const requester = await resolveRequesterContext(
-        getPrisma(),
-        req.get(REQUESTER_HEADER_NAME),
-      );
+      const requester = sessionRequester(res);
       const ticketId = parsePositivePathId(req.params.id, "id");
       const attachmentId = parsePositivePathId(req.params.attId, "attId");
       const download = await downloadOwnedAttachment(
@@ -287,10 +284,7 @@ app.patch(
   "/api/tickets/:id/attachments/:attId/remove",
   async (req: Request, res: Response) => {
     try {
-      const requester = await resolveRequesterContext(
-        getPrisma(),
-        req.get(REQUESTER_HEADER_NAME),
-      );
+      const requester = sessionRequester(res);
       const ticketId = parsePositivePathId(req.params.id, "id");
       const attachmentId = parsePositivePathId(req.params.attId, "attId");
       await requireOwnedTicket(getPrisma(), requester, ticketId);
@@ -306,6 +300,10 @@ app.patch(
     }
   },
 );
+
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: { code: "NOT_FOUND", message: "The requested resource was not found." } });
+});
 
 // Keep malformed JSON and unexpected middleware errors inside the documented
 // JSON envelope instead of Express's default HTML error response.

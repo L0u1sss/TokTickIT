@@ -1,152 +1,38 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import App from "../../src/App.js";
-import * as api from "../../src/api.js";
-import { RequesterProvider } from "../../src/context/RequesterContext.js";
-
-const requester: api.Requester = {
-  id: 1,
-  displayName: "Jennifer Anderson",
-  email: "jennifer.a@example.com",
-};
-
-const secondRequester: api.Requester = {
-  id: 2,
-  displayName: "Michael Brown",
-  email: "michael.b@example.com",
-};
-
-const metadata: api.TicketMetadata = {
-  categories: [{ id: 1, name: "Hardware" }],
-  relatedSystems: [{ id: 1, name: "Corporate Laptop" }],
-};
-
-describe("requester application flow", () => {
-  beforeEach(() => {
-    window.sessionStorage.clear();
-    window.history.replaceState({}, "", "/");
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    window.sessionStorage.clear();
-  });
-
-  it("gates a protected deep link at the requester-selection route", async () => {
-    vi.spyOn(api, "getRequesters").mockReturnValue(new Promise(() => {}));
-    window.history.replaceState({}, "", "/tickets/new");
-    render(
-      <RequesterProvider>
-        <App />
-      </RequesterProvider>,
-    );
-    expect(
-      screen.getByRole("heading", { name: "Select a Development Requester" }),
-    ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(window.location.pathname).toBe("/requester-selection");
-    });
-  });
-
-  it("opens Create Ticket only after Continue and returns to selection", async () => {
-    vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
-    vi.spyOn(api, "getTicketMetadata").mockResolvedValue(metadata);
-    const user = userEvent.setup();
-
-    render(
-      <RequesterProvider>
-        <App />
-      </RequesterProvider>,
-    );
-
-    await screen.findByRole("option", { name: /Jennifer Anderson/i });
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Development Requester" }),
-      "1",
-    );
-    expect(screen.queryByRole("heading", { name: "Create Ticket" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-
-    expect(screen.getByRole("heading", { name: "Create Ticket" })).toBeInTheDocument();
-    expect(window.location.pathname).toBe("/tickets/new");
-    const header = screen.getByRole("banner");
-    expect(within(header).getByText("Jennifer Anderson")).toBeInTheDocument();
-    expect(
-      within(header).getByRole("link", { name: "Create Ticket" }),
-    ).toHaveAttribute("aria-current", "page");
-
-    await user.click(within(header).getByRole("button", { name: "Change Requester" }));
-    expect(
-      await screen.findByRole("heading", { name: "Select a Development Requester" }),
-    ).toBeInTheDocument();
-  });
-
-  it("clears the previous requester's draft before committing another requester", async () => {
-    vi.spyOn(api, "getRequesters").mockResolvedValue([requester, secondRequester]);
-    vi.spyOn(api, "getTicketMetadata").mockResolvedValue(metadata);
-    const user = userEvent.setup();
-
-    render(
-      <RequesterProvider>
-        <App />
-      </RequesterProvider>,
-    );
-
-    await screen.findByRole("option", { name: /Jennifer Anderson/i });
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Development Requester" }),
-      "1",
-    );
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-    await user.type(screen.getByRole("textbox", { name: "Summary" }), "Private draft");
-
-    await user.click(screen.getByRole("button", { name: "Change Requester" }));
-    const nextSelect = await screen.findByRole("combobox", {
-      name: "Development Requester",
-    });
-    await user.selectOptions(nextSelect, "2");
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-
-    expect(screen.getAllByText("Michael Brown")).toHaveLength(2);
-    expect(screen.getByRole("textbox", { name: "Summary" })).toHaveValue("");
-    expect(screen.queryByDisplayValue("Private draft")).not.toBeInTheDocument();
-  });
-
-  it("offers Create Ticket and My Tickets navigation with one active destination", async () => {
-    window.sessionStorage.setItem("toktickit.requesterId", "1");
-    window.history.replaceState({}, "", "/tickets");
-    vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
-    vi.spyOn(api, "getTicketMetadata").mockResolvedValue(metadata);
-    vi.spyOn(api, "getTickets").mockResolvedValue({
-      items: [],
-      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
-      sort: { by: "createdAt", order: "desc" },
-      filters: {
-        search: null,
-        status: null,
-        requestedPriority: null,
-        categoryId: null,
-        relatedSystemId: null,
-      },
-    });
-    const user = userEvent.setup();
-    render(
-      <RequesterProvider>
-        <App />
-      </RequesterProvider>,
-    );
-
-    const header = await screen.findByRole("banner");
-    expect(within(header).getByRole("link", { name: "My Tickets" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-    expect(
-      within(header).getByRole("link", { name: "Create Ticket" }),
-    ).not.toHaveAttribute("aria-current");
-    await user.click(within(header).getByRole("link", { name: "Create Ticket" }));
-    expect(window.location.pathname).toBe("/tickets/new");
-    expect(await screen.findByRole("heading", { name: "Create Ticket" })).toBeInTheDocument();
-  });
+// Session-based role navigation replaces the Lab 2 selector/switcher tests.
+import { render, screen, cleanup, waitFor } from "@testing-library/react";
+import { afterEach, it, expect, vi } from "vitest";
+import AuthApp from "../../src/AuthApp.js";
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+it("preserves a direct My Tickets query string after session restore", async () => {
+  window.history.replaceState({}, "", "/tickets?search=printer&page=2");
+  vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
+    url.endsWith("/api/auth/me") ? { user: { id: 1, displayName: "User", email: "user@example.test", role: "REQUESTER", mustChangePassword: false } }
+    : { categories: [], relatedSystems: [], items: [], pagination: { page: 2, totalPages: 2, totalItems: 0 } }
+  )))));
+  render(<AuthApp />);
+  await screen.findByRole("heading", { name: "My Tickets" });
+  await waitFor(() => expect(window.location.search).toContain("search=printer"));
+  expect(new URLSearchParams(window.location.search).get("page")).toBe("2");
+});
+it.each(["/staff/tickets", "/admin/users"])("shows Forbidden to a Requester at %s", async path => {
+  window.history.replaceState({}, "", path);
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ user: { id: 1, displayName: "User", email: "user@example.test", role: "REQUESTER", mustChangePassword: false } }))));
+  render(<AuthApp />);
+  await screen.findByRole("heading", { name: "Forbidden" });
+  expect(screen.queryByRole("link", { name: "User Management" })).toBeNull();
+  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/tickets/new");
+});
+it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted navigation for %s", async role => {
+  window.history.replaceState({}, "", "/");
+  vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
+    url.endsWith("/api/auth/me") ? { user: { id: 1, displayName: "Session User", email: "user@example.test", role, mustChangePassword: false } }
+    : { categories: [], relatedSystems: [], items: [] }
+  )))));
+  render(<AuthApp />);
+  await screen.findByRole("button", { name: "Logout" });
+  expect(screen.queryByText("Change Requester")).toBeNull();
+  expect(screen.queryByRole("link", { name: "My Tickets" }) !== null).toBe(role === "REQUESTER");
+  expect(screen.queryByRole("link", { name: "Ticket Queue" }) !== null).toBe(role !== "REQUESTER");
+  expect(screen.queryByRole("link", { name: "User Management" }) !== null).toBe(role === "ADMINISTRATOR");
+  await waitFor(() => expect(window.location.pathname).toBe(role === "REQUESTER" ? "/tickets/new" : role === "IT_STAFF" ? "/staff/tickets" : "/admin/users"));
 });

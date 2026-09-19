@@ -15,6 +15,44 @@
   font-synthesis: none;
 }
 
+.requester-card.staff-queue { width: min(100%, 80rem); min-width: 0; padding: clamp(1rem, 3vw, 2rem); }
+.staff-table th:first-child { width: 25%; }
+.staff-table th:last-child { width: 10%; }
+.staff-filters fieldset { border: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.staff-filters label, .staff-operation-controls label { display: grid; gap: .4rem; font-weight: 600; min-width: 0; }
+.staff-filters input, .staff-filters select, .staff-operation-controls select { width: 100%; min-width: 0; min-height: 44px; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; background: white; }
+.staff-operation-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 1rem; align-items: end; margin-block: 1rem; }
+.staff-queue article, .staff-queue .communication-section a { overflow-wrap: anywhere; }
+.staff-search { grid-column: 1 / -1; }
+.staff-queue button { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--zen-primary); border-radius: .4rem; color: var(--zen-primary); background: white; }
+.staff-queue button:disabled { opacity: .55; }
+.staff-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.staff-table th, .staff-table td { padding: .8rem .5rem; text-align: left; vertical-align: top; border-bottom: 1px solid #cadbd0; overflow-wrap: anywhere; }
+.staff-table th { background: var(--zen-pale); }
+.staff-badge { display: inline-block; padding: .2rem .5rem; border-radius: .4rem; background: var(--zen-pale); color: #195635; font-size: .85rem; }
+.staff-badge.priority-high { color: #842020; background: #ffe8e8; }
+.staff-badge.priority-medium { color: #785000; background: #fff4d6; }
+.staff-cards { display: none; }
+.staff-ticket-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.staff-ticket-fields dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
+.staff-ticket-fields dt { font-weight: 600; }
+.staff-pagination { display: flex; gap: 1rem; margin-top: 1.5rem; }
+.staff-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 1023px) {
+  .staff-table { display: none; }
+  .staff-cards { display: grid; gap: 1rem; }
+  .staff-cards article { border: 1px solid #cadbd0; border-radius: .6rem; padding: 1rem; overflow-wrap: anywhere; }
+  .staff-cards a { display: inline-block; padding: .65rem 0; }
+  .staff-filters fieldset { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) { .staff-filters fieldset, .staff-ticket-fields { grid-template-columns: minmax(0, 1fr); } }
+
+.auth-field { display: grid; gap: .4rem; margin-block: 1rem; }
+.auth-field input { width: 100%; min-width: 0; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; }
+.auth-field button { justify-self: start; }
+.auth-card button { white-space: normal; }
+.auth-error { color: var(--zen-error); overflow-wrap: anywhere; }
+
 *,
 *::before,
 *::after {
@@ -210,6 +248,7 @@ a:focus-visible {
 
 .app-shell {
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 .app-header {
@@ -1338,3 +1377,34 @@ a:focus-visible {
     margin-left: 0;
   }
 }
+
+/* Administrator account management follows the shared Zen Green shell. */
+.admin-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; justify-content: space-between; }
+.admin-users .btn-primary, .admin-dialog .btn-primary { --bs-btn-bg: var(--zen-primary); --bs-btn-border-color: var(--zen-primary); --bs-btn-hover-bg: #005530; --bs-btn-hover-border-color: #005530; --bs-btn-active-bg: #005530; --bs-btn-active-border-color: #005530; --bs-btn-disabled-bg: var(--zen-primary); --bs-btn-disabled-border-color: var(--zen-primary); }
+.admin-users, .admin-users > .requester-card, .admin-dialog form, .admin-dialog fieldset { min-width: 0; }
+.admin-users > .requester-card { width: min(100%, 80rem); }
+.admin-filters { margin: 1.5rem 0; align-items: end; justify-content: start; }
+.admin-filters label { flex: 1 1 14rem; }
+.admin-users .btn, .admin-dialog .btn, .admin-users input, .admin-users select, .admin-dialog input:not([type=checkbox]), .admin-dialog select { min-height: 44px; min-width: 0; max-width: 100%; }
+.admin-dialog input:not([type=checkbox]), .admin-dialog select { width: 100%; }
+.admin-table { table-layout: fixed; }
+.admin-table th, .admin-table td, .admin-cards li { overflow-wrap: anywhere; }
+.admin-cards { display: none; list-style: none; padding: 0; }
+.admin-cards li { border: 1px solid var(--border-color, #d9e5dc); border-radius: 12px; padding: 1rem; margin-block: 1rem; }
+.admin-cards h2 { font-size: 1.2rem; }
+.admin-dialog { width: min(36rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; padding: 1.5rem; border: 1px solid #c9dace; border-radius: 16px; color: #243b2e; background: #fff; }
+.admin-dialog::backdrop { background: rgb(15 35 23 / 45%); }
+.admin-dialog label { display: block; margin-top: 1rem; }
+.admin-dialog p { overflow-wrap: anywhere; }
+.admin-dialog fieldset { min-width: 0; }
+.admin-active { display: flex !important; align-items: center; gap: .6rem; min-height: 44px; }
+.admin-dialog .admin-toolbar { margin-top: 1.5rem; }
+@media (max-width: 1023px) { .admin-table { display: none; } .admin-cards { display: block; } }
+@media (max-width: 480px) { .admin-filters > *, .admin-dialog .admin-toolbar > * { width: 100%; } .admin-dialog { padding: 1rem; } }
+.communication-section { margin-block: 1.5rem; padding: 1rem; border: 2px solid #538064; border-radius: 12px; min-width: 0; }
+.communication-internal { background: #fff8e6; border-color: #94722a; }
+.communication-public { background: #f2f8f3; }
+.communication-section textarea { display: block; width: 100%; min-height: 100px; }
+.communication-section label { display: block; }
+.communication-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+.communication-section article { border-bottom: 1px solid #b5c9b9; margin-block: 1rem; }

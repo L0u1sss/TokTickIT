@@ -1,0 +1,120 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { PrismaClient } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { verifyPassword } from "../../src/password.js";
+import { seedDatabase, LAB_INITIAL_PASSWORD } from "../../prisma/seed.js";
+import request from "supertest";
+
+let migratedDatabase: PrismaClient;
+vi.mock("../../src/prisma.js", () => ({ getPrisma: () => migratedDatabase }));
+import { app } from "../../src/app.js";
+
+const admin = new PrismaClient();
+const schemas: string[] = [];
+const clients: PrismaClient[] = [];
+const migrations = readdirSync("prisma/migrations").filter(x => /^\d/.test(x)).sort();
+async function database(legacy = true, cutoverName = "20260916010000_migrate_requester_identity") {
+  const schema = "migration_test_" + randomUUID().replaceAll("-", "");
+  await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`); schemas.push(schema);
+  const url = new URL(process.env.TEST_DATABASE_URL!); url.searchParams.set("schema", schema);
+  const db = new PrismaClient({ datasources: { db: { url: url.toString() } } }); clients.push(db);
+  const execute = (name: string) => execFileSync(process.execPath, [resolve("node_modules/prisma/build/index.js"), "db", "execute", "--stdin", "--schema", "prisma/schema.prisma"], {
+    env: { ...process.env, DATABASE_URL: url.toString() }, stdio: ["pipe", "pipe", "pipe"],
+    input: readFileSync(resolve("prisma/migrations", name, "migration.sql")),
+  });
+  const cutover = migrations.indexOf(cutoverName);
+  if (cutover < 0) throw new Error(`Migration not found: ${cutoverName}`);
+  for (const name of migrations.slice(0, legacy ? cutover : undefined)) execute(name);
+  return { db, finish: () => { for (const name of migrations.slice(cutover)) execute(name); } };
+}
+beforeAll(async () => { await admin.$connect(); });
+afterAll(async () => {
+  for (const client of clients) await client.$disconnect();
+  for (const schema of schemas) await admin.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
+  await admin.$disconnect();
+});
+
+describe("Issue #31 disposable populated identity migration", () => {
+  it("upgrades the reviewed queue schema without rewriting existing IT priorities", async () => {
+    const { db, finish } = await database(true, "20260918010000_require_explicit_it_priority");
+    await seedDatabase(db);
+    const requester = await db.user.findUniqueOrThrow({ where: { email: "jennifer.a@example.com" } });
+    const category = await db.category.findFirstOrThrow();
+    const relatedSystem = await db.relatedSystem.findFirstOrThrow();
+    const tickets: Array<{ id: number; requestedPriority: string; itPriority: string; summary: string; description: string }> = [];
+    for (const [index, requestedPriority] of (["LOW", "HIGH"] as const).entries()) {
+      const [ticket] = await db.$queryRaw<Array<{ id: number; requestedPriority: string; itPriority: string; summary: string; description: string }>>`INSERT INTO "Ticket" ("ticketNumber", "clientRequestId", "summary", "description", "requestedPriority", "itPriority", "requesterId", "categoryId", "relatedSystemId", "updatedAt") VALUES (${`TKT-2097-00000${index + 1}`}, ${randomUUID()}::uuid, 'Existing queue ticket', 'Preserve existing priority decisions on upgrade.', ${requestedPriority}::"Priority", ${requestedPriority}::"Priority", ${requester.id}, ${category.id}, ${relatedSystem.id}, CURRENT_TIMESTAMP) RETURNING "id", "requestedPriority", "itPriority", "summary", "description"`;
+      // Represent a later staff priority decision; migration must not undo it.
+      await db.$executeRaw`UPDATE "Ticket" SET "itPriority" = 'MEDIUM'::"Priority" WHERE id = ${ticket.id}`;
+      tickets.push({ ...ticket, itPriority: "MEDIUM" });
+    }
+    finish();
+    const upgraded = await db.ticket.findMany({ orderBy: { id: "asc" }, select: { id: true, requestedPriority: true, itPriority: true, summary: true, description: true } });
+    expect(upgraded).toEqual(tickets);
+    expect(await db.$queryRaw`SELECT column_default FROM information_schema.columns
+      WHERE table_schema = current_schema() AND table_name = 'Ticket' AND column_name = 'itPriority'`)
+      .toEqual([{ column_default: null }]);
+  }, 60000);
+  it("preserves requester IDs, activation, timestamps and all Ticket/Attachment audit fields", async () => {
+    const { db, finish } = await database();
+    await db.$executeRaw`INSERT INTO "RequesterUser" (id,"displayName",email,"isActive","updatedAt") VALUES (17,'Legacy Owner','legacy@example.test',true,'2026-01-01'),(18,'Inactive Owner','inactive@example.test',false,'2026-01-01')`;
+    const category = await db.category.create({ data: { name: "Migration Category" } });
+    const system = await db.relatedSystem.create({ data: { name: "Migration System" } });
+    // Use legacy SQL so this fixture does not depend on columns added after Lab 2.
+    const [ticket] = await db.$queryRaw<Array<{ id: number }>>`INSERT INTO "Ticket" ("ticketNumber", "clientRequestId", summary, description, "requestedPriority", "requesterId", "categoryId", "relatedSystemId", "updatedAt") VALUES ('TKT-2026-000017', ${randomUUID()}::uuid, 'Legacy ticket', 'Preserved legacy description', 'HIGH', 17, ${category.id}, ${system.id}, CURRENT_TIMESTAMP) RETURNING *`;
+    const attachment = await db.attachment.create({ data: { ticketId: ticket.id, originalName: "legacy.pdf", storageKey: "opaque-migration-key", sizeBytes: 10, mimeType: "application/pdf", uploadedByRequesterId: 17, removedAt: new Date(), removalReason: "Replaced", removedByRequesterId: 18 } });
+    finish();
+    expect(await db.ticket.findUnique({ where: { id: ticket.id } })).toEqual({ ...ticket, itPriority: "HIGH", ownerId: null, lastOwnerId: null, problemAppearsResolvedAt: null, problemAppearsResolvedById: null });
+    expect(await db.attachment.findUnique({ where: { id: attachment.id } })).toEqual(attachment);
+    const user = await db.user.findUniqueOrThrow({ where: { id: 17 } });
+    expect(user).toMatchObject({ displayName: "Legacy Owner", role: "REQUESTER", isActive: true, mustChangePassword: true, updatedAt: new Date("2026-01-01Z") });
+    expect(await verifyPassword(user.passwordHash, LAB_INITIAL_PASSWORD)).toBe(true);
+    expect((await db.user.findUniqueOrThrow({ where: { id: 18 } })).isActive).toBe(false);
+    await expect(db.user.delete({ where: { id: 17 } })).rejects.toThrow("Ticket_requesterId_fkey");
+    // Exercise the migrated identity through real login/session/ownership APIs.
+    migratedDatabase = db;
+    const origin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+    const agent = request.agent(app);
+    const login = await agent.post("/api/auth/login").set("Origin", origin).send({ email: user.email, password: LAB_INITIAL_PASSWORD });
+    expect(login.status).toBe(200);
+    expect(login.body.user).toMatchObject({ id: 17, role: "REQUESTER", mustChangePassword: true });
+    const blocked = await agent.get(`/api/tickets/${ticket.id}`);
+    expect(blocked.status).toBe(403); expect(blocked.body.error.code).toBe("PASSWORD_CHANGE_REQUIRED");
+    const newPassword = "Migrated-requester-password2!";
+    expect((await agent.post("/api/auth/change-password").set("Origin", origin).send({ currentPassword: LAB_INITIAL_PASSWORD, newPassword, confirmPassword: newPassword })).status).toBe(200);
+    const preserved = await agent.get(`/api/tickets/${ticket.id}`);
+    expect(preserved.status).toBe(200);
+    expect(preserved.body).toMatchObject({ id: ticket.id, summary: "Legacy ticket", requester: { id: 17 } });
+    expect(preserved.body.attachments).toEqual(expect.arrayContaining([expect.objectContaining({ id: attachment.id, fileName: "legacy.pdf", isRemoved: true, downloadable: false })]));
+    expect((await agent.get("/api/tickets")).body.items.map((item: { id: number }) => item.id)).toEqual([ticket.id]);
+    expect((await request(app).post("/api/auth/login").set("Origin", origin).send({ email: "inactive@example.test", password: LAB_INITIAL_PASSWORD })).status).toBe(401);
+    expect(await db.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() AND table_name='RequesterUser'`).toEqual([]);
+    const added = await db.user.create({ data: { displayName: "New", email: "new@example.test", passwordHash: user.passwordHash, role: "IT_STAFF" } });
+    expect(added.id).toBeGreaterThan(18);
+  }, 60000);
+  it.each(["id", "email"])("rolls back on an existing User %s collision without merging identities", async collision => {
+    const { db, finish } = await database();
+    await db.$executeRaw`INSERT INTO "RequesterUser" (id,"displayName",email,"updatedAt") VALUES (17,'Legacy','legacy@example.test',CURRENT_TIMESTAMP)`;
+    await db.user.create({ data: { id: collision === "id" ? 17 : 99, displayName: "Existing", email: collision === "email" ? "legacy@example.test" : "other@example.test", passwordHash: "locked", role: "ADMINISTRATOR" } });
+    expect(finish).toThrow();
+    expect(await db.$queryRaw`SELECT id FROM "RequesterUser"`).toEqual([{ id: 17 }]);
+    expect(await db.user.count()).toBe(1);
+  }, 60000);
+  it("supports fresh migration and repeated seed without resetting changed credentials/flags", async () => {
+    const { db } = await database(false);
+    await seedDatabase(db);
+    expect(await db.user.count({ where: { role: "REQUESTER", isActive: true } })).toBe(4);
+    expect(await db.user.count({ where: { role: "REQUESTER", isActive: false } })).toBe(1);
+    expect(await db.user.count({ where: { role: "IT_STAFF", isActive: true } })).toBe(3);
+    expect(await db.user.count({ where: { role: "IT_STAFF", isActive: false } })).toBe(1);
+    expect(await db.user.count({ where: { role: "ADMINISTRATOR", isActive: true } })).toBe(1);
+    const user = await db.user.findUniqueOrThrow({ where: { email: "jennifer.a@example.com" } });
+    await db.user.update({ where: { id: user.id }, data: { passwordHash: "changed-hash", mustChangePassword: false, isActive: false } });
+    const before = await db.user.findMany({ orderBy: { id: "asc" } });
+    await seedDatabase(db);
+    expect(await db.user.findMany({ orderBy: { id: "asc" } })).toEqual(before);
+  }, 60000);
+});

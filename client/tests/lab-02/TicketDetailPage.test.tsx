@@ -1,10 +1,10 @@
+import { mockRequesterSession } from "../auth-fixture.js";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App.js";
 import * as api from "../../src/api.js";
 import {
-  REQUESTER_STORAGE_KEY,
   RequesterProvider,
 } from "../../src/context/RequesterContext.js";
 
@@ -62,15 +62,28 @@ function renderDetail() {
 describe("Requester Ticket Detail", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
-    window.sessionStorage.setItem(REQUESTER_STORAGE_KEY, "12");
     window.history.replaceState({}, "", "/tickets/145");
-    vi.spyOn(api, "getRequesters").mockResolvedValue([requester]);
+    mockRequesterSession(requester);
+    vi.spyOn(api, "fetchAuthenticated").mockResolvedValue(new Response(JSON.stringify({ items: [] })));
     vi.spyOn(api, "getTicketDetail").mockResolvedValue(ticket);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     window.sessionStorage.clear();
+  });
+
+  it.each([
+    ["IN_PROGRESS", "In Progress"],
+    ["WAITING_FOR_REQUESTER", "Waiting for Requester"],
+    ["REOPENED", "Reopened"],
+    ["In Progress", "In Progress"],
+  ])("renders readable status %s", async (status, label) => {
+    vi.mocked(api.getTicketDetail).mockResolvedValue({ ...ticket, status });
+    renderDetail();
+    await screen.findByRole("heading", { name: ticket.ticketNumber });
+    expect(document.querySelector(".status-badge")).toHaveTextContent(label);
+    expect(document.querySelector(".status-badge")).not.toHaveTextContent("_");
   });
 
   it("renders complete read-only owned detail and active/removed metadata", async () => {

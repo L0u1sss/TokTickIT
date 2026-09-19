@@ -2,7 +2,7 @@ import { expect, type Locator, type Page, type Route, test } from "@playwright/t
 import { fileURLToPath } from "node:url";
 
 const evidenceDirectory = fileURLToPath(
-  new URL("../../../docs/lab-02/evidence/", import.meta.url),
+  new URL("../../../docs/lab-03/evidence/requester-regression/", import.meta.url),
 );
 
 const requesters = [
@@ -136,7 +136,8 @@ function defaultMockState(): MockState {
 
 const corsHeaders = {
   "access-control-allow-origin": "http://127.0.0.1:4173",
-  "access-control-allow-headers": "content-type,x-requester-id",
+  "access-control-allow-headers": "content-type",
+  "access-control-allow-credentials": "true",
   "access-control-allow-methods": "GET,POST,PATCH,OPTIONS",
 };
 
@@ -163,7 +164,7 @@ async function installApiMocks(page: Page, state: MockState) {
       return;
     }
 
-    if (url.pathname === "/api/requesters") {
+    if (url.pathname === "/api/auth/me") {
       if (state.requesterDelay) {
         await new Promise((resolve) => setTimeout(resolve, state.requesterDelay));
       }
@@ -171,7 +172,7 @@ async function installApiMocks(page: Page, state: MockState) {
         route,
         state.requesterStatus,
         state.requesterStatus === 200
-          ? state.requesterBody
+          ? { user: { ...state.requesterBody[0], role: "REQUESTER", mustChangePassword: false } }
           : errorBody("INTERNAL_ERROR", "Unable to load requesters"),
       );
       return;
@@ -217,6 +218,11 @@ async function installApiMocks(page: Page, state: MockState) {
       return;
     }
 
+    if (url.pathname === "/api/tickets/42/comments" && request.method() === "GET") {
+      await json(route, 200, { items: [] });
+      return;
+    }
+
     if (url.pathname.endsWith("/remove") && request.method() === "PATCH") {
       await json(route, 200, {
         ...activeAttachment,
@@ -238,9 +244,7 @@ async function installApiMocks(page: Page, state: MockState) {
 }
 
 async function startWithRequester(page: Page, path: string) {
-  await page.addInitScript(() => {
-    window.sessionStorage.setItem("toktickit.requesterId", "1");
-  });
+
   await page.goto(path);
 }
 
@@ -341,20 +345,11 @@ for (const viewport of viewports) {
     await installApiMocks(page, state);
     await page.setViewportSize(viewport);
 
-    await page.goto("/requester-selection");
-    await expect(page.getByRole("heading", { name: "Select a Development Requester" })).toBeVisible();
-    await expect(page.getByRole("note")).toContainText("not secure authentication");
+    await page.goto("/tickets/new");
     await assertZenGreenTokens(page);
     await assertNoPageOverflow(page);
-    await page.getByLabel("Development Requester", { exact: true }).selectOption("1");
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-    await expect(page.getByText("alex.morgan@example.test", { exact: true })).toBeVisible();
-    await assertInsideViewport(page, page.locator(".requester-card"));
-    if (viewport.name === "mobile") await assertMobileTouchTargets(page);
-    await capture(page, "requester-selection", viewport.name);
-
-    await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("heading", { name: "Create Ticket" })).toBeVisible();
+    await assertInsideViewport(page, page.locator("main"));
     await expect(page.getByRole("link", { name: "Create Ticket" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -437,28 +432,17 @@ test("loading, empty, error, busy, warning, and focus recovery states are explic
   await installApiMocks(page, state);
   await page.setViewportSize(viewports[2]);
 
-  await page.goto("/requester-selection");
-  await expect(page.getByRole("status")).toContainText("Loading requesters");
-  await expect(page.getByLabel("Development Requester", { exact: true })).toBeEnabled();
-
-  state.requesterBody = [];
-  await page.reload();
-  await expect(page.getByText("No active requesters are available.")).toBeVisible();
-  await expect(page.getByLabel("Development Requester", { exact: true })).toHaveCount(0);
-
-  state.requesterBody = requesters;
+  await page.goto("/tickets/new");
+  await expect(page.getByRole("status")).toContainText("Checking your session");
+  await expect(page.getByRole("heading", { name: "Create Ticket" })).toBeVisible();
   state.requesterStatus = 500;
   await page.reload();
   const requesterRetry = page.getByRole("button", { name: "Retry" });
   await expect(requesterRetry).toBeVisible();
-  await expect(requesterRetry).toBeFocused();
   state.requesterStatus = 200;
   state.requesterDelay = 0;
   await requesterRetry.click();
-  await expect(page.getByLabel("Development Requester", { exact: true })).toBeEnabled();
-
-  await page.getByLabel("Development Requester", { exact: true }).selectOption("1");
-  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Create Ticket" })).toBeVisible();
   state.metadataBody = { categories: [], relatedSystems: [] };
   await page.reload();
   await expect(page.getByText("No active categories are available.")).toBeVisible();
@@ -513,6 +497,29 @@ test("loading, empty, error, busy, warning, and focus recovery states are explic
   state.detailDelay = 0;
   await detailRetry.click();
   await expect(page.getByRole("heading", { name: "TKT-2026-000042" })).toBeVisible();
+});
+
+test("mobile comments failure has accessible retry and recovers", async ({ page }) => {
+  await installApiMocks(page, defaultMockState());
+  let failed = true;
+  await page.route("http://localhost:3000/api/tickets/42/comments", async route => {
+    await json(route, failed ? 500 : 200, failed
+      ? errorBody("INTERNAL_ERROR", "Unable to load comments")
+      : { items: [] });
+  });
+  await page.setViewportSize(viewports[2]);
+  await startWithRequester(page, "/tickets/42");
+  const comments = page.getByRole("region", { name: "Public Comments", exact: true });
+  await expect(comments.getByRole("alert")).toContainText("Unable to load entries.");
+  await assertNoPageOverflow(page);
+  await assertMobileTouchTargets(page);
+  const retry = comments.getByRole("button", { name: "Reload entries" });
+  await retry.focus();
+  await expect(retry).toBeFocused();
+  failed = false;
+  await page.keyboard.press("Enter");
+  await expect(comments.getByText("No entries yet.")).toBeVisible();
+  await expect(comments.getByRole("alert")).toHaveCount(0);
 });
 
 test("removal dialog keyboard flow traps, dismisses, and restores focus", async ({ page }) => {

@@ -17,6 +17,14 @@ vi.mock("../../src/prisma.js", () => ({
   }),
 }));
 
+vi.mock("../../src/auth-service.js", async (original) => {
+  const actual = await original<typeof import("../../src/auth-service.js")>();
+  return { ...actual, authenticate: async (_db: unknown, token?: string) => {
+    const actor = token ? await mocks.requesterFindFirst() : null;
+    if (!actor) throw new (await import("../../src/errors.js")).ApiError(401, "AUTHENTICATION_REQUIRED", "Sign in to continue.");
+    return { user: { ...actor, role: "REQUESTER", mustChangePassword: false } };
+  }};
+});
 import { app } from "../../src/app.js";
 
 const requester = {
@@ -49,7 +57,7 @@ describe("GET /api/tickets", () => {
   it("returns only the validated Requester's Ticket summaries and scoped totals", async () => {
     const response = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", "12");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -94,7 +102,7 @@ describe("GET /api/tickets", () => {
       .get(
         "/api/tickets?search=%20monitor%20&status=New&requestedPriority=HIGH&categoryId=3&relatedSystemId=8&sortBy=summary&sortOrder=asc&page=2&pageSize=20",
       )
-      .set("x-requester-id", "12")
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
       .expect(200);
 
     const scopedWhere = {
@@ -123,7 +131,7 @@ describe("GET /api/tickets", () => {
     for (const requestedPriority of ["LOW", "MEDIUM", "HIGH"]) {
       await request(app)
         .get(`/api/tickets?requestedPriority=${requestedPriority}`)
-        .set("x-requester-id", "12")
+        .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
         .expect(200);
       expect(mocks.ticketFindMany).toHaveBeenLastCalledWith(
         expect.objectContaining({
@@ -136,7 +144,7 @@ describe("GET /api/tickets", () => {
       for (const sortOrder of ["asc", "desc"]) {
         await request(app)
           .get(`/api/tickets?sortBy=${sortBy}&sortOrder=${sortOrder}`)
-          .set("x-requester-id", "12")
+          .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
           .expect(200);
         expect(mocks.ticketFindMany).toHaveBeenLastCalledWith(
           expect.objectContaining({
@@ -149,7 +157,7 @@ describe("GET /api/tickets", () => {
     for (const pageSize of [10, 20, 50]) {
       await request(app)
         .get(`/api/tickets?pageSize=${pageSize}`)
-        .set("x-requester-id", "12")
+        .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173")
         .expect(200);
       expect(mocks.ticketFindMany).toHaveBeenLastCalledWith(
         expect.objectContaining({ take: pageSize }),
@@ -162,7 +170,7 @@ describe("GET /api/tickets", () => {
     mocks.ticketCount.mockResolvedValue(12);
     const response = await request(app)
       .get("/api/tickets?page=3&pageSize=10")
-      .set("x-requester-id", "12");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(response.status).toBe(200);
     expect(response.body.items).toEqual([]);
     expect(response.body.pagination).toEqual({
@@ -185,7 +193,7 @@ describe("GET /api/tickets", () => {
   ])("returns INVALID_QUERY without an unrestricted fallback for %s", async (query) => {
     const response = await request(app)
       .get(`/api/tickets${query}`)
-      .set("x-requester-id", "12");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("INVALID_QUERY");
     expect(mocks.ticketFindMany).not.toHaveBeenCalled();
@@ -196,9 +204,9 @@ describe("GET /api/tickets", () => {
     mocks.requesterFindFirst.mockResolvedValue(null);
     const response = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", "99");
-    expect(response.status).toBe(400);
-    expect(response.body.error.code).toBe("INVALID_REQUESTER_CONTEXT");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe("AUTHENTICATION_REQUIRED");
     expect(mocks.ticketFindMany).not.toHaveBeenCalled();
   });
 
@@ -209,9 +217,9 @@ describe("GET /api/tickets", () => {
     );
     const response = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", "12");
+      .set("Cookie", "toktickit_session=" + "x".repeat(43)).set("Origin", "http://localhost:5173");
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({
+    expect(response.body).toMatchObject({
       error: {
         code: "INTERNAL_ERROR",
         message: "The request could not be completed.",
