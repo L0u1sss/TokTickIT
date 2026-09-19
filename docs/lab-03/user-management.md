@@ -85,7 +85,8 @@ Local results:
 | Client regression | 94/94 tests in 16 files, no unhandled errors |
 | Administrator browser | 1/1 live scenario; create, search, edit, duplicate email, deactivate/reactivate, reset, forced password change, final-admin conflict and forbidden Staff access |
 | Server/client lint and production builds | Passed |
-| Hosted CI, merge and peer approval | Not performed |
+| Hosted CI run #50 on exact HEAD `c52eb67b826ce21bd8b0f4c36c124c1f5cd92f18` | Passed; administrator browser suite, server/client tests, E2E, lint and builds completed successfully ([run 35457772298](https://github.com/L0u1sss/TokTickIT/actions/runs/35457772298)) |
+| Merge and peer approval | Pending |
 
 API tests: `server/tests/lab-03/users-admin.api.test.ts` covers AC-15/16,
 BR-29–32/36, all route role guards, Origin/CSRF, invalid inputs, safe summary,
