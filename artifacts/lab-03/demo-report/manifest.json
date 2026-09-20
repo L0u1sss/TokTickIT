@@ -1,0 +1,246 @@
+{
+  "capturedAt": "2026-09-20T21:50:49.042Z",
+  "source": "Real local app with isolated demo database; no mocked API responses",
+  "shots": [
+    {
+      "file": "01-login.png",
+      "title": "เข้าสู่ระบบ",
+      "caption": "หน้า Sign in สำหรับเข้าสู่ระบบด้วยอีเมลและรหัสผ่าน",
+      "url": "http://127.0.0.1:4175/login",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "02-login-invalid.png",
+      "title": "รหัสผ่านไม่ถูกต้อง",
+      "caption": "ระบบแสดงข้อความปฏิเสธการเข้าสู่ระบบเมื่อใช้รหัสผ่านไม่ถูกต้อง",
+      "url": "http://127.0.0.1:4175/login",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "03-change-initial-password.png",
+      "title": "เปลี่ยนรหัสผ่านครั้งแรก",
+      "caption": "ผู้ใช้ต้องตั้งรหัสผ่านใหม่ก่อนเข้าถึงฟังก์ชันภายในระบบ",
+      "url": "http://127.0.0.1:4175/change-password",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "04-requester-create-ticket.png",
+      "title": "Requester: สร้างคำร้อง",
+      "caption": "หลังเปลี่ยนรหัสผ่านสำเร็จ ผู้ใช้เข้าสู่หน้าสร้าง Ticket พร้อมแสดงตัวตนที่เข้าสู่ระบบ",
+      "url": "http://127.0.0.1:4175/tickets/new",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "05-requester-my-tickets.png",
+      "title": "Requester: รายการคำร้อง",
+      "caption": "ผู้แจ้งติดตาม Ticket ของตนเองผ่านหน้า My Tickets",
+      "url": "http://127.0.0.1:4175/tickets",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "06-staff-ticket-queue.png",
+      "title": "IT Staff: คิวงาน",
+      "caption": "ตารางคิวงานแสดงสถานะ Requested Priority, IT Priority และผู้รับผิดชอบ พร้อมค้นหาและกรองข้อมูล",
+      "url": "http://127.0.0.1:4175/staff/tickets",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "07-staff-search-filter.png",
+      "title": "IT Staff: ค้นหาและกรอง",
+      "caption": "ค้นหาคำว่า printer และกรองงานของตนเอง ได้ผลลัพธ์ตรงเงื่อนไขหนึ่งรายการ",
+      "url": "http://127.0.0.1:4175/staff/tickets?search=printer&ownerId=me&sortBy=updatedAt&sortOrder=desc&pageSize=20&page=1",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "08-staff-ticket-detail.png",
+      "title": "IT Staff: รายละเอียดคำร้อง",
+      "caption": "รายละเอียด Ticket ก่อนรับงาน พร้อมปุ่ม Claim Ticket ตัวเลือกผู้รับผิดชอบ สถานะ ความสำคัญ และไฟล์แนบ",
+      "url": "http://127.0.0.1:4175/staff/tickets/2",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "09-staff-claim-priority-status.png",
+      "title": "IT Staff: รับงานและอัปเดตสถานะ",
+      "caption": "หลัง Claim Ticket เจ้าหน้าที่ Mali IT Staff เป็นผู้รับผิดชอบ ปรับ IT Priority เป็น Low และสถานะเป็น In Progress",
+      "url": "http://127.0.0.1:4175/staff/tickets/2",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "10-staff-comments-and-notes.png",
+      "title": "IT Staff: ความคิดเห็นและบันทึกภายใน",
+      "caption": "Public Comments ใช้สื่อสารกับผู้แจ้ง ส่วน Internal Notes แสดงเฉพาะ IT Staff และ Administrator",
+      "url": "http://127.0.0.1:4175/staff/tickets/2",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "11-public-comment-closeup.png",
+      "title": "Public Comment",
+      "caption": "เจ้าหน้าที่แจ้งผลการแก้ไขผ่านความคิดเห็นที่ผู้แจ้งอ่านได้",
+      "url": "http://127.0.0.1:4175/staff/tickets/2",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "12-internal-note-closeup.png",
+      "title": "Internal Note",
+      "caption": "บันทึกผลวิเคราะห์ภายในสำหรับทีม IT",
+      "url": "http://127.0.0.1:4175/staff/tickets/2",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "13-requester-resolution.png",
+      "title": "Requester: แจ้งว่าปัญหาดูเหมือนได้รับการแก้ไข",
+      "caption": "ผู้แจ้งตอบกลับผ่าน Public Comment และกด Problem Appears Resolved โดยไม่มีส่วน Internal Notes",
+      "url": "http://127.0.0.1:4175/tickets/2",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "14-role-access-denied.png",
+      "title": "จำกัดสิทธิ์ตามบทบาท",
+      "caption": "Requester ไม่สามารถเข้าหน้าจัดการผู้ใช้ของ Administrator ได้",
+      "url": "http://127.0.0.1:4175/admin/users",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "15-staff-resolved.png",
+      "title": "IT Staff: ยืนยันแก้ไขสำเร็จ",
+      "caption": "เจ้าหน้าที่เห็นการยืนยันจากผู้แจ้งและเปลี่ยนสถานะ Ticket เป็น Resolved",
+      "url": "http://127.0.0.1:4175/staff/tickets/2",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "16-mobile-staff-queue.png",
+      "title": "มือถือ: คิวงาน",
+      "caption": "คิวงานบนหน้าจอมือถือใช้รูปแบบการ์ดแทนตาราง",
+      "url": "http://127.0.0.1:4175/staff/tickets",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "17-mobile-ticket-cards.png",
+      "title": "มือถือ: การ์ด Ticket",
+      "caption": "ภาพส่วนผลลัพธ์คิวงานบนมือถือ ขนาด 390 × 844",
+      "url": "http://127.0.0.1:4175/staff/tickets",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "18-admin-user-management.png",
+      "title": "Administrator: จัดการผู้ใช้",
+      "caption": "แสดงรายชื่อผู้ใช้ บทบาท สถานะ และคำสั่งเพิ่มหรือแก้ไขผู้ใช้",
+      "url": "http://127.0.0.1:4175/admin/users",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "19-admin-create-user.png",
+      "title": "Administrator: เพิ่มผู้ใช้",
+      "caption": "กำหนดชื่อ อีเมล บทบาท และรหัสผ่านเริ่มต้นสำหรับเจ้าหน้าที่ใหม่",
+      "url": "http://127.0.0.1:4175/admin/users",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "20-admin-user-created.png",
+      "title": "Administrator: เพิ่มผู้ใช้สำเร็จ",
+      "caption": "บัญชี Pim Support ปรากฏในรายการหลังบันทึกผ่านระบบจริง",
+      "url": "http://127.0.0.1:4175/admin/users",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "21-admin-edit-user.png",
+      "title": "Administrator: แก้ไขผู้ใช้",
+      "caption": "หน้าต่างแก้ไขข้อมูล บทบาท และสถานะ Active ของผู้ใช้",
+      "url": "http://127.0.0.1:4175/admin/users",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "22-admin-reset-password.png",
+      "title": "Administrator: ตั้งรหัสเริ่มต้นใหม่",
+      "caption": "หน้าต่างสำหรับตั้งและยืนยันรหัสผ่านเริ่มต้นใหม่ของผู้ใช้",
+      "url": "http://127.0.0.1:4175/admin/users",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "file": "23-tablet-user-management.png",
+      "title": "แท็บเล็ต: จัดการผู้ใช้",
+      "caption": "หน้าจัดการผู้ใช้บน viewport 834 × 1112",
+      "url": "http://127.0.0.1:4175/admin/users",
+      "viewport": {
+        "width": 834,
+        "height": 1112
+      }
+    },
+    {
+      "file": "24-logout.png",
+      "title": "ออกจากระบบ",
+      "caption": "หลัง Logout ระบบกลับสู่หน้า Sign in",
+      "url": "http://127.0.0.1:4175/login",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    }
+  ]
+}
