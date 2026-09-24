@@ -16,8 +16,8 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | UT-02 | Unit | BR-10–BR-12, AC-03 | Every Action transition pair; completion needs Result | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
 | UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition and resolution predicate | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
 | UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Metric status groups, limits, ordering, drill-down mapping | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
-| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data | `server/tests/lab-04/migration.test.ts` | Planned |
-| DB-02 | Integration | BR-38, AC-09 | Seed twice; stable identities/counts and 0/1/many Actions | `server/tests/lab-04/migration.test.ts` | Planned |
+| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data | `server/tests/lab-04/migration.test.ts` | Pass locally — Issue #53 populated upgrade and guarded recovery |
+| DB-02 | Integration | BR-38, AC-09 | Seed twice; stable identities/counts and 0/1/many Actions | `server/tests/lab-04/migration.test.ts` | Pass locally — Issue #53 repeated seed preserves reviewed records |
 | DB-03 | Integration | BR-14–BR-16, AC-03–AC-04 | Atomic projection/event write; stale revision loses | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, actor, assignee, time | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
@@ -116,3 +116,14 @@ Test clean deploy, populated Lab 3 forward migration, repeated seed, and applica
 | Date/time (Asia/Bangkok) | Commit SHA | Environment | Command/CI link | Result/counts | Notes |
 |---|---|---|---|---|---|
 | TBD | TBD | TBD | TBD | Not run | Populate only after execution |
+
+## 8. Issue #53 Local Evidence — 2026-09-25
+
+- `npm exec prisma validate` and `npm exec prisma generate`: Pass.
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm run test:unit`: Pass — 19 files, 165 tests.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `npm run test:isolated`: Pass — 33 files, 380 tests.
+
+The migration suite uses disposable PostgreSQL schemas and verifies populated Lab 3 preservation, zero-action legacy behavior, schema constraints, audit identities, all status/priority seed coverage, assigned/unassigned Tickets, zero/one/multiple Actions, repeated-seed preservation, guarded rollback refusal after data, pre-use rollback, and forward recovery. Record the final commit SHA and hosted CI link after push/PR; local evidence is not peer approval.
