@@ -18,14 +18,14 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Metric status groups, limits, ordering, drill-down mapping | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
 | DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data | `server/tests/lab-04/migration.test.ts` | Pass locally — Issue #53 populated upgrade and guarded recovery |
 | DB-02 | Integration | BR-38, AC-09 | Seed twice; stable identities/counts and 0/1/many Actions | `server/tests/lab-04/migration.test.ts` | Pass locally — Issue #53 repeated seed preserves reviewed records |
-| DB-03 | Integration | BR-14–BR-16, AC-03–AC-04 | Atomic projection/event write; stale revision loses | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, actor, assignee, time | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-03 | API | BR-10–BR-14, AC-03 | Assign/transition/complete/cancel/reopen and immutable event history | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-05 | API | BR-16, AC-04 | Concurrent edits with same revision; one winner, one `STALE_ACTION` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | Planned |
+| DB-03 | Integration | BR-14–BR-16, AC-03–AC-04 | Atomic projection/event write; stale revision loses | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 atomic event and concurrent revision tests |
+| API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, actor, assignee, time | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
+| API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
+| API-03 | API | BR-10–BR-14, AC-03 | Assign/transition/complete/cancel/reopen and immutable event history | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
+| API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
+| API-05 | API | BR-16, AC-04 | Concurrent edits with same revision; one winner, one `STALE_ACTION` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
+| API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — sequential and concurrent retry |
+| API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | Pass locally — assign/deactivate race and regression |
 | API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; gate accepted/rejected; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | API-09 | API | BR-23, AC-04/AC-06 | stale Ticket update loses without partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
@@ -127,3 +127,12 @@ Test clean deploy, populated Lab 3 forward migration, repeated seed, and applica
 - `npm run test:isolated`: Pass — 33 files, 380 tests.
 
 The migration suite uses disposable PostgreSQL schemas and verifies populated Lab 3 preservation, zero-action legacy behavior, schema constraints, audit identities, all status/priority seed coverage, assigned/unassigned Tickets, zero/one/multiple Actions, repeated-seed preservation, guarded rollback refusal after data, pre-use rollback, and forward recovery. Record the final commit SHA and hosted CI link after push/PR; local evidence is not peer approval.
+
+## 9. Issue #54 Local Evidence — 2026-09-26
+
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm run test:isolated -- tests/lab-04/actions-taken.api.test.ts`: Pass — 1 file, 11 tests, including sequential and concurrent retry assertions.
+- `npm run test:isolated`: Pass — 34 files, 391 tests.
+
+The suite covers authoritative actor identity, performer/assignee separation, stable list/retrieve, Requester ownership, direct role denial, protected fields, Unicode boundaries, follow-up rules, inactive assignees, sequential/concurrent idempotent replay and conflict, atomic audit events, concurrent stale writes, full Action lifecycle, assignment/deactivation coordination, CSRF/path/not-found handling, and safe unexpected failures. The commit SHA must be recorded after commit; local evidence is not hosted CI or peer approval.

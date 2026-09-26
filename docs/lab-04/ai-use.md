@@ -22,7 +22,15 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 ### Prompts 3–10
 
-Pending. Add only prompts actually used for specification review, migration, implementation, tests, accessibility, hardening, or release. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
+### Prompt 3 — Implement Actions Taken API (used, 2026-09-26)
+
+“ดำเนินการทำ Issue #54 อิงจากเอกสาร Lab 4”
+
+**Use:** Implemented list/retrieve/create/update/lifecycle APIs, requester ownership, staff authorization, actor protection, assignee eligibility, audit events, optimistic concurrency, idempotent retry, safe failures, and API tests. The result was checked with targeted and full isolated PostgreSQL suites.
+
+### Prompts 4–10
+
+Pending. Add only prompts actually used for later UI, workflow, dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -41,4 +49,4 @@ The coding-agent role should implement one reviewed issue at a time and use the 
 
 ## Known Limitations of This Log
 
-Only two prompts have been used and recorded at contract creation time. Final submission requires 6–10 selected real prompts and a revised reflection grounded in implementation and review outcomes.
+Three prompts have been used and recorded through the Actions API increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.

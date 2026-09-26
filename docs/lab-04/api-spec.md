@@ -70,6 +70,15 @@ POST /api/staff/tickets/:id/actions
 
 The initial status is `PLANNED`; `performedBy` and timestamps come from the session/backend. First success returns `201 { action, replayed:false }` and `Location`; an exact retry for the same Ticket/request ID returns `200 { action, replayed:true }`. Reusing the key with different normalized content returns `409 IDEMPOTENCY_CONFLICT`.
 
+An individual Action can be retrieved with either role-appropriate path:
+
+```http
+GET /api/staff/tickets/:ticketId/actions/:actionId
+GET /api/tickets/:ticketId/actions/:actionId
+```
+
+The requester route performs the same owned-Ticket check as the requester list route. An Action that does not belong to the path Ticket returns safe `404 NOT_FOUND`.
+
 ### 3.3 Update Action content/assignment
 
 ```http
