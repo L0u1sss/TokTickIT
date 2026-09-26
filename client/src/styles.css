@@ -22,6 +22,10 @@
 .staff-filters label, .staff-operation-controls label { display: grid; gap: .4rem; font-weight: 600; min-width: 0; }
 .staff-filters input, .staff-filters select, .staff-operation-controls select { width: 100%; min-width: 0; min-height: 44px; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; background: white; }
 .staff-operation-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 1rem; align-items: end; margin-block: 1rem; }
+.ticket-workflow { display: grid; gap: .5rem; min-width: 0; }
+.workflow-error { padding: .75rem; border-left: 4px solid #a0442e; border-radius: .35rem; background: #fff0eb; }
+.workflow-error p { margin-top: 0; }
+.workflow-error button, .workflow-error a { margin: .25rem .5rem .25rem 0; }
 .staff-queue article, .staff-queue .communication-section a { overflow-wrap: anywhere; }
 .staff-search { grid-column: 1 / -1; }
 .staff-queue button { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--zen-primary); border-radius: .4rem; color: var(--zen-primary); background: white; }

@@ -15,8 +15,12 @@ const bytes = Buffer.from("%PDF-1.4\nLab 2 attachment continuity\n%%EOF");
 let storageKey: string;
 const url = (suffix = "", id = ticketId) => `/api/staff/tickets/${id}${suffix}`;
 const read = (suffix = "", actor = 1) => request(app).get(url(suffix)).set("Cookie", cookies[actor]);
-const write = (suffix: string, body: object = {}, actor = 1, id = ticketId) => request(app)[suffix === "/claim" ? "post" : "patch"](url(suffix, id))
-  .set("Cookie", `${cookies[actor]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send(body);
+const write = async (suffix: string, body: object = {}, actor = 1, id = ticketId) => {
+  const expectedUpdatedAt = suffix === "/status" && !("expectedUpdatedAt" in body)
+    ? (await db.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { updatedAt: true } })).updatedAt.toISOString() : undefined;
+  return request(app)[suffix === "/claim" ? "post" : "patch"](url(suffix, id))
+    .set("Cookie", `${cookies[actor]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send({ ...body, ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}) });
+};
 
 beforeAll(async () => {
   for (const [index, role] of (["REQUESTER", "IT_STAFF", "ADMINISTRATOR", "IT_STAFF"] as const).entries()) {
@@ -104,11 +108,13 @@ const allowed: Record<Status, Status[]> = {
 };
 it.each(Object.values(Status).flatMap(from => Object.values(Status).map(to => [from, to] as const)))("enforces %s -> %s and persists ownership correctly", async (from, to) => {
   await db.ticket.update({ where: { id: ticketId }, data: { status: from, ownerId: ids[1] } });
+  const resolutionAction = to === "RESOLVED" ? await db.actionTaken.create({ data: { ticketId, clientRequestId: randomUUID(), description: "Lab 3 transition evidence", result: "Verified", status: "COMPLETED", performedById: ids[1], assigneeId: ids[1], completedAt: new Date() } }) : null;
   const valid = allowed[from].includes(to), terminal = to === "CLOSED" || to === "CANCELLED";
   const result = await write("/status", { status: to });
   expect(result.status).toBe(valid ? 200 : 409);
   if (!valid) expect(result.body.error.code).toBe("INVALID_STATUS_TRANSITION");
   expect(await db.ticket.findUniqueOrThrow({ where: { id: ticketId } })).toMatchObject({ status: valid ? to : from, ownerId: valid && terminal ? null : ids[1], lastOwnerId: valid && terminal ? ids[1] : null });
+  if (resolutionAction) await db.actionTaken.delete({ where: { id: resolutionAction.id } });
 });
 it("rejects malformed operations and missing tickets safely", async () => {
   for (const [suffix, body] of [["/owner", { ownerId: "1" }], ["/owner", { ownerId: 0 }], ["/it-priority", { itPriority: "URGENT" }], ["/status", { status: "DONE" }]] as const) expect((await write(suffix, body)).status).toBe(400);

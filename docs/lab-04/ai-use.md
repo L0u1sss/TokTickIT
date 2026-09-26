@@ -34,9 +34,15 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 **Use:** Implemented the shared Actions Taken section in staff and Requester Ticket Detail, including create/edit/assign/lifecycle controls, read-only visibility, validation, idempotent submission behavior, stale-conflict draft retention, safe failures, responsive Zen Green styling, and component tests. The result was checked with client build, lint, the focused Lab 4 suite, and all client tests.
 
-### Prompts 5–10
+### Prompt 5 — Enforce final Ticket workflow (used, 2026-09-26)
 
-Pending. Add only prompts actually used for later workflow, dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
+“ทำ Issue #56 โดยอิงจากเอกสาร Lab 4”
+
+**Use:** Implemented the final eight-state Ticket workflow contract, backend resolution gate, optimistic `updatedAt` conflict checks, safe workflow feedback, Requester advisory preservation, exhaustive API/component tests, and a live isolated browser flow. The implementation was checked with full server/client regression and the existing Lab 3 staff E2E flow.
+
+### Prompts 6–10
+
+Pending. Add only prompts actually used for later dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -55,4 +61,4 @@ The coding-agent role should implement one reviewed issue at a time and use the 
 
 ## Known Limitations of This Log
 
-Four prompts have been used and recorded through the Actions UI increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.
+Five prompts have been used and recorded through the Ticket workflow increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.
