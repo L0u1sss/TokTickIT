@@ -29,7 +29,8 @@ const password="Aa1!"+randomBytes(16).toString("hex");
 const userManagement = process.argv.includes("--user-management");
 const communications = process.argv.includes("--communications");
 const staffFlow = process.argv.includes("--staff-flow");
-const staffQueue = process.argv.includes("--staff-queue") || communications || staffFlow;
+const ticketWorkflow = process.argv.includes("--ticket-workflow");
+const staffQueue = process.argv.includes("--staff-queue") || communications || staffFlow || ticketWorkflow;
 const children=[];
 function start(entry,args,cwd,env,stdio="inherit"){
   const child=spawn(process.execPath,[entry,...args],{cwd,env:{...process.env,...env},stdio,windowsHide:true});
@@ -57,7 +58,7 @@ try{
     const staff = await db.user.create({ data: { displayName: "Mali IT Staff", email: "queue-browser@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     if (staffFlow) await db.user.create({ data: { displayName: "Niran IT Staff", email: "second-staff@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     const requester = await db.user.findUniqueOrThrow({ where: { email: "auth-browser@example.test" } });
-    if (communications || staffFlow) await db.user.update({ where: { id: requester.id }, data: { mustChangePassword: false } });
+    if (communications || staffFlow || ticketWorkflow) await db.user.update({ where: { id: requester.id }, data: { mustChangePassword: false } });
     const category = await db.category.create({ data: { name: "Hardware" } });
     const system = await db.relatedSystem.create({ data: { name: "Office services" } });
     if (staffFlow) attachmentDirectory = await mkdtemp(path.join(tmpdir(), "toktickit-staff-e2e-"));
@@ -73,6 +74,7 @@ try{
         const storageKey = randomUUID(), bytes = Buffer.from("%PDF-1.4\nStaff attachment continuity\n%%EOF");
         await writeFile(path.join(attachmentDirectory, storageKey), bytes);
         await db.attachment.create({ data: { ticketId: ticket.id, originalName: "existing.pdf", storageKey, sizeBytes: bytes.length, mimeType: "application/pdf", uploadedByRequesterId: requester.id } });
+        await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), description: "Existing completed staff work", result: "Connectivity restored", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
       }
     }
   }
@@ -80,7 +82,7 @@ try{
     {DATABASE_URL:isolated.toString(),CLIENT_ORIGIN:clientUrl,PORT:apiPort,NODE_ENV:"test", ...(attachmentDirectory ? { ATTACHMENT_STORAGE_DIR: attachmentDirectory } : {})},"ignore");
   const web=start(path.join(client,"node_modules/vite/bin/vite.js"),["--host","127.0.0.1","--port",webPort,"--strictPort"],client,{VITE_API_URL:apiUrl},"ignore");
   await Promise.all([ready(apiUrl+"/api/health",api.child),ready(clientUrl,web.child)]);
-  const browserSpec = userManagement ? "e2e/lab-03/user-administration.spec.ts" : staffFlow ? "e2e/lab-03/staff-ticket-flow.spec.ts" : communications ? "e2e/lab-03/comments-notes.spec.ts" : staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts";
+  const browserSpec = userManagement ? "e2e/lab-03/user-administration.spec.ts" : ticketWorkflow ? "e2e/lab-04/ticket-resolution.spec.ts" : staffFlow ? "e2e/lab-03/staff-ticket-flow.spec.ts" : communications ? "e2e/lab-03/comments-notes.spec.ts" : staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts";
   await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test",browserSpec,"--config","playwright.live.config.ts"],client,
     {E2E_CLIENT_URL:clientUrl,E2E_API_URL:apiUrl,E2E_AUTH_PASSWORD:password});
 }catch(error){console.error(error instanceof Error?error.message:"Auth E2E failed.");process.exitCode=1;}

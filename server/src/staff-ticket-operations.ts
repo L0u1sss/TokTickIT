@@ -93,15 +93,40 @@ export async function updateTicketPriority(prisma: PrismaClient, ticketId: numbe
   return { itPriority: updated.itPriority, updatedAt: updated.updatedAt.toISOString() };
 }
 
-export async function updateTicketStatus(prisma: PrismaClient, ticketId: number, nextStatus: Status) {
-  return prisma.$transaction(async (transaction) => {
-    const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true, ownerId: true } });
+export async function updateTicketStatus(prisma: PrismaClient, ticketId: number, nextStatus: Status, expectedUpdatedAt: Date) {
+  try { return await prisma.$transaction(async (transaction) => {
+    const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true, ownerId: true, updatedAt: true } });
     if (!ticket) throw notFound();
+    if (ticket.updatedAt.getTime() !== expectedUpdatedAt.getTime()) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before changing status.");
     if (!permittedStatusTransition(ticket.status, nextStatus)) throw new ApiError(409, "INVALID_STATUS_TRANSITION", `Cannot change status from ${ticket.status} to ${nextStatus}.`);
+    if (nextStatus === "RESOLVED" && await transaction.actionTaken.count({ where: { ticketId, status: "COMPLETED", result: { not: null } } }) === 0) {
+      throw new ApiError(409, "RESOLUTION_GATE_NOT_MET", "Complete at least one Action with a Result before resolving this Ticket.");
+    }
     const terminal = nextStatus === "CLOSED" || nextStatus === "CANCELLED";
-    const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { status: nextStatus, ...(nextStatus === "REOPENED" ? { problemAppearsResolvedAt: null, problemAppearsResolvedById: null } : {}), ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) }, select: { status: true, updatedAt: true } });
+    const changed = await transaction.ticket.updateMany({ where: { id: ticketId, updatedAt: expectedUpdatedAt }, data: { status: nextStatus, ...(nextStatus === "REOPENED" ? { problemAppearsResolvedAt: null, problemAppearsResolvedById: null } : {}), ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) } });
+    if (changed.count !== 1) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before changing status.");
+    const updated = await transaction.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { status: true, updatedAt: true } });
     return { status: updated.status, updatedAt: updated.updatedAt.toISOString() };
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }); }
+  catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before changing status.");
+    throw error;
+  }
+}
+
+function parseStatusUpdate(body: unknown) {
+  const input = bodyObject(body), allowed = ["status", "expectedUpdatedAt"];
+  const details = [
+    ...Object.keys(input).filter(key => !allowed.includes(key)).map(field => ({ field, issue: "This field is not accepted." })),
+    ...allowed.filter(field => !(field in input)).map(field => ({ field, issue: "This field is required." })),
+  ];
+  const status = parseEnum(input, "status", Object.values(Status));
+  const timestamp = input.expectedUpdatedAt;
+  if (typeof timestamp !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timestamp) || Number.isNaN(Date.parse(timestamp)) || new Date(timestamp).toISOString() !== timestamp) {
+    details.push({ field: "expectedUpdatedAt", issue: "Must be an ISO 8601 UTC timestamp." });
+  }
+  if (details.length) throw validationError(details);
+  return { status, expectedUpdatedAt: new Date(timestamp as string) };
 }
 
 const ticketDetailInclude = {
@@ -164,7 +189,10 @@ staffTicketOperationsRouter.patch("/tickets/:id/owner", route(async (req, res) =
   res.json(await assignTicket(getPrisma(), parsePositivePathId(req.params.id, "id"), value));
 }));
 staffTicketOperationsRouter.patch("/tickets/:id/it-priority", route(async (req, res) => res.json(await updateTicketPriority(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(bodyObject(req.body), "itPriority", Object.values(Priority))))));
-staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(bodyObject(req.body), "status", Object.values(Status))))));
+staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => {
+  const input = parseStatusUpdate(req.body);
+  res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), input.status, input.expectedUpdatedAt));
+}));
 staffTicketOperationsRouter.get("/tickets/:id/comments", route(async (req, res) => { const id = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), id); res.json({ items: await listComments(getPrisma(), id) }); }));
 staffTicketOperationsRouter.post("/tickets/:id/comments", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, req.body, false))));
 staffTicketOperationsRouter.get("/tickets/:id/internal-notes", route(async (req, res) => { const ticketId = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), ticketId); const items = await getPrisma().internalNote.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: communicationSelect }); res.json({ items: items.map(item => ({ ...item, createdAt: item.createdAt.toISOString() })) }); }));

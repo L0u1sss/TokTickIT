@@ -22,6 +22,10 @@
 .staff-filters label, .staff-operation-controls label { display: grid; gap: .4rem; font-weight: 600; min-width: 0; }
 .staff-filters input, .staff-filters select, .staff-operation-controls select { width: 100%; min-width: 0; min-height: 44px; padding: .65rem; border: 1px solid #698672; border-radius: .4rem; background: white; }
 .staff-operation-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 1rem; align-items: end; margin-block: 1rem; }
+.ticket-workflow { display: grid; gap: .5rem; min-width: 0; }
+.workflow-error { padding: .75rem; border-left: 4px solid #a0442e; border-radius: .35rem; background: #fff0eb; }
+.workflow-error p { margin-top: 0; }
+.workflow-error button, .workflow-error a { margin: .25rem .5rem .25rem 0; }
 .staff-queue article, .staff-queue .communication-section a { overflow-wrap: anywhere; }
 .staff-search { grid-column: 1 / -1; }
 .staff-queue button { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--zen-primary); border-radius: .4rem; color: var(--zen-primary); background: white; }
@@ -1408,3 +1412,39 @@ a:focus-visible {
 .communication-section label { display: block; }
 .communication-content { white-space: pre-wrap; overflow-wrap: anywhere; }
 .communication-section article { border-bottom: 1px solid #b5c9b9; margin-block: 1rem; }
+
+.actions-taken { margin-block: 1.5rem; padding: 1.25rem; border: 2px solid #357554; border-radius: 14px; background: #f4faf6; min-width: 0; }
+.actions-heading, .action-card header, .action-controls { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.actions-heading h3, .actions-heading p { margin-block: 0 .35rem; }
+.actions-empty { padding: 1rem; border: 1px dashed #7ba28a; border-radius: 10px; background: #fff; }
+.action-list { display: grid; gap: 1rem; padding: 0; list-style: none; }
+.action-card { padding: 1rem; border: 1px solid #b5cdbd; border-radius: 12px; background: #fff; overflow-wrap: anywhere; }
+.action-card header { color: #4b5f51; font-size: .9rem; }
+.action-status { display: inline-block; padding: .25rem .6rem; border-radius: 999px; color: #19462f; background: #dcefe3; font-weight: 750; }
+.action-status-completed { color: #fff; background: #146b43; }
+.action-status-cancelled { color: #603f11; background: #f5e5bd; }
+.action-status-in_progress { color: #123d5c; background: #d8ebf7; }
+.action-description { white-space: pre-wrap; font-size: 1.05rem; }
+.action-metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem 1.25rem; }
+.action-metadata div { min-width: 0; }
+.action-metadata dt { color: #4b5f51; font-size: .85rem; font-weight: 750; }
+.action-metadata dd { margin: .2rem 0 0; white-space: pre-wrap; }
+.action-controls { justify-content: flex-start; margin-top: 1rem; }
+.action-controls button { min-height: 44px; }
+.action-form { margin-block: 1rem; padding: 1rem; border: 1px solid #8eb29a; border-radius: 10px; background: #fff; }
+.action-form fieldset { display: grid; gap: .85rem; min-width: 0; border: 0; padding: 0; }
+.action-form legend { font-size: 1.15rem; font-weight: 750; }
+.action-form label { display: grid; gap: .3rem; font-weight: 700; }
+.action-form textarea, .action-form select { width: 100%; min-height: 44px; padding: .65rem; border: 1px solid #73957f; border-radius: 8px; }
+.action-form textarea { min-height: 6rem; resize: vertical; }
+.action-form .action-checkbox { display: flex; align-items: center; min-height: 44px; flex-direction: row; }
+.action-form .action-checkbox input { width: 1.2rem; height: 1.2rem; }
+.action-notice { padding: .7rem; border-left: 4px solid #147346; background: #e3f4e9; }
+.action-error { padding: .7rem; border-left: 4px solid #a0442e; background: #fff0eb; }
+
+@media (max-width: 767px) {
+  .actions-taken { padding: 1rem; }
+  .actions-heading { align-items: stretch; flex-direction: column; }
+  .actions-heading > button, .action-controls button { width: 100%; }
+  .action-metadata { grid-template-columns: minmax(0, 1fr); }
+}

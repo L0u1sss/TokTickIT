@@ -1,6 +1,6 @@
 import { ApiError } from "./errors.js";
 
-export function parsePositivePathId(value: string, field: "id" | "attId"): number {
+export function parsePositivePathId(value: string, field: "id" | "attId" | "ticketId" | "actionId"): number {
   if (!/^[1-9]\d*$/.test(value)) {
     throw new ApiError(
       400,
