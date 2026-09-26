@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CommunicationSection } from "./TicketCommunication.js";
+import { ActionsTaken } from "./ActionsTaken.js";
 import { useAuth } from "../context/AuthContext.js";
 
 type Person = { id: number; displayName: string; email: string };
@@ -155,6 +156,7 @@ export default function StaffTicketQueue() {
         </li>)}</ul> : <p>No attachments.</p>}
       </section>
       {detail.problemAppearsResolvedAt && <p role="status">Requester reports the problem appears resolved: {new Date(detail.problemAppearsResolvedAt).toLocaleString()}</p>}
+      <ActionsTaken key={detail.id + "actions"} ticketId={detail.id} staff assignees={owners} />
       <CommunicationSection key={detail.id + "comments"} ticketId={detail.id} staff />
       <CommunicationSection key={detail.id + "notes"} ticketId={detail.id} staff internal />
     </article>}
