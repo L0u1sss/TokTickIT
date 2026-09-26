@@ -6,7 +6,8 @@ export type TicketSortOrder = "asc" | "desc";
 
 export interface TicketListQuery {
   search: string | null;
-  status: Status | null;
+  status: Status[] | null;
+  statusFilter: string | null;
   requestedPriority: Priority | null;
   categoryId: number | null;
   relatedSystemId: number | null;
@@ -35,6 +36,7 @@ const sortFields = new Set<TicketSortField>([
 ]);
 const sortOrders = new Set<TicketSortOrder>(["asc", "desc"]);
 const pageSizes = new Set([10, 20, 50]);
+export const openTicketStatuses: Status[] = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"];
 
 function singleString(
   record: Record<string, unknown>,
@@ -86,9 +88,10 @@ export function parseTicketListQuery(
   }
 
   const rawStatus = singleString(query, "status", details);
-  if (rawStatus !== undefined && rawStatus !== "New") {
-    details.push({ field: "status", issue: "Must be New." });
-  }
+  const statuses = rawStatus === "New" ? ["NEW" as const]
+    : rawStatus === "OPEN_GROUP" ? openTicketStatuses
+    : rawStatus === "WAITING_FOR_REQUESTER" ? ["WAITING_FOR_REQUESTER" as const] : null;
+  if (rawStatus !== undefined && !statuses) details.push({ field: "status", issue: "Must be New, OPEN_GROUP, or WAITING_FOR_REQUESTER." });
 
   const rawPriority = singleString(query, "requestedPriority", details);
   if (
@@ -148,7 +151,8 @@ export function parseTicketListQuery(
 
   return {
     search: normalizedSearch || null,
-    status: rawStatus === "New" ? "NEW" : null,
+    status: statuses,
+    statusFilter: rawStatus ?? null,
     requestedPriority: (rawPriority as Priority | undefined) ?? null,
     categoryId,
     relatedSystemId,

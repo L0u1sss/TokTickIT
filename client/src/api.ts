@@ -70,10 +70,11 @@ export interface TicketSummary {
 
 export type TicketSortField = "createdAt" | "ticketNumber" | "summary";
 export type TicketSortOrder = "asc" | "desc";
+export type TicketStatusFilter = "New" | "OPEN_GROUP" | "WAITING_FOR_REQUESTER";
 
 export interface TicketListQuery {
   search?: string;
-  status?: "New";
+  status?: TicketStatusFilter;
   requestedPriority?: RequestedPriority;
   categoryId?: number;
   relatedSystemId?: number;
@@ -94,7 +95,7 @@ export interface TicketListResponse {
   sort: { by: TicketSortField; order: TicketSortOrder };
   filters: {
     search: string | null;
-    status: "New" | null;
+    status: string | null;
     requestedPriority: RequestedPriority | null;
     categoryId: number | null;
     relatedSystemId: number | null;
@@ -104,6 +105,13 @@ export interface TicketListResponse {
 export interface TicketCreateResult {
   ticket: TicketDetail;
   replayed: boolean;
+}
+
+export interface RequesterDashboardData {
+  metrics: { openCount: number; waitingForRequesterCount: number };
+  recentlyUpdated: TicketSummary[];
+  recentlyResolved: TicketSummary[];
+  generatedAt: string;
 }
 
 export interface SystemStatus {
@@ -287,6 +295,12 @@ export async function getTicketDetail(
   const response = await requestAsCurrentRequester(`/api/tickets/${ticketId}`, { signal });
   if (!response.ok) throw await apiResponseError(response);
   return (await response.json()) as TicketDetail;
+}
+
+export async function getRequesterDashboard(requestAsCurrentRequester: RequestAsCurrentRequester, signal?: AbortSignal): Promise<RequesterDashboardData> {
+  const response = await requestAsCurrentRequester("/api/dashboard/requester", { signal });
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as RequesterDashboardData;
 }
 
 export async function uploadAttachment(

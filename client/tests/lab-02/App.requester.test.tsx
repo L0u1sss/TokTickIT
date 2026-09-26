@@ -20,12 +20,20 @@ it.each(["/staff/tickets", "/admin/users"])("shows Forbidden to a Requester at %
   render(<AuthApp />);
   await screen.findByRole("heading", { name: "Forbidden" });
   expect(screen.queryByRole("link", { name: "User Management" })).toBeNull();
-  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/tickets/new");
+  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/dashboard");
+});
+it("shows Forbidden to staff at the Requester dashboard", async () => {
+  window.history.replaceState({}, "", "/dashboard");
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ user: { id: 2, displayName: "Staff", email: "staff@example.test", role: "IT_STAFF", mustChangePassword: false } }))));
+  render(<AuthApp />);
+  await screen.findByRole("heading", { name: "Forbidden" });
+  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/staff/tickets");
 });
 it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted navigation for %s", async role => {
   window.history.replaceState({}, "", "/");
   vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
     url.endsWith("/api/auth/me") ? { user: { id: 1, displayName: "Session User", email: "user@example.test", role, mustChangePassword: false } }
+    : role === "REQUESTER" ? { metrics: { openCount: 0, waitingForRequesterCount: 0 }, recentlyUpdated: [], recentlyResolved: [], generatedAt: "2026-09-26T10:00:00.000Z" }
     : { categories: [], relatedSystems: [], items: [] }
   )))));
   render(<AuthApp />);
@@ -34,5 +42,5 @@ it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted naviga
   expect(screen.queryByRole("link", { name: "My Tickets" }) !== null).toBe(role === "REQUESTER");
   expect(screen.queryByRole("link", { name: "Ticket Queue" }) !== null).toBe(role !== "REQUESTER");
   expect(screen.queryByRole("link", { name: "User Management" }) !== null).toBe(role === "ADMINISTRATOR");
-  await waitFor(() => expect(window.location.pathname).toBe(role === "REQUESTER" ? "/tickets/new" : role === "IT_STAFF" ? "/staff/tickets" : "/admin/users"));
+  await waitFor(() => expect(window.location.pathname).toBe(role === "REQUESTER" ? "/dashboard" : role === "IT_STAFF" ? "/staff/tickets" : "/admin/users"));
 });

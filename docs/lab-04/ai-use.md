@@ -40,7 +40,13 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 **Use:** Implemented the final eight-state Ticket workflow contract, backend resolution gate, optimistic `updatedAt` conflict checks, safe workflow feedback, Requester advisory preservation, exhaustive API/component tests, and a live isolated browser flow. The implementation was checked with full server/client regression and the existing Lab 3 staff E2E flow.
 
-### Prompts 6–10
+### Prompt 6 — Implement Requester dashboard (used, 2026-09-26)
+
+“ทำ Issue #57 โดยอิงจากเอกสาร Lab 4”
+
+**Use:** Implemented the session-scoped Requester dashboard API and UI, bounded recent lists, database-backed metrics, zero/loading/error/retry states, Dashboard navigation, My Tickets drill-down filters, responsive styling, API/component tests, and an isolated live browser flow. The implementation was checked against the Lab 4 metric definitions and with full client regression.
+
+### Prompts 7–10
 
 Pending. Add only prompts actually used for later dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
 
@@ -61,4 +67,4 @@ The coding-agent role should implement one reviewed issue at a time and use the 
 
 ## Known Limitations of This Log
 
-Five prompts have been used and recorded through the Ticket workflow increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.
+Six prompts have been used and recorded through the Requester dashboard increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.

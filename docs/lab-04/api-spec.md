@@ -132,7 +132,7 @@ Requester only; identity always comes from the session.
 }
 ```
 
-Lists contain at most five `TicketSummary` items. Counts/list definitions follow BR-26–BR-27. Zero state uses numeric zero and empty arrays. Drill-down links are constructed by the client from documented My Tickets queries: open statuses as the approved multi-status representation, waiting as `status=WAITING_FOR_REQUESTER`; detail items use `/tickets/:id`.
+Lists contain at most five `TicketSummary` items. Counts/list definitions follow BR-26–BR-27. Zero state uses numeric zero and empty arrays. Drill-down links are constructed by the client from documented My Tickets queries: open statuses use `status=OPEN_GROUP`, waiting uses `status=WAITING_FOR_REQUESTER`; detail items use `/tickets/:id`.
 
 ## 6. Staff Dashboard
 

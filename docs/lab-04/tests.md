@@ -28,23 +28,23 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | Pass locally — assign/deactivate race and regression |
 | API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; gate accepted/rejected; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass locally — Issue #56, 70-test suite |
 | API-09 | API | BR-23, AC-04/AC-06 | stale Ticket update loses without partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass locally — stale/concurrent writes |
-| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| API-11 | API | BR-27/BR-30–BR-32, AC-07 | zero/non-zero counts, UTC values, drill-down query equivalence | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass locally — Issue #57 |
+| API-11 | API | BR-27/BR-30–BR-32, AC-07 | zero/non-zero counts, UTC values, drill-down query equivalence | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass locally — Issue #57 |
 | API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; current-user Action scope | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | API-13 | API | BR-28–BR-32, AC-08 | status/priority/urgent/recent counts match direct DB queries | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | all four required API files | Planned |
 | UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
-| UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
+| UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass locally — Issue #57, 4 tests |
 | UI-03 | Component | FR-01–FR-06, AC-01–AC-05/AC-10 | list/create/edit/assign/lifecycle/validation/read-only/conflict/draft retention | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass locally — Issue #55 |
 | UI-04 | Component | FR-07–FR-08, AC-04/AC-06 | permitted status controls, confirmation, gate/stale feedback, refresh | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass locally — Issue #56, 5 tests |
 | STYLE-01 | UI style | FR-15, AC-12 | Zen Green tokens, non-color cues, long-text wrapping | Lab 4 component tests | Planned |
 | PERF-01 | Smoke | FR-11, AC-07–AC-08 | dashboard endpoints p95 ≤500 ms for 1,000 Tickets/5,000 Actions locally after warm-up | `server/tests/lab-04/dashboard-performance.test.ts` | Planned |
-| RV-01 | Browser | FR-15, AC-12 | both dashboards at 1440×900, 834×1112, 390×844 | `client/e2e/lab-04/dashboards.spec.ts` | Planned |
+| RV-01 | Browser | FR-15, AC-12 | both dashboards at 1440×900, 834×1112, 390×844 | `client/e2e/lab-04/dashboards.spec.ts` | Requester pass locally; staff pending |
 | RV-02 | Browser | FR-15, AC-12 | Actions create/edit/read-only at three viewports; no page overflow | `client/e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
 | A11Y-01 | Browser/manual | FR-15, AC-12 | axe + landmarks/names/live regions; keyboard/focus/dialog/200% reflow | all Lab 4 E2E specs + checklist | Planned |
 | E2E-01 | Live E2E | AC-01–AC-05/AC-10 | staff creates/assigns/edits/completes; requester reads; retry/conflict | `client/e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
 | E2E-02 | Live E2E | AC-04/AC-06 | Action completion → resolve → close; advisory/reopen/cancel cases | `client/e2e/lab-04/ticket-resolution.spec.ts` | Pass locally — isolated live stack |
-| E2E-03 | Live E2E | AC-07–AC-08 | role dashboards, database count evidence, drill-down, zero state | `client/e2e/lab-04/dashboards.spec.ts` | Planned |
+| E2E-03 | Live E2E | AC-07–AC-08 | role dashboards, database count evidence, drill-down, zero state | `client/e2e/lab-04/dashboards.spec.ts` | Requester pass locally; staff pending |
 | REG-01 | Regression | AC-11 | login/change/logout and role/direct-route authorization | existing Lab 3 auth suites | Planned |
 | REG-02 | Regression | AC-11 | Create/My Tickets/Detail/Attachments/ownership/idempotency | existing Lab 2 + requester regression suites | Planned |
 | REG-03 | Regression | AC-11 | staff queue/owner/priority/status/comments/notes/download | existing Lab 3 staff suites | Planned |
@@ -158,3 +158,14 @@ The component suite covers stable multi-Action display, Requester read-only visi
 - `npm run test:staff:e2e`: Pass — existing Lab 3 staff workflow regression.
 
 The workflow API suite covers the complete 8×8 transition matrix, staff/admin authorization, strict request validation, the completed-Action Result gate, legacy zero-Action Tickets, stale and concurrent writes, owner preservation/terminal release, advisory-only Requester behavior, reopening cleanup, and safe unexpected failures. The browser flow verifies gate rejection, Action creation/completion, resolve, close, reopen, cancel, a second reopen, and the Requester advisory without formal status mutation.
+
+## 12. Issue #57 Local Evidence — 2026-09-26
+
+- Server build and lint: Pass.
+- `npm run test:isolated -- tests/lab-04/requester-dashboard.api.test.ts`: Pass — 1 file, 4 tests.
+- `npm run test:isolated`: Pass — 36 files, 465 tests.
+- Client build and lint: Pass.
+- `npm test`: Pass — 21 files, 129 tests.
+- `npm run test:requester-dashboard:e2e`: Pass — 1 live browser test on an isolated migrated PostgreSQL schema.
+
+The API suite verifies authenticated ownership despite spoofed requester input, direct database counts, exact open/waiting groups, five-item limits, stable ordering, resolved/closed filtering, UTC timestamps, zero data, role denial, strict queries, and safe failures. The component and browser suites verify loading, nonzero and zero states, retry, Dashboard navigation, My Tickets filters, Ticket Detail links, and requester layout without horizontal overflow at 1440×900, 834×1112, and 390×844. Staff dashboard evidence remains pending for its separate increment.
