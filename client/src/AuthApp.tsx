@@ -8,13 +8,14 @@ import UserManagement from "./components/UserManagement.js";
 export function AuthScreens() {
   const {user,loading,error,logoutError,refresh,logout}=useAuth();
   const heading=useRef<HTMLHeadingElement>(null);
-  const home = user?.role === "REQUESTER" ? "/tickets/new" : user?.role === "ADMINISTRATOR" ? "/admin/users" : "/staff/tickets";
+  const home = user?.role === "REQUESTER" ? "/dashboard" : user?.role === "ADMINISTRATOR" ? "/admin/users" : "/staff/tickets";
   const location = window.location.pathname;
-  const permitted = user?.role === "REQUESTER" ? /^\/tickets(?:\/[^/]+)?$/.test(location)
+  const permitted = user?.role === "REQUESTER" ? location === "/dashboard" || /^\/tickets(?:\/[^/]+)?$/.test(location)
     : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
   const forbidden = Boolean(user && !user.mustChangePassword && (
     (location.startsWith("/admin/") && user.role !== "ADMINISTRATOR") ||
-    (location.startsWith("/staff/") && user.role === "REQUESTER")
+    (location.startsWith("/staff/") && user.role === "REQUESTER") ||
+    (location === "/dashboard" && user.role !== "REQUESTER")
   ));
   const path=user?(user.mustChangePassword?"/change-password":permitted || forbidden?location + window.location.search:home):"/login";
   useEffect(()=>{

@@ -37,7 +37,7 @@ test("E2E-02 completed work gates resolution while cancellation, reopening and a
   await page.getByLabel("Email", { exact: false }).fill("auth-browser@example.test");
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Create Ticket", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await page.goto(`/tickets/${ticketId}`);
   await expect(page.getByText("Ticket Detail", { exact: true })).toBeVisible();
   page.once("dialog", dialog => dialog.accept());

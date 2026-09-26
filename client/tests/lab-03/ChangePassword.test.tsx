@@ -21,13 +21,14 @@ describe("UI-02 mandatory password change",()=>{
   });
   it("saves password and shows authenticated name/role without the selector",async()=>{
     vi.stubGlobal("fetch",vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({user:identity})))
-      .mockResolvedValueOnce(new Response(JSON.stringify({user:{...identity,mustChangePassword:false}}))));
+      .mockResolvedValueOnce(new Response(JSON.stringify({user:{...identity,mustChangePassword:false}})))
+      .mockResolvedValue(new Response(JSON.stringify({metrics:{openCount:0,waitingForRequesterCount:0},recentlyUpdated:[],recentlyResolved:[],generatedAt:"2026-09-26T10:00:00.000Z"}))));
     const user=userEvent.setup();render(<AuthApp/>);await screen.findByRole("heading",{name:"Change your initial password"});
     await user.type(screen.getByLabelText(/^Current Password/),"Initial-password1!");
     await user.type(screen.getByLabelText(/^New Password/),"New-password2!");
     await user.type(screen.getByLabelText(/^Confirm New Password/),"New-password2!");
     await user.click(screen.getByRole("button",{name:"Save password"}));
-    await screen.findByRole("heading",{name:"Create Ticket"});
+    await screen.findByRole("heading",{name:"Dashboard"});
     expect(screen.getAllByText("Person")[0]).toBeInTheDocument();expect(screen.getByText("Signed in as")).toBeInTheDocument();
     expect(screen.queryByText("Change Requester")).toBeNull();
   });

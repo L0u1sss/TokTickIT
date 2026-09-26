@@ -177,9 +177,7 @@ Requester only; identity always comes from the session.
 }
 ```
 
-Lists contain at most five `TicketSummary` items. `recentlyUpdated` uses the Ticket `updatedAt` maintained by the aggregate-mutation rule in BR-43; accepted Action and Ticket aggregate changes refresh it, while comments, notes, and attachment child writes retain Lab 3 semantics. `generatedAt` is captured once; `recentlyResolvedWindow.from` is exactly 168 hours before it and `before` equals `generatedAt`. The list predicate is `status IN (RESOLVED,CLOSED) AND resolvedAt >= from AND resolvedAt < before`, scoped by authenticated requester, ordered `resolvedAt DESC, id DESC`. A legacy row with unknown `resolvedAt` is not backfilled or included. Zero state uses numeric zero and empty arrays.
-
-The existing authenticated My Tickets API is `GET /api/tickets`. It accepts one `statusIn` query parameter containing comma-separated, uppercase Ticket statuses with no whitespace or duplicates; the canonical open filter is `statusIn=NEW,OPEN,IN_PROGRESS,WAITING_FOR_REQUESTER,REOPENED`. A single status can continue to use `status`. Supplying both `status` and `statusIn`, repeating either query key, an empty member, duplicate/unknown status, or whitespace returns `400 VALIDATION_ERROR`. Recently Resolved drill-down uses `statusIn=RESOLVED,CLOSED&resolvedFrom=<from>&resolvedBefore=<before>` with the exact dashboard bounds; the two date parameters must appear together, be canonical UTC ISO timestamps, and satisfy `resolvedFrom < resolvedBefore`. Date bounds without exactly `statusIn=RESOLVED,CLOSED` are invalid. Dashboard links preserve these values; detail items use `/tickets/:id`.
+Lists contain at most five `TicketSummary` items. Counts/list definitions follow BR-26–BR-27. Zero state uses numeric zero and empty arrays. Drill-down links are constructed by the client from documented My Tickets queries: open statuses use `status=OPEN_GROUP`, waiting uses `status=WAITING_FOR_REQUESTER`; detail items use `/tickets/:id`.
 
 ## 6. Staff Dashboard
 

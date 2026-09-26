@@ -13,6 +13,7 @@
     "test:admin:e2e": "node scripts/run-auth-e2e.mjs --user-management",
     "test:staff:e2e": "node scripts/run-auth-e2e.mjs --staff-flow",
     "test:workflow:e2e": "node scripts/run-auth-e2e.mjs --ticket-workflow",
+    "test:requester-dashboard:e2e": "node scripts/run-auth-e2e.mjs --requester-dashboard",
     "test:responsive": "node scripts/run-responsive-tests.mjs",
     "test:e2e": "node scripts/run-live-e2e.mjs"
   },

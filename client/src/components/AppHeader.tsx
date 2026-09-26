@@ -2,8 +2,8 @@ import { useRequester } from "../context/RequesterContext.js";
 import { LogoutButton } from "./AuthForm.js";
 
 interface AppHeaderProps {
-  activePath: "/tickets" | "/tickets/new";
-  onNavigate: (path: "/tickets" | "/tickets/new") => void;
+  activePath: "/dashboard" | "/tickets" | "/tickets/new";
+  onNavigate: (path: "/dashboard" | "/tickets" | "/tickets/new") => void;
 }
 
 export default function AppHeader({ activePath, onNavigate }: AppHeaderProps) {
@@ -25,6 +25,7 @@ export default function AppHeader({ activePath, onNavigate }: AppHeaderProps) {
           </span>
         </div>
         <nav className="app-navigation" aria-label="Ticket navigation">
+          <a className={`app-navigation-link${activePath === "/dashboard" ? " active" : ""}`} href="/dashboard" aria-current={activePath === "/dashboard" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onNavigate("/dashboard"); }}>Dashboard</a>
           <a
             className={`app-navigation-link${activePath === "/tickets/new" ? " active" : ""}`}
             href="/tickets/new"

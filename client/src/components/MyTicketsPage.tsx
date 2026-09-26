@@ -17,6 +17,7 @@ import {
   type TicketMetadata,
   type TicketSortField,
   type TicketSortOrder,
+  type TicketStatusFilter,
   type TicketSummary,
 } from "../api.js";
 import { useRequester } from "../context/RequesterContext.js";
@@ -80,7 +81,7 @@ function queryFromLocation(locationSearch = window.location.search): LocationQue
   const pageSize = positiveInteger(rawPageSize);
 
   if (search && Array.from(search).length > 120) invalid = true;
-  if (status !== null && status !== "New") invalid = true;
+  if (status !== null && !["New", "OPEN_GROUP", "WAITING_FOR_REQUESTER"].includes(status)) invalid = true;
   if (priority !== null && !["LOW", "MEDIUM", "HIGH"].includes(priority)) invalid = true;
   if (rawCategoryId !== null && categoryId === undefined) invalid = true;
   if (rawRelatedSystemId !== null && relatedSystemId === undefined) invalid = true;
@@ -93,7 +94,7 @@ function queryFromLocation(locationSearch = window.location.search): LocationQue
     invalid,
     query: {
       ...(search && Array.from(search).length <= 120 ? { search } : {}),
-      ...(status === "New" ? { status: "New" as const } : {}),
+      ...(["New", "OPEN_GROUP", "WAITING_FOR_REQUESTER"].includes(status ?? "") ? { status: status as TicketStatusFilter } : {}),
       ...(["LOW", "MEDIUM", "HIGH"].includes(priority ?? "")
         ? { requestedPriority: priority as RequestedPriority }
         : {}),
@@ -321,7 +322,7 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
     } else if (name === "requestedPriority") {
       nextQuery.requestedPriority = value ? (value as RequestedPriority) : undefined;
     } else if (name === "status") {
-      nextQuery.status = value === "New" ? "New" : undefined;
+      nextQuery.status = value ? (value as TicketStatusFilter) : undefined;
     }
     applyQuery(nextQuery);
   }
@@ -429,7 +430,7 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
             <option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option>
           </Filter>
           <Filter label="Status" name="status" value={query.status ?? ""} onChange={updateFilter}>
-            <option value="">All statuses</option><option value="New">New</option>
+            <option value="">All statuses</option><option value="OPEN_GROUP">Open Tickets</option><option value="WAITING_FOR_REQUESTER">Waiting for Requester</option><option value="New">New</option>
           </Filter>
           <Filter label="Sort" name="sort" value={`${query.sortBy}:${query.sortOrder}`} onChange={updateFilter}>
             <option value="createdAt:desc">Newest first</option><option value="createdAt:asc">Oldest first</option>
@@ -483,11 +484,11 @@ function EmptyState({ title, action, onAction }: { title: string; action: string
 
 function TicketTable({ requesterName, tickets, sortBy, sortOrder }: { requesterName: string; tickets: TicketSummary[]; sortBy: TicketSortField; sortOrder: TicketSortOrder }) {
   const sort = (field: TicketSortField) => sortBy === field ? (sortOrder === "asc" ? "ascending" : "descending") : "none";
-  return <div className="ticket-table-region" role="region" aria-label="Ticket results — scroll horizontally for more columns" tabIndex={0}><table><caption>Tickets owned by {requesterName}</caption><thead><tr><th aria-sort={sort("ticketNumber")}>Ticket Number</th><th aria-sort={sort("summary")}>Summary</th><th>Category</th><th>Related System</th><th>Requested Priority</th><th>Status</th><th aria-sort={sort("createdAt")}>Created</th><th>Action</th></tr></thead><tbody>{tickets.map((ticket) => <tr key={ticket.id}><td><a href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a></td><td>{ticket.summary}</td><td>{ticket.category.name}</td><td>{ticket.relatedSystem.name}</td><td><span className={`priority-badge priority-${ticket.requestedPriority.toLowerCase()}`}>{displayPriority(ticket.requestedPriority)}</span></td><td><span className="status-badge">New</span></td><td><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></td><td><a href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></td></tr>)}</tbody></table></div>;
+  return <div className="ticket-table-region" role="region" aria-label="Ticket results — scroll horizontally for more columns" tabIndex={0}><table><caption>Tickets owned by {requesterName}</caption><thead><tr><th aria-sort={sort("ticketNumber")}>Ticket Number</th><th aria-sort={sort("summary")}>Summary</th><th>Category</th><th>Related System</th><th>Requested Priority</th><th>Status</th><th aria-sort={sort("createdAt")}>Created</th><th>Action</th></tr></thead><tbody>{tickets.map((ticket) => <tr key={ticket.id}><td><a href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a></td><td>{ticket.summary}</td><td>{ticket.category.name}</td><td>{ticket.relatedSystem.name}</td><td><span className={`priority-badge priority-${ticket.requestedPriority.toLowerCase()}`}>{displayPriority(ticket.requestedPriority)}</span></td><td><span className="status-badge">{ticket.status}</span></td><td><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></td><td><a href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></td></tr>)}</tbody></table></div>;
 }
 
 function TicketCards({ tickets }: { tickets: TicketSummary[] }) {
-  return <div className="ticket-card-list">{tickets.map((ticket) => <article className="ticket-card" key={ticket.id}><a className="ticket-card-number" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a><h2>{ticket.summary}</h2><dl><div><dt>Category</dt><dd>{ticket.category.name}</dd></div><div><dt>Related System</dt><dd>{ticket.relatedSystem.name}</dd></div><div><dt>Requested Priority</dt><dd>{displayPriority(ticket.requestedPriority)}</dd></div><div><dt>Status</dt><dd>New</dd></div><div><dt>Created</dt><dd><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></dd></div></dl><a className="zen-button ticket-card-action" href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></article>)}</div>;
+  return <div className="ticket-card-list">{tickets.map((ticket) => <article className="ticket-card" key={ticket.id}><a className="ticket-card-number" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a><h2>{ticket.summary}</h2><dl><div><dt>Category</dt><dd>{ticket.category.name}</dd></div><div><dt>Related System</dt><dd>{ticket.relatedSystem.name}</dd></div><div><dt>Requested Priority</dt><dd>{displayPriority(ticket.requestedPriority)}</dd></div><div><dt>Status</dt><dd>{ticket.status}</dd></div><div><dt>Created</dt><dd><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></dd></div></dl><a className="zen-button ticket-card-action" href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></article>)}</div>;
 }
 
 function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (page: number) => void }) {
