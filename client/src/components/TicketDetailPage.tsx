@@ -17,6 +17,7 @@ import {
   uploadAttachment,
 } from "../api.js";
 import { CommunicationSection, ResolutionIndication } from "./TicketCommunication.js";
+import { ActionsTaken } from "./ActionsTaken.js";
 import { useRequester } from "../context/RequesterContext.js";
 
 const maxAttachmentBytes = 5_242_880;
@@ -463,6 +464,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
           </section>
         </div>
       )}
+      <ActionsTaken key={ticket.id + "actions"} ticketId={ticket.id} />
       <CommunicationSection key={ticket.id + "comments"} ticketId={ticket.id} />
       <ResolutionIndication key={ticket.id + ticket.status} ticketId={ticket.id} status={ticket.status} initialAt={ticket.problemAppearsResolvedAt} />
     </main>

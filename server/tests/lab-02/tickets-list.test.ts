@@ -111,7 +111,7 @@ describe("GET /api/tickets", () => {
         { ticketNumber: { contains: "monitor", mode: "insensitive" } },
         { summary: { contains: "monitor", mode: "insensitive" } },
       ],
-      status: "NEW",
+      status: { in: ["NEW"] },
       requestedPriority: "HIGH",
       categoryId: 3,
       relatedSystemId: 8,

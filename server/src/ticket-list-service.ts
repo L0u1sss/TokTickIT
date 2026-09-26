@@ -2,7 +2,7 @@ import { Prisma, type PrismaClient, type Status } from "@prisma/client";
 import type { RequesterContext } from "./requester-context.js";
 import type { TicketListQuery } from "./ticket-query.js";
 
-const ticketSummarySelection = Prisma.validator<Prisma.TicketSelect>()({
+export const ticketSummarySelection = Prisma.validator<Prisma.TicketSelect>()({
   id: true,
   ticketNumber: true,
   summary: true,
@@ -25,7 +25,7 @@ function publicStatus(status: Status): string {
   return status.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, character => character.toUpperCase());
 }
 
-function serializeTicketSummary(ticket: TicketSummaryRow) {
+export function serializeTicketSummary(ticket: TicketSummaryRow) {
   return {
     id: ticket.id,
     ticketNumber: ticket.ticketNumber,
@@ -55,7 +55,7 @@ export async function listTickets(
           ],
         }
       : {}),
-    ...(query.status ? { status: query.status } : {}),
+    ...(query.status ? { status: { in: query.status } } : {}),
     ...(query.requestedPriority
       ? { requestedPriority: query.requestedPriority }
       : {}),
@@ -91,7 +91,7 @@ export async function listTickets(
     sort: { by: query.sortBy, order: query.sortOrder },
     filters: {
       search: query.search,
-      status: query.status ? "New" : null,
+      status: query.statusFilter,
       requestedPriority: query.requestedPriority,
       categoryId: query.categoryId,
       relatedSystemId: query.relatedSystemId,

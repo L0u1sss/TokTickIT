@@ -24,7 +24,7 @@ function fixture(failure?: (url: string, init?: RequestInit) => Promise<Response
       else ticket = { ...ticket, ...body };
       return response({});
     }
-    return response(url.endsWith("assignees") ? { items: [person, other] } : /\/(comments|internal-notes)$/.test(url) ? { items: [] } : ticket);
+    return response(url.endsWith("assignees") ? { items: [person, other] } : /\/(comments|internal-notes|actions)$/.test(url) ? { items: [] } : ticket);
   });
   vi.stubGlobal("fetch", fetch); return fetch;
 }

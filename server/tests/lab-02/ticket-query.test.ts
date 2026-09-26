@@ -17,6 +17,7 @@ describe("My Tickets query normalization", () => {
     expect(parseTicketListQuery({})).toEqual({
       search: null,
       status: null,
+      statusFilter: null,
       requestedPriority: null,
       categoryId: null,
       relatedSystemId: null,
@@ -44,7 +45,8 @@ describe("My Tickets query normalization", () => {
           }),
         ).toMatchObject({
           search: "monitor",
-          status: "NEW",
+          status: ["NEW"],
+          statusFilter: "New",
           requestedPriority,
           categoryId: 3,
           relatedSystemId: 8,

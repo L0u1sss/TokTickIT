@@ -60,6 +60,7 @@ export async function updateUser(prisma: PrismaClient, actorId: number, id: numb
     if (!next.isActive && id === actorId) throw new ApiError(409, "SELF_DEACTIVATION_NOT_ALLOWED", "You cannot deactivate your own account.");
     if (target.isActive && target.role === "ADMINISTRATOR" && (!next.isActive || next.role !== "ADMINISTRATOR") && await tx.user.count({ where: { isActive: true, role: "ADMINISTRATOR" } }) <= 1) throw new ApiError(409, "LAST_ACTIVE_ADMIN_REQUIRED", "Keep at least one active Administrator.");
     if ((!next.isActive || next.role === "REQUESTER") && await tx.ticket.count({ where: { ownerId: id } })) throw new ApiError(409, "USER_HAS_ASSIGNED_TICKETS", "Reassign or close/cancel assigned Tickets before changing this account.");
+    if ((!next.isActive || next.role === "REQUESTER") && await tx.actionTaken.count({ where: { assigneeId: id, status: { in: ["PLANNED", "IN_PROGRESS"] } } })) throw new ApiError(409, "USER_HAS_ASSIGNED_ACTIONS", "Reassign or complete/cancel assigned Actions before changing this account.");
     const user = await tx.user.update({ where: { id }, data, select: userSummarySelect });
     if (reset || !next.isActive || target.role !== next.role) await tx.session.deleteMany({ where: { userId: id } });
     return user;
