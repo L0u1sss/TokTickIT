@@ -35,7 +35,7 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | all four required API files | Planned |
 | UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
-| UI-03 | Component | FR-01–FR-06, AC-01–AC-05/AC-10 | list/create/edit/assign/lifecycle/validation/read-only/conflict/draft retention | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
+| UI-03 | Component | FR-01–FR-06, AC-01–AC-05/AC-10 | list/create/edit/assign/lifecycle/validation/read-only/conflict/draft retention | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass locally — Issue #55 |
 | UI-04 | Component | FR-07–FR-08, AC-04/AC-06 | permitted status controls, confirmation, gate/stale feedback, refresh | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
 | STYLE-01 | UI style | FR-15, AC-12 | Zen Green tokens, non-color cues, long-text wrapping | Lab 4 component tests | Planned |
 | PERF-01 | Smoke | FR-11, AC-07–AC-08 | dashboard endpoints p95 ≤500 ms for 1,000 Tickets/5,000 Actions locally after warm-up | `server/tests/lab-04/dashboard-performance.test.ts` | Planned |
@@ -136,3 +136,12 @@ The migration suite uses disposable PostgreSQL schemas and verifies populated La
 - `npm run test:isolated`: Pass — 34 files, 391 tests.
 
 The suite covers authoritative actor identity, performer/assignee separation, stable list/retrieve, Requester ownership, direct role denial, protected fields, Unicode boundaries, follow-up rules, inactive assignees, sequential/concurrent idempotent replay and conflict, atomic audit events, concurrent stale writes, full Action lifecycle, assignment/deactivation coordination, CSRF/path/not-found handling, and safe unexpected failures. The commit SHA must be recorded after commit; local evidence is not hosted CI or peer approval.
+
+## 10. Issue #55 Local Evidence — 2026-09-26
+
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm test -- --run tests/lab-04/ActionsTaken.test.tsx`: Pass — 1 file, 5 tests.
+- `npm test`: Pass — 19 files, 119 tests.
+
+The component suite covers stable multi-Action display, Requester read-only visibility, required fields and conditional follow-up validation, one-submit creation, retained drafts, assignment edits, start/complete lifecycle requests with Result, stale conflict recovery, safe failure/retry, and empty state. Existing Lab 2 and Lab 3 component suites pass with the new Ticket Detail section. Responsive behavior is implemented in CSS, while browser viewport and accessibility evidence remains planned under RV-02 and A11Y-01.

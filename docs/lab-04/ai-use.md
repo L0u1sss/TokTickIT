@@ -28,9 +28,15 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 **Use:** Implemented list/retrieve/create/update/lifecycle APIs, requester ownership, staff authorization, actor protection, assignee eligibility, audit events, optimistic concurrency, idempotent retry, safe failures, and API tests. The result was checked with targeted and full isolated PostgreSQL suites.
 
-### Prompts 4–10
+### Prompt 4 — Implement Actions Taken UI (used, 2026-09-26)
 
-Pending. Add only prompts actually used for later UI, workflow, dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
+“ทำ Issue #55 อิงจากเอกสาร Lab 4”
+
+**Use:** Implemented the shared Actions Taken section in staff and Requester Ticket Detail, including create/edit/assign/lifecycle controls, read-only visibility, validation, idempotent submission behavior, stale-conflict draft retention, safe failures, responsive Zen Green styling, and component tests. The result was checked with client build, lint, the focused Lab 4 suite, and all client tests.
+
+### Prompts 5–10
+
+Pending. Add only prompts actually used for later workflow, dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -49,4 +55,4 @@ The coding-agent role should implement one reviewed issue at a time and use the 
 
 ## Known Limitations of This Log
 
-Three prompts have been used and recorded through the Actions API increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.
+Four prompts have been used and recorded through the Actions UI increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.
