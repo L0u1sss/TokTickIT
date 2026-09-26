@@ -32,17 +32,15 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 **Use:** Implemented the shared Actions Taken section in staff and Requester Ticket Detail, including create/edit/assign/lifecycle controls, read-only visibility, validation, idempotent submission behavior, stale-conflict draft retention, safe failures, responsive Zen Green styling, and component tests. The result was checked with client build, lint, the focused Lab 4 suite, and all client tests.
 
-### Prompt 5 — Align Issue #55 with the merged contract (used, 2026-10-02)
+### Prompt 5 — Enforce final Ticket workflow (used, 2026-09-26)
 
-“ทำงานตาม PR นี้ [https://github.com/L0u1sss/TokTickIT/issues/55#issue-5571643072](https://github.com/L0u1sss/TokTickIT/issues/55#issue-5571643072) โดยอิงจากเอกสาร D:\Software_Engineering\SE+Lab+4.pdf”
+“ทำ Issue #56 โดยอิงจากเอกสาร Lab 4”
 
-**Use:** Read all 11 pages of the handout and mapped §§7, 8.3, 8.5–8.6, 12 and Answer Part 6 to the existing engineering contract. Reviewed the earlier Actions UI against the incoming API and identified missing parent-version tokens, non-null performer assumptions, and obsolete terminal-reopen behavior. Updated the shared UI and staff integration to consume the actual response envelope, preserve drafts/request identity during recovery, share the latest Ticket version, prevent overlapping aggregate writes, enforce the documented lifecycle in available controls, and display automatic recorder/completion/cancellation provenance. Added component/integration coverage and a real-API browser flow with three viewports and screenshot/axe evidence. Review feedback also corrected field-error clearing and focus recovery after terminal transitions.
-
-**Verification:** The final local client suite passed 19 files/141 tests, including 20 Action component tests and 25 Staff Detail/Queue tests. Client lint and build passed. The isolated real-API flow passed 7 tests and generated 25 screenshots; it includes actual inactive-assignee rejection/recovery, role/ownership restrictions, a real stale update with draft reapplication, and a committed create followed by a lost response and same-ID replay. [tests.md](./tests.md#10-issue-55-contract-alignment-and-local-evidence--2026-10-02) links the output and screenshot evidence. CI wiring is implemented, but hosted CI, peer approval, final `main`, and complete manual keyboard/200% reflow checks are not claimed.
+**Use:** Implemented the final eight-state Ticket workflow contract, backend resolution gate, optimistic `updatedAt` conflict checks, safe workflow feedback, Requester advisory preservation, exhaustive API/component tests, and a live isolated browser flow. The implementation was checked with full server/client regression and the existing Lab 3 staff E2E flow.
 
 ### Prompts 6–10
 
-Pending. Add only prompts actually used for later workflow, dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
+Pending. Add only prompts actually used for later dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -67,4 +65,4 @@ The coding-agent review found that the earlier UI tests could pass while the imp
 
 ## Known Limitations of This Log
 
-Five prompts have been used and recorded. Final submission still requires 6–10 selected real prompts, final validation against the submitted commit, and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
+Five prompts have been used and recorded through the Ticket workflow increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.
