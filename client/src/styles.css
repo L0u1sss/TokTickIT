@@ -43,6 +43,12 @@
 .dashboard-loading p { grid-column: 1 / -1; }
 .dashboard-zero { margin-top: 1rem; text-align: center; }
 @media (max-width: 767px) { .dashboard-page { width: min(100% - 1.5rem, 76rem); padding-block: 1.5rem; } .dashboard-heading { align-items: stretch; flex-direction: column; } .dashboard-metrics, .dashboard-lists, .dashboard-loading { grid-template-columns: minmax(0, 1fr); } .dashboard-metric { min-height: 8rem; } }
+.staff-dashboard-groups { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-top: 1rem; }
+.staff-dashboard-counts { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem !important; }
+.staff-dashboard-counts a { display: flex !important; align-items: center; justify-content: space-between; min-height: 3.25rem; padding: .7rem .8rem !important; border: 1px solid #a8cbb5; border-radius: 9px; }
+.staff-dashboard-counts strong { font-size: 1.35rem; }
+.staff-dashboard-actions { margin-top: 1rem; }
+@media (max-width: 767px) { .staff-dashboard-groups, .staff-dashboard-counts { grid-template-columns: minmax(0, 1fr); } .staff-dashboard-counts a { min-height: 44px; } }
 .staff-queue article, .staff-queue .communication-section a { overflow-wrap: anywhere; }
 .staff-search { grid-column: 1 / -1; }
 .staff-queue button { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--zen-primary); border-radius: .4rem; color: var(--zen-primary); background: white; }

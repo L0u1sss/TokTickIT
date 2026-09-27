@@ -46,9 +46,15 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 **Use:** Implemented the session-scoped Requester dashboard API and UI, bounded recent lists, database-backed metrics, zero/loading/error/retry states, Dashboard navigation, My Tickets drill-down filters, responsive styling, API/component tests, and an isolated live browser flow. The implementation was checked against the Lab 4 metric definitions and with full client regression.
 
-### Prompts 7–10
+### Prompt 7 — Implement Staff and Administrator dashboard (used, 2026-09-27)
 
-Pending. Add only prompts actually used for later dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
+“ทำ Issue #58 โดยอิงจากเอกสาร Lab 4”
+
+**Use:** Implemented the operational dashboard shared by IT Staff and Administrators, including backend status/priority/ownership metrics, current-assignee Actions, bounded recent and urgent lists, exact Queue drill-down filters, role navigation, responsive states, and API/component/browser tests. The implementation was checked against direct database queries, full regression, and isolated live role flows.
+
+### Prompts 8–10
+
+Pending. Add only prompts actually used for later hardening or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -67,4 +73,4 @@ The coding-agent role should implement one reviewed issue at a time and use the 
 
 ## Known Limitations of This Log
 
-Six prompts have been used and recorded through the Requester dashboard increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.
+Seven prompts have been used and recorded through the Staff dashboard increment. Final submission requires 6–10 selected real prompts and a revised reflection grounded in later implementation and review outcomes.

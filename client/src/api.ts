@@ -114,6 +114,40 @@ export interface RequesterDashboardData {
   generatedAt: string;
 }
 
+export type StaffTicketStatus = "NEW" | "OPEN" | "IN_PROGRESS" | "WAITING_FOR_REQUESTER" | "RESOLVED" | "CLOSED" | "REOPENED" | "CANCELLED";
+export interface StaffDashboardTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  status: StaffTicketStatus;
+  itPriority: RequestedPriority;
+  owner: { id: number; displayName: string; role: string } | null;
+  updatedAt: string;
+}
+export interface StaffDashboardAction {
+  id: number;
+  ticketId: number;
+  ticketNumber: string;
+  ticketSummary: string;
+  description: string;
+  status: "PLANNED" | "IN_PROGRESS";
+  assignee: { id: number; displayName: string; role: string };
+  revision: number;
+  updatedAt: string;
+}
+export interface StaffDashboardData {
+  metrics: {
+    unassignedOpenCount: number;
+    ownedByMeOpenCount: number;
+    byStatus: Record<StaffTicketStatus, number>;
+    byItPriority: Record<RequestedPriority, number>;
+  };
+  myActions: StaffDashboardAction[];
+  recentlyUpdated: StaffDashboardTicket[];
+  urgentTickets: StaffDashboardTicket[];
+  generatedAt: string;
+}
+
 export interface SystemStatus {
   online: boolean;
   categories: Category[];
@@ -301,6 +335,12 @@ export async function getRequesterDashboard(requestAsCurrentRequester: RequestAs
   const response = await requestAsCurrentRequester("/api/dashboard/requester", { signal });
   if (!response.ok) throw await apiResponseError(response);
   return (await response.json()) as RequesterDashboardData;
+}
+
+export async function getStaffDashboard(signal?: AbortSignal): Promise<StaffDashboardData> {
+  const response = await fetchAuthenticated("/api/staff/dashboard", { signal });
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as StaffDashboardData;
 }
 
 export async function uploadAttachment(

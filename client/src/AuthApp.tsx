@@ -4,14 +4,15 @@ import AuthForm, { LogoutButton } from "./components/AuthForm.js";
 import App from "./App.js";
 import StaffTicketQueue from "./components/StaffTicketQueue.js";
 import UserManagement from "./components/UserManagement.js";
+import StaffDashboard from "./components/StaffDashboard.js";
 
 export function AuthScreens() {
   const {user,loading,error,logoutError,refresh,logout}=useAuth();
   const heading=useRef<HTMLHeadingElement>(null);
-  const home = user?.role === "REQUESTER" ? "/dashboard" : user?.role === "ADMINISTRATOR" ? "/admin/users" : "/staff/tickets";
+  const home = user?.role === "REQUESTER" ? "/dashboard" : "/staff/dashboard";
   const location = window.location.pathname;
   const permitted = user?.role === "REQUESTER" ? location === "/dashboard" || /^\/tickets(?:\/[^/]+)?$/.test(location)
-    : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
+    : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || location === "/staff/dashboard" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : location === "/staff/dashboard" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
   const forbidden = Boolean(user && !user.mustChangePassword && (
     (location.startsWith("/admin/") && user.role !== "ADMINISTRATOR") ||
     (location.startsWith("/staff/") && user.role === "REQUESTER") ||
@@ -33,10 +34,10 @@ export function AuthScreens() {
     <a className="skip-link" href="#main-content">Skip to main content</a>
     <header className="app-header"><div className="app-header-inner">
       <span className="app-brand">TokTickIT <strong>IT Service Desk</strong></span>
-      <nav className="app-navigation" aria-label="Main navigation"><a className={`app-navigation-link${path.startsWith("/staff/tickets") ? " active" : ""}`} href="/staff/tickets" aria-current={path === "/staff/tickets" ? "page" : undefined}>Ticket Queue</a>{user.role === "ADMINISTRATOR" && <a className={`app-navigation-link${path === "/admin/users" ? " active" : ""}`} href="/admin/users" aria-current={path === "/admin/users" ? "page" : undefined}>User Management</a>}</nav>
+      <nav className="app-navigation" aria-label="Main navigation"><a className={`app-navigation-link${path === "/staff/dashboard" ? " active" : ""}`} href="/staff/dashboard" aria-current={path === "/staff/dashboard" ? "page" : undefined}>Dashboard</a><a className={`app-navigation-link${path.startsWith("/staff/tickets") ? " active" : ""}`} href="/staff/tickets" aria-current={path === "/staff/tickets" ? "page" : undefined}>Ticket Queue</a>{user.role === "ADMINISTRATOR" && <a className={`app-navigation-link${path === "/admin/users" ? " active" : ""}`} href="/admin/users" aria-current={path === "/admin/users" ? "page" : undefined}>User Management</a>}</nav>
       <div className="requester-menu"><strong>{user.displayName}</strong><span>{user.role.replaceAll("_"," ")}</span><LogoutButton/></div>
     </div></header>
-    {path.startsWith("/staff/tickets") ? <StaffTicketQueue /> : <UserManagement />}
+    {path === "/staff/dashboard" ? <StaffDashboard /> : path.startsWith("/staff/tickets") ? <StaffTicketQueue /> : <UserManagement />}
   </div>;
 }
 

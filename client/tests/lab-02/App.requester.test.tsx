@@ -27,7 +27,7 @@ it("shows Forbidden to staff at the Requester dashboard", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ user: { id: 2, displayName: "Staff", email: "staff@example.test", role: "IT_STAFF", mustChangePassword: false } }))));
   render(<AuthApp />);
   await screen.findByRole("heading", { name: "Forbidden" });
-  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/staff/tickets");
+  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/staff/dashboard");
 });
 it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted navigation for %s", async role => {
   window.history.replaceState({}, "", "/");
@@ -42,5 +42,5 @@ it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted naviga
   expect(screen.queryByRole("link", { name: "My Tickets" }) !== null).toBe(role === "REQUESTER");
   expect(screen.queryByRole("link", { name: "Ticket Queue" }) !== null).toBe(role !== "REQUESTER");
   expect(screen.queryByRole("link", { name: "User Management" }) !== null).toBe(role === "ADMINISTRATOR");
-  await waitFor(() => expect(window.location.pathname).toBe(role === "REQUESTER" ? "/dashboard" : role === "IT_STAFF" ? "/staff/tickets" : "/admin/users"));
+  await waitFor(() => expect(window.location.pathname).toBe(role === "REQUESTER" ? "/dashboard" : "/staff/dashboard"));
 });

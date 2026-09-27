@@ -13,9 +13,9 @@ type Ticket = { id: number; ticketNumber: string; summary: string; category: { n
   attachments?: { id: number; fileName: string; downloadable: boolean; isRemoved: boolean }[];
   publicComments?: Communication[]; internalNotes?: Communication[] };
 type Queue = { items: Ticket[]; pagination: { page: number; pageSize: number; totalItems: number; totalPages: number } };
-const statuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
+const statuses = ["OPEN_GROUP", "NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
 const priorities = ["LOW", "MEDIUM", "HIGH"];
-const label = (value: string) => ({ updatedAt: "Last Updated", createdAt: "Created Date", ticketNumber: "Ticket Number", itPriority: "IT Priority", asc: "Ascending", desc: "Descending" }[value]
+const label = (value: string) => ({ OPEN_GROUP: "Open Tickets", updatedAt: "Last Updated", createdAt: "Created Date", ticketNumber: "Ticket Number", itPriority: "IT Priority", asc: "Ascending", desc: "Descending" }[value]
   ?? value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
 class QueueError extends Error { constructor(public code: string) { super(code); } }
 async function get<T>(path: string, signal: AbortSignal): Promise<T> {
@@ -85,6 +85,11 @@ export default function StaffTicketQueue() {
       .catch(() => { if (!controller.signal.aborted) setOwnerError(true); });
     return () => controller.abort();
   }, [ownerRevision]);
+  useEffect(() => {
+    if (detail && window.location.hash === "#actions") {
+      window.requestAnimationFrame(() => document.getElementById("actions")?.scrollIntoView?.());
+    }
+  }, [detail]);
   const navigate = (path: string) => { window.history.pushState({}, "", path); setLocation(path); };
   const params = new URLSearchParams(search);
   const filtered = ["search", "status", "requestedPriority", "itPriority", "ownerId"].some(key => params.has(key));

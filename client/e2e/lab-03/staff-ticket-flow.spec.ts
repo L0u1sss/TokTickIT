@@ -7,6 +7,8 @@ test("E2E-02 staff workflow persists ownership, priorities, statuses and separat
   await page.getByLabel("Email", { exact: false }).fill("queue-browser@example.test");
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Ticket Queue", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "User Management", exact: true })).toHaveCount(0);
   await page.getByLabel("Search", { exact: true }).fill("TKT-2026-000002");
@@ -81,7 +83,7 @@ test("E2E-02 staff workflow persists ownership, priorities, statuses and separat
   await page.getByLabel("Email", { exact: false }).fill("auth-browser@example.test");
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Create Ticket", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   const requester = await page.request.get(`${process.env.E2E_API_URL}/api/tickets/${ticketId}`);
   expect(requester.status()).toBe(200); expect(JSON.stringify(await requester.json())).not.toContain(privateText);
   expect((await page.request.get(`${endpoint}/internal-notes`)).status()).toBe(403);

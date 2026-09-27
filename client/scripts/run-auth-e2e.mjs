@@ -55,7 +55,8 @@ try{
   await db.user.create({data:{displayName:"Auth Browser User",email:"auth-browser@example.test",role:"REQUESTER",passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:true}});
   await db.user.create({data:{displayName:"Inactive Browser User",email:"inactive-browser@example.test",role:"REQUESTER",isActive:false,passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:false}});
   if (requesterDashboard) await db.user.create({ data: { displayName: "Empty Dashboard User", email: "empty-dashboard@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
-  if (userManagement) await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
+  let dashboardAdmin;
+  if (userManagement || requesterDashboard) dashboardAdmin = await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
   if (staffQueue) {
     const staff = await db.user.create({ data: { displayName: "Mali IT Staff", email: "queue-browser@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     if (staffFlow) await db.user.create({ data: { displayName: "Niran IT Staff", email: "second-staff@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
@@ -64,6 +65,7 @@ try{
     const category = await db.category.create({ data: { name: "Hardware" } });
     const system = await db.relatedSystem.create({ data: { name: "Office services" } });
     if (staffFlow) attachmentDirectory = await mkdtemp(path.join(tmpdir(), "toktickit-staff-e2e-"));
+    const createdTickets = [];
     for (let i = 1; i <= 23; i++) {
       const dashboardStatus = requesterDashboard && i === 2 ? "WAITING_FOR_REQUESTER" : requesterDashboard && i === 3 ? "RESOLVED" : requesterDashboard && i === 4 ? "CLOSED" : i % 2 ? "OPEN" : "NEW";
       const ticket = await db.ticket.create({ data: {
@@ -71,6 +73,7 @@ try{
       description: "The office printer cannot be reached from the shared network.", requesterId: requester.id, categoryId: category.id, relatedSystemId: system.id,
       requestedPriority: "HIGH", itPriority: "HIGH", status: dashboardStatus, ownerId: ["CLOSED", "CANCELLED"].includes(dashboardStatus) ? null : i % 2 ? staff.id : null,
     } });
+      createdTickets.push(ticket);
       // Represent an existing staff adjustment after correct priority initialization.
       if (i % 2 === 0) await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "MEDIUM" } });
       if (staffFlow && i === 2) {
@@ -79,6 +82,11 @@ try{
         await db.attachment.create({ data: { ticketId: ticket.id, originalName: "existing.pdf", storageKey, sizeBytes: bytes.length, mimeType: "application/pdf", uploadedByRequesterId: requester.id } });
         await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), description: "Existing completed staff work", result: "Connectivity restored", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
       }
+    }
+    if (requesterDashboard) {
+      for (let i = 0; i < 6; i++) await db.actionTaken.create({ data: { ticketId: createdTickets[i].id, clientRequestId: randomUUID(), description: `Dashboard active Action ${i + 1}`, status: i % 2 ? "IN_PROGRESS" : "PLANNED", performedById: dashboardAdmin.id, assigneeId: staff.id } });
+      await db.actionTaken.create({ data: { ticketId: createdTickets[6].id, clientRequestId: randomUUID(), description: "Administrator dashboard Action", status: "PLANNED", performedById: staff.id, assigneeId: dashboardAdmin.id } });
+      await db.actionTaken.create({ data: { ticketId: createdTickets[7].id, clientRequestId: randomUUID(), description: "Completed dashboard Action", result: "Completed", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
     }
   }
   const api=start(path.join(server,"node_modules/tsx/dist/cli.mjs"),[path.join(server,"src/index.ts")],server,

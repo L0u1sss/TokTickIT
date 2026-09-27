@@ -155,7 +155,7 @@ IT Staff/Administrator only.
 }
 ```
 
-Each list is bounded to five summaries. Counts follow BR-26 and BR-28. Drill-down uses existing Queue parameters (`ownerId=unassigned`, `ownerId=me`, `status`, `itPriority`) or `/staff/tickets/:id`. The Queue contract must add the literal `me` if not already supported before dashboard drill-down is considered complete.
+Each list is bounded to five summaries. Counts follow BR-26 and BR-28. `myActions` means Actions assigned to the authenticated user (`assigneeId=currentUser`) in `PLANNED` or `IN_PROGRESS`; performer identity does not expand this list. Open-count drill-down uses `status=OPEN_GROUP` with `ownerId=unassigned` or `ownerId=me`. Status and priority cards use exact `status` or `itPriority` values; list items use `/staff/tickets/:id` and Action items append `#actions`.
 
 ## 7. Assignee Reference Data
 
