@@ -35,6 +35,13 @@ type ActionSummary = Pick<ActionTaken,
   attribution: ("RECORDED" | "ASSIGNED" | "PERFORMED")[];
 };
 
+type ActionEvent = {
+  id: number; actionId: number; actor: UserSummary;
+  eventType: "ACTION_CREATED" | "ACTION_UPDATED" | "ACTION_COMPLETED" | "ACTION_CANCELLED" | "TICKET_CASCADE_CANCELLED";
+  fromStatus: ActionStatus | null; toStatus: ActionStatus | null;
+  changedFields: { fields: string[] }; revision: number; createdAt: string;
+};
+
 type TicketSummary = {
   id: number; ticketNumber: string; summary: string; status: string;
   itPriority: "LOW" | "MEDIUM" | "HIGH"; owner: UserSummary | null;
@@ -102,7 +109,7 @@ PATCH /api/staff/tickets/:ticketId/actions/:actionId/status
 GET /api/staff/tickets/:ticketId/actions/:actionId/events
 ```
 
-Staff/Admin only. Returns bounded Action event metadata in `createdAt ASC, id ASC`, including event type, authenticated actor, Action revision, and event time. Manual cancellation uses `ACTION_CANCELLED`; Ticket cascade cancellation uses `TICKET_CASCADE_CANCELLED`. Events cannot be created, updated, or deleted directly. Requester Action responses do not expose changed-field history.
+Staff/Admin only. Returns bounded `ActionEvent` metadata in `createdAt ASC, id ASC`, including event type, authenticated actor, Action revision, and event time. `changedFields` is exactly `{ "fields": string[] }` with at least one non-empty field name. `ACTION_UPDATED` includes non-terminal status transitions such as `PLANNED → IN_PROGRESS`; completion/cancellation use their dedicated event types. Manual cancellation uses `ACTION_CANCELLED`; Ticket cascade cancellation uses `TICKET_CASCADE_CANCELLED`. Events cannot be created, updated, or deleted through the API; the database rejects updates, deletes, and truncation. Requester Action responses do not expose changed-field history.
 
 ## 4. Ticket Workflow Extension
 
@@ -198,7 +205,7 @@ Authentication and forced-password rules run before resource lookup. Role checks
 
 ## 9. Concurrency and Duplicate Handling
 
-Every Ticket aggregate write (claim, owner assignment/reassignment, priority, status, and Action mutation) uses the same parent lock and compare-and-swap predicate `id=:id AND version=:expectedTicketVersion`. The transaction increments version once and sets parent `updatedAt` to its transaction timestamp on success; stale concurrent owner/priority/status/Action writes return `409 STALE_TICKET`, so none of these write routes has an asymmetric last-write-wins path. Action writes additionally check Action `revision`. The parent Ticket row is locked before the Action row. For completion, re-read the Action assignee after acquiring the Action row lock and compare it to the authenticated actor inside the transaction. Reassignment and completion serialize: if reassignment commits first, the old assignee cannot complete; if completion commits first, the terminal Action cannot be reassigned. The transaction also rechecks parent status/cycle, authorization, assignee eligibility, and resolution predicate. Competing child writes and resolution/cancellation serialize: if a child write wins, the gate sees it; if the terminal Ticket transition wins, the child write rechecks and is rejected. Action projection, one parent version increment, and one event insert commit atomically. Comments, Internal Notes, and attachment child-resource writes retain their Lab 3 contract and do not increment the Ticket version or change Ticket `updatedAt` unless they also mutate a Ticket aggregate field. No timestamp participates in concurrency. Missing `expectedTicketVersion` on a Lab 4 aggregate write returns `400 VALIDATION_ERROR`; Lab 4 clients must be upgraded together, while additive `version` response fields do not break Lab 3 readers. Action creation uses `(ticketId, clientRequestId)` uniqueness and a canonical request fingerprint. Assignment eligibility changes reuse the Lab 3 transaction/advisory-lock protocol so an active Action never finishes assigned to an ineligible user.
+Every Ticket aggregate write (claim, owner assignment/reassignment, priority, status, and Action mutation) uses the same parent lock and compare-and-swap predicate `id=:id AND version=:expectedTicketVersion`. The transaction increments version once and sets parent `updatedAt` to its transaction timestamp on success; stale concurrent owner/priority/status/Action writes return `409 STALE_TICKET`, so none of these write routes has an asymmetric last-write-wins path. Action writes additionally check Action `revision`. The parent Ticket row is locked before the Action row. For completion, re-read the Action assignee after acquiring the Action row lock and compare it to the authenticated actor inside the transaction. Reassignment and completion serialize: if reassignment commits first, the old assignee cannot complete; if completion commits first, the terminal Action cannot be reassigned. The transaction also rechecks parent status/cycle, authorization, assignee eligibility, and resolution predicate. Competing child writes and resolution/cancellation serialize: if a child write wins, the gate sees it; if the terminal Ticket transition wins, the child write rechecks and is rejected. Action projection, one parent version increment, and one event insert commit atomically; the event revision equals the incremented projection revision, preserving the contiguous sequence. PostgreSQL guarantees event revision positivity/uniqueness, while this cross-row agreement and monotonicity are API transaction responsibilities tested in the Action API suite. Comments, Internal Notes, and attachment child-resource writes retain their Lab 3 contract and do not increment the Ticket version or change Ticket `updatedAt` unless they also mutate a Ticket aggregate field. No timestamp participates in concurrency. Missing `expectedTicketVersion` on a Lab 4 aggregate write returns `400 VALIDATION_ERROR`; Lab 4 clients must be upgraded together, while additive `version` response fields do not break Lab 3 readers. Action creation uses `(ticketId, clientRequestId)` uniqueness and a canonical request fingerprint. Assignment eligibility changes reuse the Lab 3 transaction/advisory-lock protocol so an active Action never finishes assigned to an ineligible user.
 
 ## 10. Health and Regression
 

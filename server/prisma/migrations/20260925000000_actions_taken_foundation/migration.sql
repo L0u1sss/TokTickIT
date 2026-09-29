@@ -59,8 +59,32 @@ CREATE TABLE "ActionEvent" (
   "revision" INTEGER NOT NULL,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "ActionEvent_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "ActionEvent_revision_check" CHECK ("revision" >= 1)
+  CONSTRAINT "ActionEvent_revision_check" CHECK ("revision" >= 1),
+  CONSTRAINT "ActionEvent_changedFields_check" CHECK (
+    jsonb_typeof("changedFields") = 'object'
+    AND "changedFields" ? 'fields'
+    AND "changedFields" - 'fields' = '{}'::jsonb
+    AND jsonb_typeof("changedFields" -> 'fields') = 'array'
+    AND jsonb_array_length("changedFields" -> 'fields') > 0
+    AND NOT jsonb_path_exists("changedFields", '$.fields[*] ? (@.type() != "string")')
+    AND NOT jsonb_path_exists("changedFields", '$.fields[*] ? (@ == "")')
+  )
 );
+
+CREATE FUNCTION reject_action_event_mutation() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'ActionEvent is append-only' USING ERRCODE = '55000';
+END;
+$$;
+
+CREATE TRIGGER "ActionEvent_reject_update_delete"
+BEFORE UPDATE OR DELETE ON "ActionEvent"
+FOR EACH ROW EXECUTE FUNCTION reject_action_event_mutation();
+
+CREATE TRIGGER "ActionEvent_reject_truncate"
+BEFORE TRUNCATE ON "ActionEvent"
+FOR EACH STATEMENT EXECUTE FUNCTION reject_action_event_mutation();
 
 CREATE UNIQUE INDEX "ActionTaken_ticketId_clientRequestId_key" ON "ActionTaken"("ticketId", "clientRequestId");
 CREATE INDEX "Ticket_status_resolvedAt_idx" ON "Ticket"("status", "resolvedAt");

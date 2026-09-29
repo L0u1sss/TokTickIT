@@ -128,8 +128,8 @@ describe("Issue #53 Actions Taken migration", () => {
     const { db } = await disposableDatabase(true);
     await seedDatabase(db);
     expect(await db.ticket.count({ where: { ticketNumber: { startsWith: "TKT-2026-9" } } })).toBe(8);
-    expect(await db.actionTaken.count()).toBe(5);
-    expect(await db.actionEvent.count()).toBe(11);
+    expect(await db.actionTaken.count()).toBe(6);
+    expect(await db.actionEvent.count()).toBe(14);
     const audited = await db.actionTaken.findFirstOrThrow({
       where: { description: "Run hardware diagnostics after driver installation." },
       include: { recordedBy: true, performedBy: true, assignee: true, events: { include: { actor: true }, orderBy: { revision: "asc" } } },
@@ -141,15 +141,35 @@ describe("Issue #53 Actions Taken migration", () => {
     expect(audited.events).toHaveLength(3);
     expect(audited.events[0]).toMatchObject({ eventType: "ACTION_CREATED", revision: 1, actorId: audited.recordedById });
     expect(audited.events[2]).toMatchObject({ eventType: "ACTION_COMPLETED", revision: 3, actorId: audited.performedById });
+    expect(audited.events[0].createdAt).toEqual(audited.createdAt);
+    expect(audited.events[2].createdAt).toEqual(audited.completedAt);
     const planned = await db.actionTaken.findFirstOrThrow({ where: { status: "PLANNED" } });
     expect(planned.performedById).toBeNull();
     expect(planned.workflowCycle).toBe(1);
-    const cancelled = await db.actionTaken.findFirstOrThrow({ where: { status: "CANCELLED" } });
+    const cancelled = await db.actionTaken.findFirstOrThrow({ where: { status: "CANCELLED", cancellationSource: "STAFF_ACTION" } });
     expect(cancelled).toMatchObject({
       cancelledAt: expect.any(Date),
       cancelledById: expect.any(Number),
       cancellationSource: "STAFF_ACTION",
       performedById: null,
+    });
+    const staffCancellationEvent = await db.actionEvent.findFirstOrThrow({ where: { actionId: cancelled.id, eventType: "ACTION_CANCELLED" } });
+    expect(staffCancellationEvent).toMatchObject({ actorId: cancelled.cancelledById, createdAt: cancelled.cancelledAt });
+    const cascadeCancelled = await db.actionTaken.findFirstOrThrow({
+      where: { cancellationSource: "TICKET_CASCADE" },
+      include: { events: { orderBy: { revision: "asc" } } },
+    });
+    expect(cascadeCancelled).toMatchObject({
+      status: "CANCELLED",
+      followUpRequired: true,
+      followUpNote: "Retain the requester confirmation with the cancelled request.",
+      cancellationSource: "TICKET_CASCADE",
+      cancelledById: expect.any(Number),
+    });
+    expect(cascadeCancelled.events.at(-1)).toMatchObject({
+      eventType: "TICKET_CASCADE_CANCELLED",
+      actorId: cascadeCancelled.cancelledById,
+      createdAt: cascadeCancelled.cancelledAt,
     });
     const reopened = await db.ticket.findFirstOrThrow({ where: { status: "REOPENED" } });
     expect(reopened).toMatchObject({ version: 1, workflowCycle: 2, resolvedAt: null });
@@ -182,6 +202,23 @@ describe("Issue #53 Actions Taken migration", () => {
       ticketId: audited.ticketId, clientRequestId: randomUUID(), description: "Cancelled without provenance",
       recordedById: audited.recordedById, assigneeId: audited.assigneeId, status: "CANCELLED",
     } })).rejects.toThrow();
+    const invalidEvent = {
+      actionId: audited.id,
+      actorId: audited.recordedById,
+      eventType: "ACTION_UPDATED" as const,
+      fromStatus: "PLANNED" as const,
+      toStatus: "IN_PROGRESS" as const,
+      revision: 99,
+    };
+    await expect(db.actionEvent.create({ data: { ...invalidEvent, changedFields: {} } })).rejects.toThrow();
+    await expect(db.actionEvent.create({ data: { ...invalidEvent, changedFields: { fields: [] } } })).rejects.toThrow();
+    await expect(db.actionEvent.create({ data: { ...invalidEvent, changedFields: { fields: [""] } } })).rejects.toThrow();
+    await expect(db.actionEvent.create({ data: { ...invalidEvent, changedFields: { fields: [1] } } })).rejects.toThrow();
+    await expect(db.actionEvent.create({ data: { ...invalidEvent, changedFields: { fields: ["status"], extra: true } } })).rejects.toThrow();
+    const immutableEvent = await db.actionEvent.findFirstOrThrow({ where: { actionId: audited.id } });
+    await expect(db.actionEvent.update({ where: { id: immutableEvent.id }, data: { changedFields: { fields: ["status"] } } })).rejects.toThrow();
+    await expect(db.actionEvent.delete({ where: { id: immutableEvent.id } })).rejects.toThrow();
+    await expect(db.$executeRawUnsafe('TRUNCATE TABLE "ActionEvent"')).rejects.toThrow();
     await expect(db.actionTaken.create({ data: {
       ticketId: audited.ticketId, clientRequestId: audited.clientRequestId, description: "Duplicate retry identity",
       recordedById: audited.recordedById, assigneeId: audited.assigneeId,
@@ -196,12 +233,13 @@ describe("Issue #53 Actions Taken migration", () => {
     expect(counts.some(ticket => ticket._count.actions > 1)).toBe(true);
 
     const changedAction = await db.actionTaken.findFirstOrThrow();
+    // This deliberate out-of-band edit tests seed preservation; its revision/event chain is not a valid API-write fixture.
     await db.actionTaken.update({ where: { id: changedAction.id }, data: { description: "Locally reviewed description", revision: 2 } });
     const changedTicket = await db.ticket.findFirstOrThrow({ where: { ticketNumber: "TKT-2026-900001" } });
     await db.ticket.update({ where: { id: changedTicket.id }, data: { summary: "Locally reviewed summary" } });
     await seedDatabase(db);
-    expect(await db.actionTaken.count()).toBe(5);
-    expect(await db.actionEvent.count()).toBe(11);
+    expect(await db.actionTaken.count()).toBe(6);
+    expect(await db.actionEvent.count()).toBe(14);
     expect(await db.actionTaken.findUniqueOrThrow({ where: { id: changedAction.id } })).toMatchObject({ description: "Locally reviewed description", revision: 2 });
     expect(await db.ticket.findUniqueOrThrow({ where: { id: changedTicket.id } })).toMatchObject({ summary: "Locally reviewed summary" });
   }, 60000);

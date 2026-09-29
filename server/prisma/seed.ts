@@ -70,19 +70,21 @@ const lab4Tickets = [
 ] as const;
 
 const lab4Actions = [
-  { ticketNumber: "TKT-L4-000002", clientRequestId: "50000000-0000-4000-8000-000000000001", description: "Review VPN gateway logs.", result: null, status: "PLANNED", workflowCycle: 1, recordedByEmail: "staff.one@example.com", performerEmail: null, assigneeEmail: "staff.two@example.com", followUpRequired: true, followUpNote: "Compare the next disconnect timestamp with gateway logs.", attachmentNotes: "See vpn-client-log.txt on the Ticket.", completedAt: null, cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
-  { ticketNumber: "TKT-L4-000003", clientRequestId: "50000000-0000-4000-8000-000000000002", description: "Reinstall the approved camera driver.", result: null, status: "IN_PROGRESS", workflowCycle: 1, recordedByEmail: "staff.one@example.com", performerEmail: null, assigneeEmail: "staff.two@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: null, completedAt: null, cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
-  { ticketNumber: "TKT-L4-000003", clientRequestId: "50000000-0000-4000-8000-000000000003", description: "Run hardware diagnostics after driver installation.", result: "Camera passed the vendor diagnostic and video preview test.", status: "COMPLETED", workflowCycle: 1, recordedByEmail: "staff.one@example.com", performerEmail: "staff.two@example.com", assigneeEmail: "staff.two@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: "Diagnostic summary is attached to the Ticket.", completedAt: new Date("2026-09-24T09:00:00.000Z"), cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
-  { ticketNumber: "TKT-L4-000005", clientRequestId: "50000000-0000-4000-8000-000000000004", description: "Repair the grade-submission permission mapping.", result: "Requester verified that submission access works.", status: "COMPLETED", workflowCycle: 1, recordedByEmail: "staff.three@example.com", performerEmail: "staff.one@example.com", assigneeEmail: "staff.one@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: null, completedAt: new Date("2026-09-23T08:00:00.000Z"), cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
-  { ticketNumber: "TKT-L4-000007", clientRequestId: "50000000-0000-4000-8000-000000000005", description: "Replace the saved VPN profile.", result: null, status: "CANCELLED", workflowCycle: 1, recordedByEmail: "staff.two@example.com", performerEmail: null, assigneeEmail: "staff.two@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: null, completedAt: null, cancelledAt: new Date("2026-09-24T10:00:00.000Z"), cancelledByEmail: "staff.two@example.com", cancellationSource: "STAFF_ACTION" },
+  { ticketNumber: "TKT-L4-000002", clientRequestId: "50000000-0000-4000-8000-000000000001", description: "Review VPN gateway logs.", result: null, status: "PLANNED", workflowCycle: 1, recordedByEmail: "staff.one@example.com", performerEmail: null, assigneeEmail: "staff.two@example.com", followUpRequired: true, followUpNote: "Compare the next disconnect timestamp with gateway logs.", attachmentNotes: "See vpn-client-log.txt on the Ticket.", createdAt: new Date("2026-09-24T07:00:00.000Z"), inProgressAt: null, completedAt: null, cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
+  { ticketNumber: "TKT-L4-000003", clientRequestId: "50000000-0000-4000-8000-000000000002", description: "Reinstall the approved camera driver.", result: null, status: "IN_PROGRESS", workflowCycle: 1, recordedByEmail: "staff.one@example.com", performerEmail: null, assigneeEmail: "staff.two@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: null, createdAt: new Date("2026-09-24T07:00:00.000Z"), inProgressAt: new Date("2026-09-24T08:00:00.000Z"), completedAt: null, cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
+  { ticketNumber: "TKT-L4-000003", clientRequestId: "50000000-0000-4000-8000-000000000003", description: "Run hardware diagnostics after driver installation.", result: "Camera passed the vendor diagnostic and video preview test.", status: "COMPLETED", workflowCycle: 1, recordedByEmail: "staff.one@example.com", performerEmail: "staff.two@example.com", assigneeEmail: "staff.two@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: "Diagnostic summary is attached to the Ticket.", createdAt: new Date("2026-09-22T07:00:00.000Z"), inProgressAt: new Date("2026-09-23T08:00:00.000Z"), completedAt: new Date("2026-09-24T09:00:00.000Z"), cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
+  { ticketNumber: "TKT-L4-000005", clientRequestId: "50000000-0000-4000-8000-000000000004", description: "Repair the grade-submission permission mapping.", result: "Requester verified that submission access works.", status: "COMPLETED", workflowCycle: 1, recordedByEmail: "staff.three@example.com", performerEmail: "staff.one@example.com", assigneeEmail: "staff.one@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: null, createdAt: new Date("2026-09-21T08:00:00.000Z"), inProgressAt: new Date("2026-09-22T08:00:00.000Z"), completedAt: new Date("2026-09-23T08:00:00.000Z"), cancelledAt: null, cancelledByEmail: null, cancellationSource: null },
+  { ticketNumber: "TKT-L4-000007", clientRequestId: "50000000-0000-4000-8000-000000000005", description: "Replace the saved VPN profile.", result: null, status: "CANCELLED", workflowCycle: 1, recordedByEmail: "staff.two@example.com", performerEmail: null, assigneeEmail: "staff.two@example.com", followUpRequired: false, followUpNote: null, attachmentNotes: null, createdAt: new Date("2026-09-24T07:00:00.000Z"), inProgressAt: null, completedAt: null, cancelledAt: new Date("2026-09-24T10:00:00.000Z"), cancelledByEmail: "staff.two@example.com", cancellationSource: "STAFF_ACTION" },
+  { ticketNumber: "TKT-L4-000008", clientRequestId: "50000000-0000-4000-8000-000000000006", description: "Collect the duplicate request evidence for the incident record.", result: null, status: "CANCELLED", workflowCycle: 1, recordedByEmail: "staff.one@example.com", performerEmail: null, assigneeEmail: "staff.three@example.com", followUpRequired: true, followUpNote: "Retain the requester confirmation with the cancelled request.", attachmentNotes: null, createdAt: new Date("2026-09-24T07:00:00.000Z"), inProgressAt: new Date("2026-09-24T08:00:00.000Z"), completedAt: null, cancelledAt: new Date("2026-09-24T11:00:00.000Z"), cancelledByEmail: "staff.two@example.com", cancellationSource: "TICKET_CASCADE" },
 ] as const;
 
 type SeedActionEvent = {
   actorId: number;
-  eventType: "ACTION_CREATED" | "ACTION_UPDATED" | "ACTION_COMPLETED" | "ACTION_CANCELLED";
+  eventType: "ACTION_CREATED" | "ACTION_UPDATED" | "ACTION_COMPLETED" | "ACTION_CANCELLED" | "TICKET_CASCADE_CANCELLED";
   fromStatus: "PLANNED" | "IN_PROGRESS" | null;
   toStatus: "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   changedFields: { fields: string[] };
+  createdAt: Date;
 };
 
 function lab4TicketNumber(draftNumber: string) {
@@ -186,17 +188,19 @@ export async function seedDatabase(prisma: PrismaClient) {
         fromStatus: null,
         toStatus: "PLANNED" as const,
         changedFields: { fields: ["description", "assigneeId", "followUpRequired", "followUpNote", "attachmentNotes"] },
+        createdAt: action.createdAt,
       },
     ];
-    if (action.status === "IN_PROGRESS") events.push({ actorId: assigneeId, eventType: "ACTION_UPDATED", fromStatus: "PLANNED", toStatus: "IN_PROGRESS", changedFields: { fields: ["status"] } });
+    if (action.inProgressAt) events.push({ actorId: assigneeId, eventType: "ACTION_UPDATED", fromStatus: "PLANNED", toStatus: "IN_PROGRESS", changedFields: { fields: ["status"] }, createdAt: action.inProgressAt });
     if (action.status === "COMPLETED") {
-      if (!performedById) throw new Error(`Missing completion performer for ${action.clientRequestId}.`);
-      events.push({ actorId: assigneeId, eventType: "ACTION_UPDATED", fromStatus: "PLANNED", toStatus: "IN_PROGRESS", changedFields: { fields: ["status"] } });
-      events.push({ actorId: performedById, eventType: "ACTION_COMPLETED", fromStatus: "IN_PROGRESS", toStatus: "COMPLETED", changedFields: { fields: ["result", "status", "performedById", "completedAt"] } });
+      if (!performedById || !action.inProgressAt || !action.completedAt) throw new Error(`Missing completion provenance for ${action.clientRequestId}.`);
+      events.push({ actorId: performedById, eventType: "ACTION_COMPLETED", fromStatus: "IN_PROGRESS", toStatus: "COMPLETED", changedFields: { fields: ["result", "status", "performedById", "completedAt"] }, createdAt: action.completedAt });
     }
     if (action.status === "CANCELLED") {
-      if (!cancelledById) throw new Error(`Missing cancellation actor for ${action.clientRequestId}.`);
-      events.push({ actorId: cancelledById, eventType: "ACTION_CANCELLED", fromStatus: "PLANNED", toStatus: "CANCELLED", changedFields: { fields: ["status", "cancelledAt", "cancelledById", "cancellationSource"] } });
+      if (!cancelledById || !action.cancelledAt) throw new Error(`Missing cancellation provenance for ${action.clientRequestId}.`);
+      const fromStatus = action.inProgressAt ? "IN_PROGRESS" : "PLANNED";
+      const eventType = action.cancellationSource === "TICKET_CASCADE" ? "TICKET_CASCADE_CANCELLED" : "ACTION_CANCELLED";
+      events.push({ actorId: cancelledById, eventType, fromStatus, toStatus: "CANCELLED", changedFields: { fields: ["status", "cancelledAt", "cancelledById", "cancellationSource"] }, createdAt: action.cancelledAt });
     }
     const seededAction = await prisma.actionTaken.upsert({
       where: { ticketId_clientRequestId: { ticketId: selectedTicketId, clientRequestId: action.clientRequestId } },
@@ -214,6 +218,8 @@ export async function seedDatabase(prisma: PrismaClient) {
         followUpRequired: action.followUpRequired,
         followUpNote: action.followUpNote,
         attachmentNotes: action.attachmentNotes,
+        createdAt: action.createdAt,
+        updatedAt: action.cancelledAt ?? action.completedAt ?? action.inProgressAt ?? action.createdAt,
         completedAt: action.completedAt,
         cancelledAt: action.cancelledAt,
         cancelledById,
