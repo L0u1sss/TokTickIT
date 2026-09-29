@@ -13,26 +13,27 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | ID | Type | Requirement / AC | Scenario and expected result | Planned automated file | Final |
 |---|---|---|---|---|---|
 | UT-01 | Unit | BR-05–BR-06, AC-02 | Unicode boundaries, trim, conditional follow-up note | `server/tests/lab-04/action-validation.test.ts` | Planned |
-| UT-02 | Unit | BR-10–BR-12, AC-03 | Every Action transition pair; completion needs Result | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
-| UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition and resolution predicate | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
-| UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Metric status groups, limits, ordering, drill-down mapping | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
+| UT-02 | Unit | BR-10–BR-13, AC-03 | Every Action transition pair; terminal reversal/edit rejected; completion needs Result and cleared follow-up | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
+| UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition; current-cycle resolution predicate; cycle/resolvedAt updates | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
+| UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Seven-day window boundaries, status groups, limits, ordering, query mapping, attribution/deduplication | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
 | DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data | `server/tests/lab-04/migration.test.ts` | Planned |
 | DB-02 | Integration | BR-38, AC-09 | Seed twice; stable identities/counts and 0/1/many Actions | `server/tests/lab-04/migration.test.ts` | Planned |
-| DB-03 | Integration | BR-14–BR-16, AC-03–AC-04 | Atomic projection/event write; stale revision loses | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | Atomic projection/event/parent-version write; stale Action or Ticket version loses | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, actor, assignee, time | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-03 | API | BR-10–BR-14, AC-03 | Assign/transition/complete/cancel/reopen and immutable event history | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-03 | API | BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel, reject terminal reversal/edit and non-actionable parent, enforce follow-up rule and immutable event history | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-05 | API | BR-16, AC-04 | Concurrent edits with same revision; one winner, one `STALE_ACTION` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-05 | API | BR-16, BR-40–BR-41, AC-04 | Concurrent edits with same parent/Action versions; one winner, stale loser, one event and one parent version increment | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; gate accepted/rejected; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| API-09 | API | BR-23, AC-04/AC-06 | stale Ticket update loses without partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| API-11 | API | BR-27/BR-30–BR-32, AC-07 | zero/non-zero counts, UTC values, drill-down query equivalence | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; current-user Action scope | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| API-13 | API | BR-28–BR-32, AC-08 | status/priority/urgent/recent counts match direct DB queries | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; current-cycle gate rejects active/follow-up Actions; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| API-09 | API | BR-23, BR-40–BR-41, AC-04/AC-06 | stale integer Ticket version loses; atomic conditional update has no partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded; exact seven-day resolved window | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| API-11 | API | BR-27/BR-30–BR-32, AC-07 | inclusive lower/exclusive upper UTC bounds, returned drill-down bounds, statusIn validation | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; recorder/assignee/performer union and attribution | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| API-13 | API | BR-28–BR-32, AC-08 | status/priority/urgent/recent counts match direct DB queries; current-user Actions deduplicated | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | all four required API files | Planned |
+| RACE-01 | Concurrent API | BR-21, BR-40–BR-42, AC-04/AC-06 | Action create/update/complete versus Ticket resolve/cancel; shared parent lock yields serial outcome and gate recheck; terminal Ticket rejects later Action writes | `server/tests/lab-04/ticket-resolution-concurrency.api.test.ts` | Planned |
 | UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | UI-03 | Component | FR-01–FR-06, AC-01–AC-05/AC-10 | list/create/edit/assign/lifecycle/validation/read-only/conflict/draft retention | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
@@ -91,7 +92,7 @@ client/e2e/lab-04/
 └── dashboards.spec.ts
 ```
 
-Additional unit/migration/performance files in the matrix are allowed. Final paths must replace planned paths if implementation structure changes.
+These are planned target paths, not files present in the contract baseline. At this commit `server/tests/lab-04/`, `client/tests/lab-04/`, and `client/e2e/lab-04/` do not exist; the implementation issues must add them or update this matrix to the actual paths before claiming coverage. Existing Lab 1–3 suites remain at their current locations. Additional unit/migration/performance files are allowed.
 
 ## 5. Planned Verification Commands
 
@@ -105,11 +106,11 @@ npm --prefix client run lint
 npm --prefix client run build
 ```
 
-Lab 4 E2E scripts will be added before E2E rows can pass. Playwright Chromium and an isolated PostgreSQL test target are prerequisites. Final evidence records command, SHA, timestamp/timezone, counts, result, and CI link. “Planned” is not evidence of passing.
+The listed server/client package scripts were verified in `server/package.json` and `client/package.json`: `test:unit`, `test:isolated`, `test:db`, `lint`, and `build` exist for the server; `test`, `test:e2e`, `test:responsive`, `lint`, and `build` exist for the client. The target Lab 4 spec files/directories above are planned and absent at this contract commit; the existing client `test:e2e` runner does not prove those future specs exist. Run from the repository root, for example `npm --prefix server run test:unit`, `npm --prefix server run test:isolated`, `npm --prefix client run test`, and `npm --prefix client run test:e2e`. Playwright Chromium and an isolated PostgreSQL test target are prerequisites. Final evidence records command, SHA, timestamp/timezone, counts, result, and CI link. “Planned” is not evidence of passing.
 
 ## 6. Migration and Recovery Procedure
 
-Test clean deploy, populated Lab 3 forward migration, repeated seed, and application startup. Snapshot fixture counts/IDs/ownership before migration and compare afterward. Exercise the documented recovery path on a disposable database. Never use `prisma migrate reset` against development or production data.
+Test clean deploy, populated Lab 3 forward migration, repeated seed, and application startup. Snapshot fixture counts/IDs/ownership before migration and compare afterward. Destructive rollback/drop is allowed only against an isolated disposable migration-test database after verifying no user data or real Actions exist. For any populated development/staging/production database, recovery is verified backup/restore or a forward corrective migration only. Never use `prisma migrate reset` against development or production data.
 
 ## 7. Final Evidence Template
 

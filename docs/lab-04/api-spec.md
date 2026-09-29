@@ -20,7 +20,8 @@ type UserSummary = { id: number; displayName: string; role: "IT_STAFF" | "ADMINI
 
 type ActionTaken = {
   id: number; ticketId: number; description: string; result: string | null;
-  status: ActionStatus; performedBy: UserSummary; assignee: UserSummary;
+  status: ActionStatus; recordedBy: UserSummary; performedBy: UserSummary | null;
+  assignee: UserSummary; workflowCycle: number;
   followUpRequired: boolean; followUpNote: string | null;
   attachmentNotes: string | null; revision: number;
   createdAt: string; updatedAt: string; completedAt: string | null;
@@ -29,11 +30,13 @@ type ActionTaken = {
 type ActionSummary = Pick<ActionTaken,
   "id" | "ticketId" | "description" | "status" | "assignee" | "revision" | "updatedAt"> & {
   ticketNumber: string; ticketSummary: string;
+  attribution: ("RECORDED" | "ASSIGNED" | "PERFORMED")[];
 };
 
 type TicketSummary = {
   id: number; ticketNumber: string; summary: string; status: string;
-  itPriority: "LOW" | "MEDIUM" | "HIGH"; owner: UserSummary | null; updatedAt: string;
+  itPriority: "LOW" | "MEDIUM" | "HIGH"; owner: UserSummary | null;
+  version: number; resolvedAt: string | null; updatedAt: string;
 };
 ```
 
@@ -59,6 +62,7 @@ POST /api/staff/tickets/:id/actions
 ```json
 {
   "clientRequestId": "52f36ab9-85b0-48ee-a60b-3c31e9f741ee",
+  "expectedTicketVersion": 4,
   "description": "Inspect and replace the damaged network cable.",
   "result": null,
   "assigneeId": 12,
@@ -68,7 +72,7 @@ POST /api/staff/tickets/:id/actions
 }
 ```
 
-The initial status is `PLANNED`; `performedBy` and timestamps come from the session/backend. First success returns `201 { action, replayed:false }` and `Location`; an exact retry for the same Ticket/request ID returns `200 { action, replayed:true }`. Reusing the key with different normalized content returns `409 IDEMPOTENCY_CONFLICT`.
+The initial status is `PLANNED`; `recordedBy` and timestamps come from the session/backend. First success returns `201 { action, replayed:false }` and `Location`; an exact retry for the same Ticket/request ID returns `200 { action, replayed:true }` even though that success advanced the Ticket version. The idempotency fingerprint excludes `expectedTicketVersion`. Reusing the key with different normalized Action content returns `409 IDEMPOTENCY_CONFLICT`. A new create checks `expectedTicketVersion` after locking the parent and returns `409 STALE_TICKET` on mismatch.
 
 ### 3.3 Update Action content/assignment
 
@@ -76,7 +80,7 @@ The initial status is `PLANNED`; `performedBy` and timestamps come from the sess
 PATCH /api/staff/tickets/:ticketId/actions/:actionId
 ```
 
-Body contains `revision` and one or more of `description`, `result`, `assigneeId`, `followUpRequired`, `followUpNote`, `attachmentNotes`. Status changes are not accepted here. Success returns `200 ActionTaken`. A revision mismatch returns `409 STALE_ACTION`. Ineligible assignee returns `409 INVALID_ACTION_ASSIGNEE`. The update and append-only event are committed atomically.
+Body contains `expectedTicketVersion`, `revision`, and one or more of `description`, `result`, `assigneeId`, `followUpRequired`, `followUpNote`, `attachmentNotes`. Status changes are not accepted here. Only non-terminal Actions on actionable Tickets (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`) can be edited. Success returns `200 ActionTaken`. A non-actionable Ticket returns `409 TICKET_NOT_ACTIONABLE`; a parent version mismatch returns `409 STALE_TICKET`; an Action revision mismatch returns `409 STALE_ACTION`. Ineligible assignee returns `409 INVALID_ACTION_ASSIGNEE`. The Action update, one parent version increment, and append-only event are committed atomically.
 
 ### 3.4 Transition Action
 
@@ -85,10 +89,10 @@ PATCH /api/staff/tickets/:ticketId/actions/:actionId/status
 ```
 
 ```json
-{ "status": "COMPLETED", "revision": 3, "result": "Cable replaced; link stable." }
+{ "status": "COMPLETED", "expectedTicketVersion": 5, "revision": 3, "result": "Cable replaced; link stable." }
 ```
 
-`result` is accepted here to complete atomically. Success returns `200 ActionTaken`. Invalid transition returns `409 INVALID_ACTION_TRANSITION`; missing completion Result returns `400 VALIDATION_ERROR`; stale revision returns `409 STALE_ACTION`. No delete endpoint exists.
+`result` is accepted here to complete atomically. Completion requires a non-empty Result and `followUpRequired=false`; staff cancellation also requires `followUpRequired=false`. On completion, the authenticated actor becomes `performedBy` and the server sets `completedAt`. Success returns `200 ActionTaken`. A terminal Action cannot transition or be edited; create another Action for later work. Invalid transition returns `409 INVALID_ACTION_TRANSITION`; missing Result or uncleared follow-up returns `400 VALIDATION_ERROR`; a non-actionable Ticket returns `409 TICKET_NOT_ACTIONABLE`; stale parent/Action tokens return `409 STALE_TICKET`/`STALE_ACTION`. Ticket-level cancellation may system-cancel active Actions while retaining their follow-up fields as historical data. No delete endpoint exists.
 
 ### 3.5 List Action audit events
 
@@ -104,7 +108,7 @@ Staff/Admin only. Returns bounded Action event metadata in `createdAt ASC, id AS
 PATCH /api/staff/tickets/:id/status
 ```
 
-Lab 4 request body is `{ "status": <TicketStatus>, "expectedUpdatedAt": <ISO timestamp> }`. Existing transition rules remain. `RESOLVED` additionally requires a completed Action with Result; failure returns `409 RESOLUTION_GATE_NOT_MET`. A stale timestamp returns `409 STALE_TICKET`. Resolution validation and update share one transaction. Requester advisory route remains unchanged and cannot formally resolve a Ticket.
+Lab 4 request body is `{ "status": <TicketStatus>, "expectedTicketVersion": <positive integer> }`. Existing transition rules remain. `RESOLVED` additionally requires current-cycle completed work with Result, no `PLANNED`/`IN_PROGRESS` Actions, and no Action with `followUpRequired=true`; failure returns `409 RESOLUTION_GATE_NOT_MET` with safe reason codes. A version mismatch returns `409 STALE_TICKET`. Resolution validation and update share one transaction. Reopening increments `workflowCycle` and clears `resolvedAt`; resolving sets `resolvedAt`, which closing preserves. Requester advisory route remains unchanged and cannot formally resolve a Ticket.
 
 ## 5. Requester Dashboard
 
@@ -119,11 +123,17 @@ Requester only; identity always comes from the session.
   "metrics": { "openCount": 3, "waitingForRequesterCount": 1 },
   "recentlyUpdated": [],
   "recentlyResolved": [],
+  "recentlyResolvedWindow": {
+    "from": "2026-09-18T00:00:00.000Z",
+    "before": "2026-09-25T00:00:00.000Z"
+  },
   "generatedAt": "2026-09-25T00:00:00.000Z"
 }
 ```
 
-Lists contain at most five `TicketSummary` items. Counts/list definitions follow BR-26–BR-27. Zero state uses numeric zero and empty arrays. Drill-down links are constructed by the client from documented My Tickets queries: open statuses as the approved multi-status representation, waiting as `status=WAITING_FOR_REQUESTER`; detail items use `/tickets/:id`.
+Lists contain at most five `TicketSummary` items. `generatedAt` is captured once; `recentlyResolvedWindow.from` is exactly 168 hours before it and `before` equals `generatedAt`. The list predicate is `status IN (RESOLVED,CLOSED) AND resolvedAt >= from AND resolvedAt < before`, scoped by authenticated requester, ordered `resolvedAt DESC, id DESC`. A legacy row with unknown `resolvedAt` is not backfilled or included. Zero state uses numeric zero and empty arrays.
+
+The existing authenticated My Tickets API is `GET /api/tickets`. It accepts one `statusIn` query parameter containing comma-separated, uppercase Ticket statuses with no whitespace or duplicates; the canonical open filter is `statusIn=NEW,OPEN,IN_PROGRESS,WAITING_FOR_REQUESTER,REOPENED`. A single status can continue to use `status`. Supplying both `status` and `statusIn`, repeating either query key, an empty member, duplicate/unknown status, or whitespace returns `400 VALIDATION_ERROR`. Recently Resolved drill-down uses `statusIn=RESOLVED,CLOSED&resolvedFrom=<from>&resolvedBefore=<before>` with the exact dashboard bounds; the two date parameters must appear together, be canonical UTC ISO timestamps, and satisfy `resolvedFrom < resolvedBefore`. Date bounds without exactly `statusIn=RESOLVED,CLOSED` are invalid. Dashboard links preserve these values; detail items use `/tickets/:id`.
 
 ## 6. Staff Dashboard
 
@@ -146,7 +156,7 @@ IT Staff/Administrator only.
 }
 ```
 
-Each list is bounded to five summaries. Counts follow BR-26 and BR-28. Drill-down uses existing Queue parameters (`ownerId=unassigned`, `ownerId=me`, `status`, `itPriority`) or `/staff/tickets/:id`. The Queue contract must add the literal `me` if not already supported before dashboard drill-down is considered complete.
+Each list is bounded to five summaries. Counts follow BR-26 and BR-28. `myActions` is the deduplicated union of Actions recorded by, assigned to, or performed by the authenticated staff user; each summary includes `attribution: ("RECORDED"|"ASSIGNED"|"PERFORMED")[]` with all matching roles. Drill-down uses existing Queue parameters (`ownerId=unassigned`, `ownerId=me`, `status`, `itPriority`) or `/staff/tickets/:id`. The Queue contract must add the literal `me` if not already supported before dashboard drill-down is considered complete.
 
 ## 7. Assignee Reference Data
 
@@ -158,7 +168,7 @@ Authentication and forced-password rules run before resource lookup. Role checks
 
 ## 9. Concurrency and Duplicate Handling
 
-Action writes use optimistic revision checks and atomic event insertion. Ticket workflow uses expected `updatedAt`. Action creation uses `(ticketId, clientRequestId)` uniqueness and a canonical request fingerprint. Assignment eligibility changes reuse the Lab 3 transaction/advisory-lock protocol so an active Action never finishes assigned to an ineligible user.
+Action writes use optimistic Action revision and parent Ticket version checks. Every Action write and Ticket status transition begins a transaction, locks the parent Ticket row first, then the Action row if present, and rechecks parent status/cycle, version, Action revision, authorization, assignee eligibility, and the resolution predicate under lock. Competing child writes and resolution/cancellation therefore serialize: if the child write wins, the gate sees it; if the terminal Ticket transition wins, the child write rechecks and is rejected. A successful Action mutation, parent `version=version+1`, and one event insert commit atomically. The conditional Ticket write predicate is `id=:id AND version=:expectedTicketVersion`; no timestamp participates in concurrency. Missing `expectedTicketVersion` on a Lab 4 write returns `400 VALIDATION_ERROR`; Lab 4 clients must be upgraded together, while additive `version` response fields do not break Lab 3 readers. Action creation uses `(ticketId, clientRequestId)` uniqueness and a canonical request fingerprint. Assignment eligibility changes reuse the Lab 3 transaction/advisory-lock protocol so an active Action never finishes assigned to an ineligible user.
 
 ## 10. Health and Regression
 
