@@ -21,7 +21,7 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | Atomic projection/event/parent-version write; stale Action or Ticket version loses | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, recorder, assignee, performedBy, time, and returned parent version | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-03 | API | BR-02, BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel; only current assignee can complete; performedBy equals assignee; reject terminal reversal/edit and non-actionable parent; enforce follow-up rule and immutable event history | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-03 | API | BR-02, BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel; only current assignee can complete; performedBy equals assignee; verify completion/cancellation provenance fields and immutable terminal history; reject terminal reversal/edit and non-actionable parent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-05 | API | BR-16, BR-40–BR-41, AC-04 | Concurrent edits with same parent/Action versions; one winner, stale loser, one event and one parent version increment; success returns the next parent token | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
@@ -29,13 +29,15 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; current-cycle gate rejects active/follow-up Actions; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | API-09 | API | BR-23, BR-40–BR-41, AC-04/AC-06 | stale integer Ticket version on status transition loses; conditional update has no partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | API-15 | API | BR-23, BR-40–BR-41, AC-04 | Claim, owner assignment/reassignment, and priority writes require expectedTicketVersion; stale concurrent requests return STALE_TICKET and accepted requests increment version exactly once and return the next token | `server/tests/lab-04/ticket-mutations.api.test.ts` | Planned |
+| API-16 | API/Integration | BR-12, BR-14, BR-41, BR-43, AC-03/AC-06 | Ticket cancellation increments each current-cycle active Action revision once, sets updatedAt/cancelledAt/cancelledBy/source, appends TICKET_CASCADE_CANCELLED event with authenticated actor, preserves follow-up as historical, and makes old Action revisions stale | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded; exact seven-day resolved window | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| API-11 | API | BR-27/BR-30–BR-32, AC-07 | inclusive lower/exclusive upper UTC bounds, returned drill-down bounds, statusIn validation | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| API-11 | API | BR-27/BR-30–BR-32, BR-43, AC-07 | inclusive lower/exclusive upper UTC bounds, returned drill-down bounds, statusIn validation, recentlyUpdated reflects accepted aggregate mutations through Ticket.updatedAt | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
 | API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; recorder/assignee/performer union and attribution | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| API-13 | API | BR-28–BR-32, AC-08 | status/priority/urgent/recent counts match direct DB queries; current-user Actions deduplicated | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| API-13 | API | BR-28–BR-32, BR-43, AC-08 | status/priority/urgent/recent counts match direct DB queries; current-user Actions deduplicated; accepted Action/aggregate writes update Ticket.updatedAt and Recently Updated ordering | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | all four required API files | Planned |
 | RACE-01 | Concurrent API | BR-21, BR-40–BR-42, AC-04/AC-06 | Action create/update/complete versus Ticket resolve/cancel; shared parent lock yields serial outcome and gate recheck; terminal Ticket rejects later Action writes | `server/tests/lab-04/ticket-resolution-concurrency.api.test.ts` | Planned |
 | RACE-02 | Concurrent API | BR-40–BR-41, AC-04 | Competing claim/owner/priority writes with one expected version serialize; stale loser cannot overwrite winner | `server/tests/lab-04/ticket-mutations.api.test.ts` | Planned |
+| RACE-03 | Concurrent API | BR-02, BR-04, BR-16, BR-40, AC-03–AC-04 | Reassign versus current-assignee completion: reassignment-first rejects old assignee completion; completion-first leaves terminal Action and rejects reassignment | `server/tests/lab-04/actions-concurrency.api.test.ts` | Planned |
 | UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | UI-03 | Component | FR-01–FR-06, AC-01–AC-05/AC-10 | list/create/edit/assign/lifecycle/validation/read-only/conflict/draft retention | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
@@ -59,10 +61,10 @@ Tests are written before or alongside implementation. Unit tests cover determini
 |---|---|
 | AC-01 | API-01, API-06, UI-03, E2E-01 |
 | AC-02 | UT-01, API-02, API-07, UI-03 |
-| AC-03 | UT-02, DB-03, API-01, API-03, UI-03, E2E-01 |
-| AC-04 | DB-03, API-05, API-09, API-15, RACE-02, UI-03–UI-04, E2E-01–E2E-02 |
+| AC-03 | UT-02, DB-03, API-01, API-03, RACE-03, UI-03, E2E-01 |
+| AC-04 | DB-03, API-05, API-09, API-15, RACE-02–RACE-03, UI-03–UI-04, E2E-01–E2E-02 |
 | AC-05 | API-04, UI-03, E2E-01 |
-| AC-06 | UT-03, API-08–API-09, UI-04, E2E-02 |
+| AC-06 | UT-03, API-08–API-09, API-16, UI-04, E2E-02 |
 | AC-07 | UT-04, API-10–API-11, UI-02, E2E-03 |
 | AC-08 | UT-04, API-12–API-13, UI-01, E2E-03 |
 | AC-09 | DB-01–DB-02 |
@@ -78,6 +80,7 @@ Every AC has planned automated or explicit manual evidence. Manual evidence neve
 ```text
 server/tests/lab-04/
 ├── actions-taken.api.test.ts
+├── actions-concurrency.api.test.ts
 ├── ticket-mutations.api.test.ts
 ├── ticket-workflow.api.test.ts
 ├── requester-dashboard.api.test.ts
