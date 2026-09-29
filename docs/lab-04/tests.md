@@ -16,8 +16,8 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | UT-02 | Unit | BR-10–BR-13, AC-03 | Every Action transition pair; terminal reversal/edit rejected; completion needs Result and cleared follow-up | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
 | UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition; current-cycle resolution predicate; cycle/resolvedAt updates | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
 | UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Seven-day window boundaries, status groups, limits, ordering, query mapping, attribution/deduplication | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
-| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data | `server/tests/lab-04/migration.test.ts` | Planned |
-| DB-02 | Integration | BR-38, AC-09 | Seed twice; stable identities/counts and 0/1/many Actions | `server/tests/lab-04/migration.test.ts` | Planned |
+| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data; legacy Tickets get version/cycle 1 and null resolvedAt, with zero fabricated Actions | `server/tests/lab-04/migration.test.ts` | Pass (local) |
+| DB-02 | Integration | BR-02–BR-04, BR-14–BR-15, BR-38, AC-03/AC-09 | Seed twice; stable identities/counts and 0/1/many Actions; distinct recorder/assignee/performer, event semantics, lifecycle provenance, ordering, and database invariants | `server/tests/lab-04/migration.test.ts` | Pass (local) |
 | DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | Atomic projection/event/parent-version write; stale Action or Ticket version loses | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, recorder, assignee, performedBy, time, and returned parent version | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
@@ -134,3 +134,16 @@ Test clean deploy, populated Lab 3 forward migration, repeated seed, and applica
 - `npm run test:isolated`: Pass — 33 files, 380 tests.
 
 The migration suite uses disposable PostgreSQL schemas and verifies populated Lab 3 preservation, zero-action legacy behavior, schema constraints, audit identities, all status/priority seed coverage, assigned/unassigned Tickets, zero/one/multiple Actions, repeated-seed preservation, guarded rollback refusal after data, pre-use rollback, and forward recovery. Record the final commit SHA and hosted CI link after push/PR; local evidence is not peer approval.
+
+## 9. PR #63 Review Follow-up — 2026-09-30
+
+Local verification on the uncommitted working tree based on `6ba3aac`:
+
+- `prisma validate`: Pass.
+- `prisma generate`: Pass.
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `npm run test:isolated`: Pass — 33 files, 380 tests.
+
+The Lab 4 migration assertions now cover additive Ticket defaults, event type semantics, recorder/assignee/performer separation, completion and cancellation provenance checks, and Action ordering. These results apply to the local worktree; rerun on the final commit and record hosted CI/peer-review evidence before merge.

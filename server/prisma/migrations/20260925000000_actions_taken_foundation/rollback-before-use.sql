@@ -10,5 +10,13 @@ END $$;
 
 DROP TABLE "ActionEvent";
 DROP TABLE "ActionTaken";
+DROP INDEX "Ticket_status_resolvedAt_idx";
+ALTER TABLE "Ticket"
+  DROP CONSTRAINT "Ticket_version_check",
+  DROP CONSTRAINT "Ticket_workflowCycle_check",
+  DROP COLUMN "version",
+  DROP COLUMN "workflowCycle",
+  DROP COLUMN "resolvedAt";
+DROP TYPE "CancellationSource";
 DROP TYPE "ActionEventType";
 DROP TYPE "ActionStatus";
