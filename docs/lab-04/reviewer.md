@@ -8,8 +8,9 @@
 - Issue: https://github.com/L0u1sss/TokTickIT/issues/52
 - Pull request: [#62 — docs(lab-04): define Sprint 4 engineering contract and traceability](https://github.com/L0u1sss/TokTickIT/pull/62)
 - Reviewed head at request-changes review: `cad940e521072cfe521fb96d3d615116ac384840`
+- Latest reviewed head: `f154169cdb2cf9bb3180bb380de32bd4ba2eeab3`
 - Reviewer: Tanaboonnnnn
-- Review status: Changes requested; contract updates in progress; re-review pending
+- Review status: Two review rounds have requested changes; latest contract updates in progress; re-review pending
 
 ### Review focus
 
@@ -26,6 +27,7 @@
 | Date | Reviewer | PR/comment link | Comment | Response/change | Resolution |
 |---|---|---|---|---|---|
 | 2026-09-29 | Tanaboonnnnn | [Review 5350109562](https://github.com/L0u1sss/TokTickIT/pull/62#pullrequestreview-5350109562) | Clarify terminal Action lifecycle; strengthen the current-cycle resolution gate; justify Ticket concurrency token and define atomicity; serialize parent/Action races; define recently-resolved window; specify requester multi-status drill-down; define My Actions membership; constrain destructive migration recovery; refresh PR evidence; verify test commands and planned paths | Contract changes recorded across specification, API, UI, and test plan; awaiting reviewer confirmation | Changes requested; re-review pending |
+| 2026-09-29 | Tanaboonnnnn | [Review 5350346761](https://github.com/L0u1sss/TokTickIT/pull/62#pullrequestreview-5350346761) | Define `performedBy` as the assignee who alone may complete; correct BR-42's exception reference; require the same Ticket version token for claim, owner, priority, status, and Action writes | Contract changes recorded across specification, API, UI, and test plan; awaiting reviewer confirmation | Changes requested; re-review pending |
 
 ## Verification Reviewed
 

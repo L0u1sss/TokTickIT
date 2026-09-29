@@ -28,7 +28,7 @@ The page shows Open Tickets and Waiting for You metric cards plus Recently Updat
 
 ### 5.1 List and read mode
 
-Actions appear in stable oldest-first order. Every item shows created date/time, description, result or “Not recorded”, performer, assignee, status, follow-up requirement/note, attachment notes, and updated time. Requesters see this read-only shared view on owned Tickets. Internal Notes remain in their separate staff-only area.
+Actions appear in stable oldest-first order. Every item shows created date/time, description, result or “Not recorded”, performer, assignee, status, follow-up requirement/note, attachment notes, and updated time. `Performed by` is the current assignee who completed the work; it is empty until completion. Only that assignee can complete the Action, so the displayed performer cannot accidentally identify a different staff member who merely recorded completion. The audit event records the authenticated completion actor. Requesters see this read-only shared view on owned Tickets. Internal Notes remain in their separate staff-only area.
 
 ### 5.2 Create mode
 
@@ -36,13 +36,13 @@ Staff/Admin select “Add Action”. The form contains Description, Assignee, op
 
 ### 5.3 Edit and lifecycle mode
 
-Authorized staff can open Edit, change contract-approved fields on non-terminal Actions, and Save/Cancel. Lifecycle controls expose only valid next states. Complete requires Result and cleared follow-up; staff Cancel also requires cleared follow-up. `COMPLETED` and `CANCELLED` Actions are read-only terminal records; later work is a new Action, never a reopen. Actions are read-only and cannot be created on `RESOLVED`, `CLOSED`, or `CANCELLED` Tickets; the user must reopen the Ticket to start a new workflow cycle. Ticket status and Action writes send the displayed integer Ticket version; Action writes also send the Action revision. A success refreshes both the Action and Ticket summary/dashboard-invalidated data.
+Authorized staff can open Edit, change contract-approved fields on non-terminal Actions, and Save/Cancel. Lifecycle controls expose only valid next states. Only the current assignee sees/enables Complete; other staff receive a clear “Only the assigned staff member can complete this Action” explanation. Complete requires Result and cleared follow-up; staff Cancel also requires cleared follow-up. `COMPLETED` and `CANCELLED` Actions are read-only terminal records; later work is a new Action, never a reopen. Actions are read-only and cannot be created on `RESOLVED`, `CLOSED`, or `CANCELLED` Tickets; the user must reopen the Ticket to start a new workflow cycle. Every Ticket aggregate write (claim, owner assignment/reassignment, priority, status, Action create/edit/transition) sends the displayed integer Ticket version; Action writes also send the Action revision. On success, replace the locally held Ticket version with the returned `version`/`ticketVersion` before enabling another write, then refresh affected summaries.
 
 Inactive assignee, resolution-gate failure, and stale data have specific messages and recovery actions. The UI cannot imply that hiding a control provides authorization.
 
 ## 6. Ticket Workflow Feedback
 
-Ticket status options come from the current matrix. Moving to Resolved requires confirmation and completed work in the current workflow cycle, with Result, no active Actions, and no outstanding follow-up. Server rejection names safe reason codes without exposing private data. Ticket status and Action writes use integer version tokens; a conflict preserves the draft and offers reload/reapply. Requester “Problem Appears Resolved” remains wording distinct from formal “Resolve Ticket”. After success, heading badge, permitted actions, owner summary, and relevant lists refresh.
+Ticket status options come from the current matrix. Moving to Resolved requires confirmation and completed work in the current workflow cycle, with Result, no active Actions, and no outstanding follow-up. Claim, owner, priority, status, and Action mutation controls all submit the current Ticket version; stale conflicts preserve drafts and offer reload/reapply. Server rejection names safe reason codes without exposing private data. Requester “Problem Appears Resolved” remains wording distinct from formal “Resolve Ticket”. After success, heading badge, permitted actions, owner summary, and relevant lists refresh with the returned version.
 
 ## 7. URL and Drill-down Contract
 
