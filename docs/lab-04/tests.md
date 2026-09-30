@@ -16,9 +16,9 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | UT-02 | Unit | BR-10–BR-13, AC-03 | Every Action transition pair; terminal reversal/edit rejected; completion needs Result and cleared follow-up | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
 | UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition; current-cycle resolution predicate; cycle/resolvedAt updates | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
 | UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Seven-day window boundaries, status groups, limits, ordering, query mapping, attribution/deduplication | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
-| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data | `server/tests/lab-04/migration.test.ts` | Planned |
-| DB-02 | Integration | BR-38, AC-09 | Seed twice; stable identities/counts and 0/1/many Actions | `server/tests/lab-04/migration.test.ts` | Planned |
-| DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | Atomic projection/event/parent-version write; stale Action or Ticket version loses | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data; legacy Tickets get version/cycle 1 and null resolvedAt, with zero fabricated Actions | `server/tests/lab-04/migration.test.ts` | Pass (local) |
+| DB-02 | Integration | BR-02–BR-04, BR-14–BR-16, BR-38, AC-03/AC-09 | Seed twice; stable identities/counts and 0/1/many Actions; distinct attribution; lifecycle-aligned events; staff/cascade cancellation; append-only and changedFields database guards; ordering and Action constraints | `server/tests/lab-04/migration.test.ts` | Pass (local review follow-up) |
+| DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | API transaction appends one event at the incremented Action revision; projection/event revisions remain contiguous and atomic; stale Action or Ticket version loses. Database itself enforces event revision positivity/uniqueness only. | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, recorder, assignee, performedBy, time, and returned parent version | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | API-03 | API | BR-02, BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel; only current assignee can complete; performedBy equals assignee; verify completion/cancellation provenance fields and immutable terminal history; reject terminal reversal/edit and non-actionable parent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
@@ -123,3 +123,41 @@ Test clean deploy, populated Lab 3 forward migration, repeated seed, and applica
 | Date/time (Asia/Bangkok) | Commit SHA | Environment | Command/CI link | Result/counts | Notes |
 |---|---|---|---|---|---|
 | TBD | TBD | TBD | TBD | Not run | Populate only after execution |
+
+## 8. Issue #53 Local Evidence — 2026-09-25
+
+- `npm exec prisma validate` and `npm exec prisma generate`: Pass.
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm run test:unit`: Pass — 19 files, 165 tests.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `npm run test:isolated`: Pass — 33 files, 380 tests.
+
+The migration suite uses disposable PostgreSQL schemas and verifies populated Lab 3 preservation, zero-action legacy behavior, schema constraints, audit identities, all status/priority seed coverage, assigned/unassigned Tickets, zero/one/multiple Actions, repeated-seed preservation, guarded rollback refusal after data, pre-use rollback, and forward recovery. Record the final commit SHA and hosted CI link after push/PR; local evidence is not peer approval.
+
+## 9. PR #63 Review Follow-up — 2026-09-30
+
+The previous agent's handoff records a clean reviewed PR head `8705b3c1244200295e1f0b3253cda1f584e112aa` passing these checks on 2026-09-30, before the review follow-up edits:
+
+- `prisma validate`: Pass.
+- `npm run build`: Pass.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `git diff --check`: Pass.
+
+The current uncommitted review follow-up is based on `8705b3c1244200295e1f0b3253cda1f584e112aa`; checks independently rerun on this worktree on 2026-09-30 at 04:32–04:33 Asia/Bangkok passed:
+
+- `prisma validate` and `prisma generate`: Pass.
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `git diff --check`: Pass.
+
+The migration suite covers append-only triggers, changedFields shape, deterministic event timestamps, and Ticket-cascade cancellation. These uncommitted worktree results are not checks on commit `8705b3c`; rerun on the final commit and record hosted CI/peer-review evidence against the final pushed commit before merge.
+
+Prisma generation initially encountered a Windows query-engine DLL lock while the migration suite was running. After the suite exited, generation, build, and lint passed sequentially.
+
+### Pending PR description correction
+
+Updating PR #63 through the GitHub connector returned HTTP 403 (`Resource not accessible by integration`). The remote description remains unchanged. Replace its ordering bullet with:
+
+> Ticket Action ordering ตาม `createdAt ASC`, `id ASC`; `workflowCycle` ใช้กรอง current-cycle query ไม่ใช่ sort key ของรายการรวมทุก cycle
