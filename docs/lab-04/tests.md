@@ -13,26 +13,31 @@ Tests are written before or alongside implementation. Unit tests cover determini
 | ID | Type | Requirement / AC | Scenario and expected result | Planned automated file | Final |
 |---|---|---|---|---|---|
 | UT-01 | Unit | BR-05–BR-06, AC-02 | Unicode boundaries, trim, conditional follow-up note | `server/tests/lab-04/action-validation.test.ts` | Planned |
-| UT-02 | Unit | BR-10–BR-12, AC-03 | Every Action transition pair; completion needs Result | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
-| UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition and resolution predicate | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
-| UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Metric status groups, limits, ordering, drill-down mapping | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
-| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data | `server/tests/lab-04/migration.test.ts` | Pass locally — Issue #53 populated upgrade and guarded recovery |
-| DB-02 | Integration | BR-38, AC-09 | Seed twice; stable identities/counts and 0/1/many Actions | `server/tests/lab-04/migration.test.ts` | Pass locally — Issue #53 repeated seed preserves reviewed records |
-| DB-03 | Integration | BR-14–BR-16, AC-03–AC-04 | Atomic projection/event write; stale revision loses | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 atomic event and concurrent revision tests |
-| API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, actor, assignee, time | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
-| API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
-| API-03 | API | BR-10–BR-14, AC-03 | Assign/transition/complete/cancel/reopen and immutable event history | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
-| API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
-| API-05 | API | BR-16, AC-04 | Concurrent edits with same revision; one winner, one `STALE_ACTION` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — Issue #54 |
-| API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | Pass locally — sequential and concurrent retry |
-| API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | Pass locally — assign/deactivate race and regression |
-| API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; gate accepted/rejected; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| API-09 | API | BR-23, AC-04/AC-06 | stale Ticket update loses without partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| API-11 | API | BR-27/BR-30–BR-32, AC-07 | zero/non-zero counts, UTC values, drill-down query equivalence | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; current-user Action scope | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| API-13 | API | BR-28–BR-32, AC-08 | status/priority/urgent/recent counts match direct DB queries | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| UT-02 | Unit | BR-10–BR-13, AC-03 | Every Action transition pair; terminal reversal/edit rejected; completion needs Result and cleared follow-up | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
+| UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition; current-cycle resolution predicate; cycle/resolvedAt updates | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
+| UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Seven-day window boundaries, status groups, limits, ordering, query mapping, attribution/deduplication | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
+| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data; legacy Tickets get version/cycle 1 and null resolvedAt, with zero fabricated Actions | `server/tests/lab-04/migration.test.ts` | Pass (local) |
+| DB-02 | Integration | BR-02–BR-04, BR-14–BR-16, BR-38, AC-03/AC-09 | Seed twice; stable identities/counts and 0/1/many Actions; distinct attribution; lifecycle-aligned events; staff/cascade cancellation; append-only and changedFields database guards; ordering and Action constraints | `server/tests/lab-04/migration.test.ts` | Pass (local review follow-up) |
+| DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | API transaction appends one event at the incremented Action revision; projection/event revisions remain contiguous and atomic; stale Action or Ticket version loses. Database itself enforces event revision positivity/uniqueness only. | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, recorder, assignee, performedBy, time, and returned parent version | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-03 | API | BR-02, BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel; only current assignee can complete; performedBy equals assignee; verify completion/cancellation provenance fields and immutable terminal history; reject terminal reversal/edit and non-actionable parent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-05 | API | BR-16, BR-40–BR-41, AC-04 | Concurrent edits with same parent/Action versions; one winner, stale loser, one event and one parent version increment; success returns the next parent token | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | Planned |
+| API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; current-cycle gate rejects active/follow-up Actions; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| API-09 | API | BR-23, BR-40–BR-41, AC-04/AC-06 | stale integer Ticket version on status transition loses; conditional update has no partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| API-15 | API | BR-23, BR-40–BR-41, AC-04 | Claim, owner assignment/reassignment, and priority writes require expectedTicketVersion; stale concurrent requests return STALE_TICKET and accepted requests increment version exactly once and return the next token | `server/tests/lab-04/ticket-mutations.api.test.ts` | Planned |
+| API-16 | API/Integration | BR-12, BR-14, BR-41, BR-43, AC-03/AC-06 | Ticket cancellation increments each current-cycle active Action revision once, sets updatedAt/cancelledAt/cancelledBy/source, appends TICKET_CASCADE_CANCELLED event with authenticated actor, preserves follow-up as historical, and makes old Action revisions stale | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded; exact seven-day resolved window | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| API-11 | API | BR-27/BR-30–BR-32, BR-43, AC-07 | inclusive lower/exclusive upper UTC bounds, returned drill-down bounds, statusIn validation, recentlyUpdated reflects accepted aggregate mutations through Ticket.updatedAt | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; recorder/assignee/performer union and attribution | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| API-13 | API | BR-28–BR-32, BR-43, AC-08 | status/priority/urgent/recent counts match direct DB queries; current-user Actions deduplicated; accepted Action/aggregate writes update Ticket.updatedAt and Recently Updated ordering | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | all four required API files | Planned |
+| RACE-01 | Concurrent API | BR-21, BR-40–BR-42, AC-04/AC-06 | Action create/update/complete versus Ticket resolve/cancel; shared parent lock yields serial outcome and gate recheck; terminal Ticket rejects later Action writes | `server/tests/lab-04/ticket-resolution-concurrency.api.test.ts` | Planned |
+| RACE-02 | Concurrent API | BR-40–BR-41, AC-04 | Competing claim/owner/priority writes with one expected version serialize; stale loser cannot overwrite winner | `server/tests/lab-04/ticket-mutations.api.test.ts` | Planned |
+| RACE-03 | Concurrent API | BR-02, BR-04, BR-16, BR-40, AC-03–AC-04 | Reassign versus current-assignee completion: reassignment-first rejects old assignee completion; completion-first leaves terminal Action and rejects reassignment | `server/tests/lab-04/actions-concurrency.api.test.ts` | Planned |
 | UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | UI-03 | Component | FR-01–FR-06, AC-01–AC-05/AC-10 | list/create/edit/assign/lifecycle/validation/read-only/conflict/draft retention | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
@@ -56,10 +61,10 @@ Tests are written before or alongside implementation. Unit tests cover determini
 |---|---|
 | AC-01 | API-01, API-06, UI-03, E2E-01 |
 | AC-02 | UT-01, API-02, API-07, UI-03 |
-| AC-03 | UT-02, DB-03, API-03, UI-03, E2E-01 |
-| AC-04 | DB-03, API-05, API-09, UI-03–UI-04, E2E-01–E2E-02 |
+| AC-03 | UT-02, DB-03, API-01, API-03, RACE-03, UI-03, E2E-01 |
+| AC-04 | DB-03, API-05, API-09, API-15, RACE-02–RACE-03, UI-03–UI-04, E2E-01–E2E-02 |
 | AC-05 | API-04, UI-03, E2E-01 |
-| AC-06 | UT-03, API-08–API-09, UI-04, E2E-02 |
+| AC-06 | UT-03, API-08–API-09, API-16, UI-04, E2E-02 |
 | AC-07 | UT-04, API-10–API-11, UI-02, E2E-03 |
 | AC-08 | UT-04, API-12–API-13, UI-01, E2E-03 |
 | AC-09 | DB-01–DB-02 |
@@ -75,6 +80,8 @@ Every AC has planned automated or explicit manual evidence. Manual evidence neve
 ```text
 server/tests/lab-04/
 ├── actions-taken.api.test.ts
+├── actions-concurrency.api.test.ts
+├── ticket-mutations.api.test.ts
 ├── ticket-workflow.api.test.ts
 ├── requester-dashboard.api.test.ts
 └── staff-dashboard.api.test.ts
@@ -91,7 +98,7 @@ client/e2e/lab-04/
 └── dashboards.spec.ts
 ```
 
-Additional unit/migration/performance files in the matrix are allowed. Final paths must replace planned paths if implementation structure changes.
+These are planned target paths, not files present in the contract baseline. At this commit `server/tests/lab-04/`, `client/tests/lab-04/`, and `client/e2e/lab-04/` do not exist; the implementation issues must add them or update this matrix to the actual paths before claiming coverage. Existing Lab 1–3 suites remain at their current locations. Additional unit/migration/performance files are allowed.
 
 ## 5. Planned Verification Commands
 
@@ -105,11 +112,11 @@ npm --prefix client run lint
 npm --prefix client run build
 ```
 
-Lab 4 E2E scripts will be added before E2E rows can pass. Playwright Chromium and an isolated PostgreSQL test target are prerequisites. Final evidence records command, SHA, timestamp/timezone, counts, result, and CI link. “Planned” is not evidence of passing.
+The listed server/client package scripts were verified in `server/package.json` and `client/package.json`: `test:unit`, `test:isolated`, `test:db`, `lint`, and `build` exist for the server; `test`, `test:e2e`, `test:responsive`, `lint`, and `build` exist for the client. The target Lab 4 spec files/directories above are planned and absent at this contract commit; the existing client `test:e2e` runner does not prove those future specs exist. Run from the repository root, for example `npm --prefix server run test:unit`, `npm --prefix server run test:isolated`, `npm --prefix client run test`, and `npm --prefix client run test:e2e`. Playwright Chromium and an isolated PostgreSQL test target are prerequisites. Final evidence records command, SHA, timestamp/timezone, counts, result, and CI link. “Planned” is not evidence of passing.
 
 ## 6. Migration and Recovery Procedure
 
-Test clean deploy, populated Lab 3 forward migration, repeated seed, and application startup. Snapshot fixture counts/IDs/ownership before migration and compare afterward. Exercise the documented recovery path on a disposable database. Never use `prisma migrate reset` against development or production data.
+Test clean deploy, populated Lab 3 forward migration, repeated seed, and application startup. Snapshot fixture counts/IDs/ownership before migration and compare afterward. Destructive rollback/drop is allowed only against an isolated disposable migration-test database after verifying no user data or real Actions exist. For any populated development/staging/production database, recovery is verified backup/restore or a forward corrective migration only. Never use `prisma migrate reset` against development or production data.
 
 ## 7. Final Evidence Template
 
@@ -128,11 +135,29 @@ Test clean deploy, populated Lab 3 forward migration, repeated seed, and applica
 
 The migration suite uses disposable PostgreSQL schemas and verifies populated Lab 3 preservation, zero-action legacy behavior, schema constraints, audit identities, all status/priority seed coverage, assigned/unassigned Tickets, zero/one/multiple Actions, repeated-seed preservation, guarded rollback refusal after data, pre-use rollback, and forward recovery. Record the final commit SHA and hosted CI link after push/PR; local evidence is not peer approval.
 
-## 9. Issue #54 Local Evidence — 2026-09-26
+## 9. PR #63 Review Follow-up — 2026-09-30
 
+The previous agent's handoff records a clean reviewed PR head `8705b3c1244200295e1f0b3253cda1f584e112aa` passing these checks on 2026-09-30, before the review follow-up edits:
+
+- `prisma validate`: Pass.
+- `npm run build`: Pass.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `git diff --check`: Pass.
+
+The current uncommitted review follow-up is based on `8705b3c1244200295e1f0b3253cda1f584e112aa`; checks independently rerun on this worktree on 2026-09-30 at 04:32–04:33 Asia/Bangkok passed:
+
+- `prisma validate` and `prisma generate`: Pass.
 - `npm run build`: Pass.
 - `npm run lint`: Pass.
-- `npm run test:isolated -- tests/lab-04/actions-taken.api.test.ts`: Pass — 1 file, 11 tests, including sequential and concurrent retry assertions.
-- `npm run test:isolated`: Pass — 34 files, 391 tests.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `git diff --check`: Pass.
 
-The suite covers authoritative actor identity, performer/assignee separation, stable list/retrieve, Requester ownership, direct role denial, protected fields, Unicode boundaries, follow-up rules, inactive assignees, sequential/concurrent idempotent replay and conflict, atomic audit events, concurrent stale writes, full Action lifecycle, assignment/deactivation coordination, CSRF/path/not-found handling, and safe unexpected failures. The commit SHA must be recorded after commit; local evidence is not hosted CI or peer approval.
+The migration suite covers append-only triggers, changedFields shape, deterministic event timestamps, and Ticket-cascade cancellation. These uncommitted worktree results are not checks on commit `8705b3c`; rerun on the final commit and record hosted CI/peer-review evidence against the final pushed commit before merge.
+
+Prisma generation initially encountered a Windows query-engine DLL lock while the migration suite was running. After the suite exited, generation, build, and lint passed sequentially.
+
+### Pending PR description correction
+
+Updating PR #63 through the GitHub connector returned HTTP 403 (`Resource not accessible by integration`). The remote description remains unchanged. Replace its ordering bullet with:
+
+> Ticket Action ordering ตาม `createdAt ASC`, `id ASC`; `workflowCycle` ใช้กรอง current-cycle query ไม่ใช่ sort key ของรายการรวมทุก cycle

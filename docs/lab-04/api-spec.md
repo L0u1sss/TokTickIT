@@ -1,6 +1,6 @@
 # TokTickIT Lab 4 — REST API Contract
 
-> Proposed contract for Issue #52. Paths extend the Lab 3 API; unchanged Lab 1–3 routes retain their prior contract.
+> Proposed contract for Issue #52. Paths extend the Lab 3 API. Lab 4 explicitly changes claim, owner, IT Priority, and status write payloads to require `expectedTicketVersion`; other unchanged Lab 1–3 routes retain their prior contract.
 
 ## 1. Conventions
 
@@ -20,7 +20,10 @@ type UserSummary = { id: number; displayName: string; role: "IT_STAFF" | "ADMINI
 
 type ActionTaken = {
   id: number; ticketId: number; description: string; result: string | null;
-  status: ActionStatus; performedBy: UserSummary; assignee: UserSummary;
+  status: ActionStatus; recordedBy: UserSummary; performedBy: UserSummary | null;
+  assignee: UserSummary; workflowCycle: number;
+  cancelledAt: string | null; cancelledBy: UserSummary | null;
+  cancellationSource: "STAFF_ACTION" | "TICKET_CASCADE" | null;
   followUpRequired: boolean; followUpNote: string | null;
   attachmentNotes: string | null; revision: number;
   createdAt: string; updatedAt: string; completedAt: string | null;
@@ -29,11 +32,20 @@ type ActionTaken = {
 type ActionSummary = Pick<ActionTaken,
   "id" | "ticketId" | "description" | "status" | "assignee" | "revision" | "updatedAt"> & {
   ticketNumber: string; ticketSummary: string;
+  attribution: ("RECORDED" | "ASSIGNED" | "PERFORMED")[];
+};
+
+type ActionEvent = {
+  id: number; actionId: number; actor: UserSummary;
+  eventType: "ACTION_CREATED" | "ACTION_UPDATED" | "ACTION_COMPLETED" | "ACTION_CANCELLED" | "TICKET_CASCADE_CANCELLED";
+  fromStatus: ActionStatus | null; toStatus: ActionStatus | null;
+  changedFields: { fields: string[] }; revision: number; createdAt: string;
 };
 
 type TicketSummary = {
   id: number; ticketNumber: string; summary: string; status: string;
-  itPriority: "LOW" | "MEDIUM" | "HIGH"; owner: UserSummary | null; updatedAt: string;
+  itPriority: "LOW" | "MEDIUM" | "HIGH"; owner: UserSummary | null;
+  version: number; resolvedAt: string | null; updatedAt: string;
 };
 ```
 
@@ -59,6 +71,7 @@ POST /api/staff/tickets/:id/actions
 ```json
 {
   "clientRequestId": "52f36ab9-85b0-48ee-a60b-3c31e9f741ee",
+  "expectedTicketVersion": 4,
   "description": "Inspect and replace the damaged network cable.",
   "result": null,
   "assigneeId": 12,
@@ -68,7 +81,7 @@ POST /api/staff/tickets/:id/actions
 }
 ```
 
-The initial status is `PLANNED`; `performedBy` and timestamps come from the session/backend. First success returns `201 { action, replayed:false }` and `Location`; an exact retry for the same Ticket/request ID returns `200 { action, replayed:true }`. Reusing the key with different normalized content returns `409 IDEMPOTENCY_CONFLICT`.
+The initial status is `PLANNED`; `recordedBy` and timestamps come from the session/backend. Cancellation provenance fields are initially null. First success returns `201 { action, replayed:false, ticketVersion }` and `Location`; an exact retry for the same Ticket/request ID returns `200 { action, replayed:true, ticketVersion }` even though that success advanced the Ticket version. `ticketVersion` is the current parent version after the operation (or current version on replay) and is the token for the next Ticket/Action write. The idempotency fingerprint excludes `expectedTicketVersion`. Reusing the key with different normalized Action content returns `409 IDEMPOTENCY_CONFLICT`. A new create checks `expectedTicketVersion` after locking the parent and returns `409 STALE_TICKET` on mismatch.
 
 An individual Action can be retrieved with either role-appropriate path:
 
@@ -85,7 +98,7 @@ The requester route performs the same owned-Ticket check as the requester list r
 PATCH /api/staff/tickets/:ticketId/actions/:actionId
 ```
 
-Body contains `revision` and one or more of `description`, `result`, `assigneeId`, `followUpRequired`, `followUpNote`, `attachmentNotes`. Status changes are not accepted here. Success returns `200 ActionTaken`. A revision mismatch returns `409 STALE_ACTION`. Ineligible assignee returns `409 INVALID_ACTION_ASSIGNEE`. The update and append-only event are committed atomically.
+Body contains `expectedTicketVersion`, `revision`, and one or more of `description`, `result`, `assigneeId`, `followUpRequired`, `followUpNote`, `attachmentNotes`. Status changes are not accepted here. Only non-terminal Actions on actionable Tickets (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`) can be edited. Success returns `200 { action: ActionTaken, ticketVersion }`; `ticketVersion` is the incremented parent version and must be used for the next write. A non-actionable Ticket returns `409 TICKET_NOT_ACTIONABLE`; a parent version mismatch returns `409 STALE_TICKET`; an Action revision mismatch returns `409 STALE_ACTION`. Ineligible assignee returns `409 INVALID_ACTION_ASSIGNEE`. The Action update, one parent version increment, and append-only event are committed atomically.
 
 ### 3.4 Transition Action
 
@@ -94,10 +107,10 @@ PATCH /api/staff/tickets/:ticketId/actions/:actionId/status
 ```
 
 ```json
-{ "status": "COMPLETED", "revision": 3, "result": "Cable replaced; link stable." }
+{ "status": "COMPLETED", "expectedTicketVersion": 5, "revision": 3, "result": "Cable replaced; link stable." }
 ```
 
-`result` is accepted here to complete atomically. Success returns `200 ActionTaken`. Invalid transition returns `409 INVALID_ACTION_TRANSITION`; missing completion Result returns `400 VALIDATION_ERROR`; stale revision returns `409 STALE_ACTION`. No delete endpoint exists.
+`result` is accepted here to complete atomically. Completion requires a non-empty Result, `followUpRequired=false`, and the authenticated actor to be the current Action assignee. The server locks the parent Ticket, then the Action row, re-reads `assigneeId`, and checks actor identity while holding both locks before copying the assignee into `performedBy` and setting `completedAt`. The append-only Action event records the authenticated actor. A non-assignee receives `403 ACTION_ASSIGNEE_REQUIRED`. Staff cancellation also requires `followUpRequired=false`; it sets `cancelledAt`, `cancelledBy`, and `cancellationSource=STAFF_ACTION`. Success returns `200 { action: ActionTaken, ticketVersion }`; use the returned parent version for the next write. A terminal Action cannot transition or be edited; create another Action for later work. Invalid transition returns `409 INVALID_ACTION_TRANSITION`; missing Result or uncleared follow-up returns `400 VALIDATION_ERROR`; a non-actionable Ticket returns `409 TICKET_NOT_ACTIONABLE`; stale parent/Action tokens return `409 STALE_TICKET`/`STALE_ACTION`. Ticket-level cancellation may system-cancel active Actions while retaining their follow-up fields as historical data. No delete endpoint exists.
 
 ### 3.5 List Action audit events
 
@@ -105,15 +118,43 @@ PATCH /api/staff/tickets/:ticketId/actions/:actionId/status
 GET /api/staff/tickets/:ticketId/actions/:actionId/events
 ```
 
-Staff/Admin only. Returns bounded Action event metadata in `createdAt ASC, id ASC`. Events cannot be created, updated, or deleted directly. Requester Action responses do not expose changed-field history.
+Staff/Admin only. Returns bounded `ActionEvent` metadata in `createdAt ASC, id ASC`, including event type, authenticated actor, Action revision, and event time. `changedFields` is exactly `{ "fields": string[] }` with at least one non-empty field name. `ACTION_UPDATED` includes non-terminal status transitions such as `PLANNED → IN_PROGRESS`; completion/cancellation use their dedicated event types. Manual cancellation uses `ACTION_CANCELLED`; Ticket cascade cancellation uses `TICKET_CASCADE_CANCELLED`. Events cannot be created, updated, or deleted through the API; the database rejects updates, deletes, and truncation. Requester Action responses do not expose changed-field history.
 
 ## 4. Ticket Workflow Extension
+
+All Ticket aggregate writes use the same optimistic concurrency contract. The client sends the `version` returned by Ticket Detail/dashboard summaries as `expectedTicketVersion`; missing or non-positive values return `400 VALIDATION_ERROR`, and a stale value returns `409 STALE_TICKET` without mutation. Each accepted command conditionally increments the Ticket version exactly once and returns the new `version` and `updatedAt`. This extends the Lab 3 write contract; all Lab 4 clients must be upgraded together.
+
+### 4.1 Claim Ticket
+
+```http
+POST /api/staff/tickets/:id/claim
+```
+
+Body: `{ "expectedTicketVersion": 5 }`. The authenticated eligible staff user becomes owner only if the Ticket is still unowned and assignable. Success returns `{ "owner": UserSummary, "version": 6, "updatedAt": "..." }`. A stale token returns `409 STALE_TICKET`; existing already-owned/not-assignable conflicts remain unchanged.
+
+### 4.2 Assign or reassign owner
+
+```http
+PATCH /api/staff/tickets/:id/owner
+```
+
+Body: `{ "ownerId": 12, "expectedTicketVersion": 5 }`. The server validates eligibility and conditionally writes owner plus `version=version+1`. Success returns `{ "owner": UserSummary, "version": 6, "updatedAt": "..." }`; stale token returns `409 STALE_TICKET`.
+
+### 4.3 Update IT Priority
+
+```http
+PATCH /api/staff/tickets/:id/it-priority
+```
+
+Body: `{ "itPriority": "HIGH", "expectedTicketVersion": 5 }`. Success returns `{ "itPriority": "HIGH", "version": 6, "updatedAt": "..." }`; stale token returns `409 STALE_TICKET`.
+
+### 4.4 Transition Ticket status
 
 ```http
 PATCH /api/staff/tickets/:id/status
 ```
 
-Lab 4 request body is `{ "status": <TicketStatus>, "expectedUpdatedAt": <ISO timestamp> }`. Existing transition rules remain. `RESOLVED` additionally requires a completed Action with Result; failure returns `409 RESOLUTION_GATE_NOT_MET`. A stale timestamp returns `409 STALE_TICKET`. Resolution validation and update share one transaction. Requester advisory route remains unchanged and cannot formally resolve a Ticket.
+Body: `{ "status": <TicketStatus>, "expectedTicketVersion": <positive integer> }`. Existing transition rules remain. `RESOLVED` additionally requires current-cycle completed work with Result, no `PLANNED`/`IN_PROGRESS` Actions, and no non-cancelled Action with `followUpRequired=true`; cancelled follow-up is historical-only. Failure returns `409 RESOLUTION_GATE_NOT_MET` with safe reason codes. Success returns `{ "status": <TicketStatus>, "version": <new integer>, "updatedAt": "..." }`. Resolution validation and conditional update share one transaction. For Ticket cancellation, each current-cycle `PLANNED`/`IN_PROGRESS` Action is changed to `CANCELLED` atomically: increment its revision exactly once, set Action `updatedAt` and `cancelledAt` to the same UTC transaction timestamp as the Ticket, set `cancelledBy` to the authenticated Ticket-cancellation actor, set source `TICKET_CASCADE`, preserve follow-up fields as historical-only, and append one `TICKET_CASCADE_CANCELLED` event at that revision with that actor and timestamp. Old Action revision tokens then fail with `409 STALE_ACTION`. The parent Ticket version increments once for the aggregate cancellation. Reopening increments `workflowCycle` and clears `resolvedAt`; resolving sets `resolvedAt`, which closing preserves. Requester advisory route remains unchanged and cannot formally resolve a Ticket.
 
 ## 5. Requester Dashboard
 
@@ -128,11 +169,17 @@ Requester only; identity always comes from the session.
   "metrics": { "openCount": 3, "waitingForRequesterCount": 1 },
   "recentlyUpdated": [],
   "recentlyResolved": [],
+  "recentlyResolvedWindow": {
+    "from": "2026-09-18T00:00:00.000Z",
+    "before": "2026-09-25T00:00:00.000Z"
+  },
   "generatedAt": "2026-09-25T00:00:00.000Z"
 }
 ```
 
-Lists contain at most five `TicketSummary` items. Counts/list definitions follow BR-26–BR-27. Zero state uses numeric zero and empty arrays. Drill-down links are constructed by the client from documented My Tickets queries: open statuses as the approved multi-status representation, waiting as `status=WAITING_FOR_REQUESTER`; detail items use `/tickets/:id`.
+Lists contain at most five `TicketSummary` items. `recentlyUpdated` uses the Ticket `updatedAt` maintained by the aggregate-mutation rule in BR-43; accepted Action and Ticket aggregate changes refresh it, while comments, notes, and attachment child writes retain Lab 3 semantics. `generatedAt` is captured once; `recentlyResolvedWindow.from` is exactly 168 hours before it and `before` equals `generatedAt`. The list predicate is `status IN (RESOLVED,CLOSED) AND resolvedAt >= from AND resolvedAt < before`, scoped by authenticated requester, ordered `resolvedAt DESC, id DESC`. A legacy row with unknown `resolvedAt` is not backfilled or included. Zero state uses numeric zero and empty arrays.
+
+The existing authenticated My Tickets API is `GET /api/tickets`. It accepts one `statusIn` query parameter containing comma-separated, uppercase Ticket statuses with no whitespace or duplicates; the canonical open filter is `statusIn=NEW,OPEN,IN_PROGRESS,WAITING_FOR_REQUESTER,REOPENED`. A single status can continue to use `status`. Supplying both `status` and `statusIn`, repeating either query key, an empty member, duplicate/unknown status, or whitespace returns `400 VALIDATION_ERROR`. Recently Resolved drill-down uses `statusIn=RESOLVED,CLOSED&resolvedFrom=<from>&resolvedBefore=<before>` with the exact dashboard bounds; the two date parameters must appear together, be canonical UTC ISO timestamps, and satisfy `resolvedFrom < resolvedBefore`. Date bounds without exactly `statusIn=RESOLVED,CLOSED` are invalid. Dashboard links preserve these values; detail items use `/tickets/:id`.
 
 ## 6. Staff Dashboard
 
@@ -155,7 +202,7 @@ IT Staff/Administrator only.
 }
 ```
 
-Each list is bounded to five summaries. Counts follow BR-26 and BR-28. Drill-down uses existing Queue parameters (`ownerId=unassigned`, `ownerId=me`, `status`, `itPriority`) or `/staff/tickets/:id`. The Queue contract must add the literal `me` if not already supported before dashboard drill-down is considered complete.
+Each list is bounded to five summaries. `recentlyUpdated` uses Ticket `updatedAt` as defined in BR-43, so accepted Action aggregate mutations appear in the preview. Counts follow BR-26 and BR-28. `myActions` is the deduplicated union of Actions recorded by, assigned to, or performed by the authenticated staff user; each summary includes `attribution: ("RECORDED"|"ASSIGNED"|"PERFORMED")[]` with all matching roles. Drill-down uses existing Queue parameters (`ownerId=unassigned`, `ownerId=me`, `status`, `itPriority`) or `/staff/tickets/:id`. The Queue contract must add the literal `me` if not already supported before dashboard drill-down is considered complete.
 
 ## 7. Assignee Reference Data
 
@@ -163,11 +210,11 @@ Existing `GET /api/staff/assignees` remains the source for active eligible users
 
 ## 8. Authorization and Error Precedence
 
-Authentication and forced-password rules run before resource lookup. Role checks run before staff/admin handler execution. Valid-role handlers then validate path/body and resolve resource/ownership. Expected codes include `VALIDATION_ERROR`, `FORBIDDEN`, `NOT_FOUND`, `INVALID_ACTION_ASSIGNEE`, `INVALID_ACTION_TRANSITION`, `RESOLUTION_GATE_NOT_MET`, `STALE_ACTION`, `STALE_TICKET`, `IDEMPOTENCY_CONFLICT`, and safe `INTERNAL_ERROR`.
+Authentication and forced-password rules run before resource lookup. Role checks run before staff/admin handler execution. Valid-role handlers then validate path/body and resolve resource/ownership. Expected codes include `VALIDATION_ERROR`, `FORBIDDEN`, `NOT_FOUND`, `ACTION_ASSIGNEE_REQUIRED`, `INVALID_ACTION_ASSIGNEE`, `INVALID_ACTION_TRANSITION`, `RESOLUTION_GATE_NOT_MET`, `STALE_ACTION`, `STALE_TICKET`, `IDEMPOTENCY_CONFLICT`, and safe `INTERNAL_ERROR`.
 
 ## 9. Concurrency and Duplicate Handling
 
-Action writes use optimistic revision checks and atomic event insertion. Ticket workflow uses expected `updatedAt`. Action creation uses `(ticketId, clientRequestId)` uniqueness and a canonical request fingerprint. Assignment eligibility changes reuse the Lab 3 transaction/advisory-lock protocol so an active Action never finishes assigned to an ineligible user.
+Every Ticket aggregate write (claim, owner assignment/reassignment, priority, status, and Action mutation) uses the same parent lock and compare-and-swap predicate `id=:id AND version=:expectedTicketVersion`. The transaction increments version once and sets parent `updatedAt` to its transaction timestamp on success; stale concurrent owner/priority/status/Action writes return `409 STALE_TICKET`, so none of these write routes has an asymmetric last-write-wins path. Action writes additionally check Action `revision`. The parent Ticket row is locked before the Action row. For completion, re-read the Action assignee after acquiring the Action row lock and compare it to the authenticated actor inside the transaction. Reassignment and completion serialize: if reassignment commits first, the old assignee cannot complete; if completion commits first, the terminal Action cannot be reassigned. The transaction also rechecks parent status/cycle, authorization, assignee eligibility, and resolution predicate. Competing child writes and resolution/cancellation serialize: if a child write wins, the gate sees it; if the terminal Ticket transition wins, the child write rechecks and is rejected. Action projection, one parent version increment, and one event insert commit atomically; the event revision equals the incremented projection revision, preserving the contiguous sequence. PostgreSQL guarantees event revision positivity/uniqueness, while this cross-row agreement and monotonicity are API transaction responsibilities tested in the Action API suite. Comments, Internal Notes, and attachment child-resource writes retain their Lab 3 contract and do not increment the Ticket version or change Ticket `updatedAt` unless they also mutate a Ticket aggregate field. No timestamp participates in concurrency. Missing `expectedTicketVersion` on a Lab 4 aggregate write returns `400 VALIDATION_ERROR`; Lab 4 clients must be upgraded together, while additive `version` response fields do not break Lab 3 readers. Action creation uses `(ticketId, clientRequestId)` uniqueness and a canonical request fingerprint. Assignment eligibility changes reuse the Lab 3 transaction/advisory-lock protocol so an active Action never finishes assigned to an ineligible user.
 
 ## 10. Health and Regression
 
