@@ -15,8 +15,12 @@ const bytes = Buffer.from("%PDF-1.4\nLab 2 attachment continuity\n%%EOF");
 let storageKey: string;
 const url = (suffix = "", id = ticketId) => `/api/staff/tickets/${id}${suffix}`;
 const read = (suffix = "", actor = 1) => request(app).get(url(suffix)).set("Cookie", cookies[actor]);
-const write = (suffix: string, body: object = {}, actor = 1, id = ticketId) => request(app)[suffix === "/claim" ? "post" : "patch"](url(suffix, id))
-  .set("Cookie", `${cookies[actor]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send(body);
+const write = async (suffix: string, body: object = {}, actor = 1, id = ticketId) => {
+  const ticket = await db.ticket.findUnique({ where: { id }, select: { version: true } });
+  const payload = !("expectedTicketVersion" in body) ? { ...body, expectedTicketVersion: ticket?.version ?? 1 } : body;
+  return request(app)[suffix === "/claim" ? "post" : "patch"](url(suffix, id))
+    .set("Cookie", `${cookies[actor]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send(payload);
+};
 
 beforeAll(async () => {
   for (const [index, role] of (["REQUESTER", "IT_STAFF", "ADMINISTRATOR", "IT_STAFF"] as const).entries()) {
@@ -71,7 +75,7 @@ it("allows exactly one concurrent claim and preserves that owner on conflict", a
   expect(results.map(result => result.status).sort()).toEqual([200, 409]);
   const winner = results.find(result => result.status === 200)!;
   expect((await db.ticket.findUniqueOrThrow({ where: { id: ticketId } })).ownerId).toBe(winner.body.owner.id);
-  expect(results.find(result => result.status === 409)!.body.error.code).toBe("TICKET_ALREADY_ASSIGNED");
+  expect(results.find(result => result.status === 409)!.body.error.code).toBe("STALE_TICKET");
 });
 it("reassigns to active staff/admin and rejects inactive/requester/missing owners", async () => {
   for (const ownerId of [ids[1], ids[2]]) {

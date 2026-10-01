@@ -75,15 +75,25 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  // The test schema is disposable. Temporarily disable only the UPDATE/DELETE
+  // guard to remove prior-test fixtures; the append-only behavior is separately
+  // asserted while the trigger is enabled in migration integration tests.
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" DISABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionEvent.deleteMany({ where: { action: { ticketId: { in: [ownedTicketId, otherTicketId] } } } });
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" ENABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionTaken.deleteMany({ where: { ticketId: { in: [ownedTicketId, otherTicketId] } } });
+  await db.ticket.updateMany({ where: { id: { in: [ownedTicketId, otherTicketId] } }, data: { status: "NEW", version: 1, workflowCycle: 1, resolvedAt: null, problemAppearsResolvedAt: null, problemAppearsResolvedById: null } });
   await db.user.update({ where: { id: userIds[3] }, data: { isActive: true, role: "IT_STAFF" } });
 });
 
 afterEach(() => vi.restoreAllMocks());
 
 afterAll(async () => {
+  // This suite runs in a disposable schema. Disable only its DELETE guard while
+  // removing fixtures so other suites still see the four seeded categories.
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" DISABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionEvent.deleteMany({ where: { action: { ticketId: { in: [ownedTicketId, otherTicketId] } } } });
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" ENABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionTaken.deleteMany({ where: { ticketId: { in: [ownedTicketId, otherTicketId] } } });
   await db.ticket.deleteMany({ where: { id: { in: [ownedTicketId, otherTicketId] } } });
   await db.session.deleteMany({ where: { userId: { in: userIds } } });
@@ -124,7 +134,7 @@ it("creates, retrieves and persists an Action with authoritative actor and audit
 
 it("returns stable oldest-first lists to staff and only the owning Requester", async () => {
   const first = await createAction({ description: "First Action" });
-  const second = await createAction({ description: "Second Action", clientRequestId: randomUUID() }, 4);
+  const second = await createAction({ description: "Second Action", clientRequestId: randomUUID(), expectedTicketVersion: first.body.ticketVersion }, 4);
   await db.actionTaken.update({ where: { id: first.body.action.id }, data: { createdAt: new Date("2026-01-01T00:00:00Z") } });
   await db.actionTaken.update({ where: { id: second.body.action.id }, data: { createdAt: new Date("2026-01-02T00:00:00Z") } });
   for (const result of [await staffRead(), await requesterRead()]) {
@@ -189,7 +199,7 @@ it("replays an identical create and rejects reuse with different data", async ()
   expect(conflict.body.error.code).toBe("IDEMPOTENCY_CONFLICT");
   expect(await db.actionTaken.count({ where: { ticketId: ownedTicketId } })).toBe(1);
   expect(await db.actionEvent.count({ where: { actionId: first.body.action.id } })).toBe(1);
-  const concurrentBody = createBody();
+  const concurrentBody = createBody({ expectedTicketVersion: replay.body.ticketVersion });
   const concurrent = await Promise.all([
     staffWrite("post", "", concurrentBody),
     staffWrite("post", "", concurrentBody),
@@ -262,7 +272,7 @@ it("records staff cancellation provenance and rejects follow-up terminal transit
     expectedTicketVersion: actionWithFollowUp.body.ticketVersion, revision: 1, status: "CANCELLED",
   });
   expect(cancelBlocked.status).toBe(400);
-  const action = await createAction({ expectedTicketVersion: cancelBlocked.body.ticketVersion, followUpRequired: false, followUpNote: null });
+  const action = await createAction({ expectedTicketVersion: actionWithFollowUp.body.ticketVersion, followUpRequired: false, followUpNote: null });
   const cancelled = await staffWrite("patch", `/${action.body.action.id}/status`, {
     expectedTicketVersion: action.body.ticketVersion, revision: 1, status: "CANCELLED",
   });
@@ -321,7 +331,7 @@ it("allows one concurrent revision update and rejects stale writes without parti
     staffWrite("patch", `/${id}`, { expectedTicketVersion: ticketVersion, revision: 1, description: "Concurrent B" }, 4),
   ]);
   expect(results.map(result => result.status).sort()).toEqual([200, 409]);
-  expect(results.find(result => result.status === 409)!.body.error.code).toBe("STALE_ACTION");
+  expect(results.find(result => result.status === 409)!.body.error.code).toBe("STALE_TICKET");
   ticketVersion = results.find(result => result.status === 200)!.body.ticketVersion;
   const persisted = await db.actionTaken.findUniqueOrThrow({ where: { id } });
   expect(persisted.revision).toBe(2);

@@ -189,6 +189,7 @@ function parseCreate(body: unknown): CreateInput {
 
 function createFingerprint(input: CreateInput, actorId: number) {
   const { expectedTicketVersion: _version, ...intent } = input;
+  void _version;
   return createHash("sha256").update(JSON.stringify({ actorId, ...intent })).digest("hex");
 }
 
@@ -231,6 +232,7 @@ async function createAction(prisma: PrismaClient, ticketId: number, actorId: num
       await lockActionAssignee(tx, input.assigneeId);
       await requireEligibleAssignee(tx, input.assigneeId);
       const { expectedTicketVersion: _version, ...createData } = input;
+      void _version;
       const action = await tx.actionTaken.create({
         data: { ticketId, workflowCycle: ticket.workflowCycle, recordedById: actorId, createFingerprint: createFingerprint(input, actorId), status: "PLANNED", ...createData },
         select: actionSelect,
