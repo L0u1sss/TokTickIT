@@ -366,10 +366,13 @@ describe("Lab 2 database integration contract", () => {
           "relatedSystemId",
           "requestedPriority",
           "requesterId",
+          "resolvedAt",
           "status",
           "summary",
           "ticketNumber",
           "updatedAt",
+          "version",
+          "workflowCycle",
         ],
       ],
       [

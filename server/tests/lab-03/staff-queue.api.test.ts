@@ -208,7 +208,8 @@ describe("staff queue API", () => {
     const path = `/api/staff/tickets/${tickets[1]}/claim`;
     expect((await request(app).post(path).set("Cookie", cookies[1]).set("Origin", "http://localhost:5173").send({})).status).toBe(403);
     expect((await request(app).post(path).set("Cookie", `${cookies[1]}; ${csrfCookie!.split(";", 1)[0]}`).set("Origin", "http://localhost:5173").set("X-CSRF-Token", "invalid").send({})).status).toBe(403);
-    const accepted = await request(app).post(path).set("Cookie", `${cookies[1]}; ${csrfCookie!.split(";", 1)[0]}`).set("Origin", "http://localhost:5173").set("X-CSRF-Token", csrfToken).send({});
+    const ticket = await db.ticket.findUniqueOrThrow({ where: { id: tickets[1] }, select: { version: true } });
+    const accepted = await request(app).post(path).set("Cookie", `${cookies[1]}; ${csrfCookie!.split(";", 1)[0]}`).set("Origin", "http://localhost:5173").set("X-CSRF-Token", csrfToken).send({ expectedTicketVersion: ticket.version });
     expect(accepted.status).toBe(200);
     expect(accepted.body.owner.id).toBe(ids[1]);
   });

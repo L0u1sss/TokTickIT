@@ -7,8 +7,12 @@ import { parsePositivePathId } from "./path-contract.js";
 
 export const userSummarySelect = { id: true, displayName: true, email: true, role: true, isActive: true, mustChangePassword: true, createdAt: true, updatedAt: true } as const;
 export async function lockUserManagement(tx: Prisma.TransactionClient) {
-  // Shared by account changes and ticket assignment. Acquire before reading either.
+  // Serializes account changes with Ticket owner assignment; callers lock Ticket before this lock.
   await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(350035)`;
+}
+export async function lockActionAssignee(tx: Prisma.TransactionClient, userId: number) {
+  // Action writes use Ticket -> Action -> User row and never take the advisory lock.
+  await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
 }
 function object(body: unknown, fields: string[]) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw validationError([{ field: "form", issue: "Send a JSON object." }]);

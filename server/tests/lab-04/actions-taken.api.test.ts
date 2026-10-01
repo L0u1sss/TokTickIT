@@ -30,6 +30,7 @@ const staffWrite = (method: "post" | "patch", suffix: string, body: object, acto
 function createBody(overrides: Record<string, unknown> = {}) {
   return {
     clientRequestId: randomUUID(),
+    expectedTicketVersion: 1,
     description: "Inspect the affected device and record the work.",
     result: null,
     assigneeId: userIds[3],
@@ -74,15 +75,25 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  // The test schema is disposable. Temporarily disable only the UPDATE/DELETE
+  // guard to remove prior-test fixtures; the append-only behavior is separately
+  // asserted while the trigger is enabled in migration integration tests.
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" DISABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionEvent.deleteMany({ where: { action: { ticketId: { in: [ownedTicketId, otherTicketId] } } } });
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" ENABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionTaken.deleteMany({ where: { ticketId: { in: [ownedTicketId, otherTicketId] } } });
+  await db.ticket.updateMany({ where: { id: { in: [ownedTicketId, otherTicketId] } }, data: { status: "NEW", version: 1, workflowCycle: 1, resolvedAt: null, problemAppearsResolvedAt: null, problemAppearsResolvedById: null } });
   await db.user.update({ where: { id: userIds[3] }, data: { isActive: true, role: "IT_STAFF" } });
 });
 
 afterEach(() => vi.restoreAllMocks());
 
 afterAll(async () => {
+  // This suite runs in a disposable schema. Disable only its DELETE guard while
+  // removing fixtures so other suites still see the four seeded categories.
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" DISABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionEvent.deleteMany({ where: { action: { ticketId: { in: [ownedTicketId, otherTicketId] } } } });
+  await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" ENABLE TRIGGER "ActionEvent_reject_update_delete"');
   await db.actionTaken.deleteMany({ where: { ticketId: { in: [ownedTicketId, otherTicketId] } } });
   await db.ticket.deleteMany({ where: { id: { in: [ownedTicketId, otherTicketId] } } });
   await db.session.deleteMany({ where: { userId: { in: userIds } } });
@@ -103,7 +114,8 @@ it("creates, retrieves and persists an Action with authoritative actor and audit
     replayed: false,
     action: {
       ticketId: ownedTicketId, status: "PLANNED", revision: 1,
-      performedBy: { id: userIds[2], role: "IT_STAFF" },
+      recordedBy: { id: userIds[2], role: "IT_STAFF" },
+      performedBy: null,
       assignee: { id: userIds[3], role: "IT_STAFF" },
       followUpRequired: true, followUpNote: "Confirm stability tomorrow.",
     },
@@ -111,17 +123,18 @@ it("creates, retrieves and persists an Action with authoritative actor and audit
   expect(result.body.action.createdAt).toEqual(expect.any(String));
   expect(result.body.action.updatedAt).toEqual(expect.any(String));
   expect(result.body.action.completedAt).toBeNull();
+  expect(result.body.ticketVersion).toBe(2);
   expect(JSON.stringify(result.body)).not.toMatch(/passwordHash|email|isActive|mustChangePassword/);
 
   const persisted = await db.actionTaken.findUniqueOrThrow({ where: { id: result.body.action.id }, include: { events: true } });
-  expect(persisted).toMatchObject({ ticketId: ownedTicketId, performedById: userIds[2], assigneeId: userIds[3], revision: 1 });
-  expect(persisted.events).toEqual([expect.objectContaining({ actorId: userIds[2], eventType: "CREATED", toStatus: "PLANNED", revision: 1 })]);
-  expect((await staffRead(`/${persisted.id}`)).body).toMatchObject({ id: persisted.id, performedBy: { id: userIds[2] } });
+  expect(persisted).toMatchObject({ ticketId: ownedTicketId, recordedById: userIds[2], performedById: null, assigneeId: userIds[3], revision: 1 });
+  expect(persisted.events).toEqual([expect.objectContaining({ actorId: userIds[2], eventType: "ACTION_CREATED", toStatus: "PLANNED", revision: 1 })]);
+  expect((await staffRead(`/${persisted.id}`)).body).toMatchObject({ id: persisted.id, performedBy: null, recordedBy: { id: userIds[2] } });
 });
 
 it("returns stable oldest-first lists to staff and only the owning Requester", async () => {
   const first = await createAction({ description: "First Action" });
-  const second = await createAction({ description: "Second Action", clientRequestId: randomUUID() }, 4);
+  const second = await createAction({ description: "Second Action", clientRequestId: randomUUID(), expectedTicketVersion: first.body.ticketVersion }, 4);
   await db.actionTaken.update({ where: { id: first.body.action.id }, data: { createdAt: new Date("2026-01-01T00:00:00Z") } });
   await db.actionTaken.update({ where: { id: second.body.action.id }, data: { createdAt: new Date("2026-01-02T00:00:00Z") } });
   for (const result of [await staffRead(), await requesterRead()]) {
@@ -177,7 +190,7 @@ it("rejects inactive, Requester and missing assignees without changing data", as
 it("replays an identical create and rejects reuse with different data", async () => {
   const body = createBody();
   const first = await staffWrite("post", "", body);
-  const replay = await staffWrite("post", "", body);
+  const replay = await staffWrite("post", "", { ...body, expectedTicketVersion: first.body.ticketVersion });
   expect(first.status).toBe(201);
   expect(replay.status).toBe(200);
   expect(replay.body).toMatchObject({ replayed: true, action: { id: first.body.action.id } });
@@ -186,7 +199,7 @@ it("replays an identical create and rejects reuse with different data", async ()
   expect(conflict.body.error.code).toBe("IDEMPOTENCY_CONFLICT");
   expect(await db.actionTaken.count({ where: { ticketId: ownedTicketId } })).toBe(1);
   expect(await db.actionEvent.count({ where: { actionId: first.body.action.id } })).toBe(1);
-  const concurrentBody = createBody();
+  const concurrentBody = createBody({ expectedTicketVersion: replay.body.ticketVersion });
   const concurrent = await Promise.all([
     staffWrite("post", "", concurrentBody),
     staffWrite("post", "", concurrentBody),
@@ -197,36 +210,134 @@ it("replays an identical create and rejects reuse with different data", async ()
   expect(await db.actionEvent.count({ where: { actionId: concurrent[0].body.action.id } })).toBe(1);
 });
 
+it("replays the original normalized create intent after the Action projection changes", async () => {
+  const body = createBody();
+  const first = await staffWrite("post", "", body);
+  const edited = await staffWrite("patch", `/${first.body.action.id}`, {
+    expectedTicketVersion: first.body.ticketVersion, revision: 1, description: "Edited after creation", assigneeId: userIds[4],
+  });
+  expect(edited.status).toBe(200);
+  const replay = await staffWrite("post", "", { ...body, expectedTicketVersion: edited.body.ticketVersion });
+  expect(replay.status).toBe(200);
+  expect(replay.body).toMatchObject({ replayed: true, action: { id: first.body.action.id, description: "Edited after creation", assignee: { id: userIds[4] } }, ticketVersion: edited.body.ticketVersion });
+  expect(await db.actionEvent.count({ where: { actionId: first.body.action.id } })).toBe(2);
+});
+
+it("races reassignment against completion and enforces the resulting current assignee", async () => {
+  const created = await createAction();
+  const id = created.body.action.id;
+  const started = await staffWrite("patch", `/${id}/status`, { expectedTicketVersion: created.body.ticketVersion, status: "IN_PROGRESS", revision: 1 });
+  expect(started.status).toBe(200);
+  const [reassign, complete] = await Promise.all([
+    staffWrite("patch", `/${id}`, { expectedTicketVersion: started.body.ticketVersion, revision: 2, assigneeId: userIds[4] }, 2),
+    staffWrite("patch", `/${id}/status`, { expectedTicketVersion: started.body.ticketVersion, status: "COMPLETED", revision: 2, result: "Done." }, 3),
+  ]);
+  const winner = reassign.status === 200 ? "reassigned" : complete.status === 200 ? "completed" : "neither";
+  expect(winner).not.toBe("neither");
+  const current = await db.actionTaken.findUniqueOrThrow({ where: { id } });
+  const ticket = await db.ticket.findUniqueOrThrow({ where: { id: ownedTicketId } });
+  expect(ticket.version).toBe(started.body.ticketVersion + 1);
+  if (winner === "reassigned") {
+    expect(complete.status).toBe(409);
+    expect(complete.body.error.code).toBe("STALE_TICKET");
+    expect(current).toMatchObject({ status: "IN_PROGRESS", assigneeId: userIds[4], performedById: null });
+  } else {
+    expect(reassign.status).toBe(409);
+    expect(reassign.body.error.code).toBe("STALE_TICKET");
+    expect(current).toMatchObject({ status: "COMPLETED", assigneeId: userIds[3], performedById: userIds[3] });
+  }
+});
+
+it("rejects stale parent versions on Action create, update, and transition", async () => {
+  const created = await createAction();
+  const id = created.body.action.id;
+  const staleCreate = await createAction({ expectedTicketVersion: 1 });
+  expect(staleCreate.status).toBe(409);
+  expect(staleCreate.body.error.code).toBe("STALE_TICKET");
+  const updatedTicket = await request(app).patch(`/api/staff/tickets/${ownedTicketId}/it-priority`)
+    .set("Cookie", `${cookies[2]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf)
+    .set("Origin", "http://localhost:5173").send({ itPriority: "LOW", expectedTicketVersion: created.body.ticketVersion });
+  expect(updatedTicket.status).toBe(200);
+  const staleUpdate = await staffWrite("patch", `/${id}`, { expectedTicketVersion: created.body.ticketVersion, revision: 1, description: "stale" });
+  expect(staleUpdate.status).toBe(409);
+  expect(staleUpdate.body.error.code).toBe("STALE_TICKET");
+  const staleTransition = await staffWrite("patch", `/${id}/status`, { expectedTicketVersion: created.body.ticketVersion, revision: 1, status: "IN_PROGRESS" });
+  expect(staleTransition.status).toBe(409);
+  expect(staleTransition.body.error.code).toBe("STALE_TICKET");
+});
+
+it("records staff cancellation provenance and rejects follow-up terminal transitions", async () => {
+  const actionWithFollowUp = await createAction({ followUpRequired: true, followUpNote: "Check later." });
+  const cancelBlocked = await staffWrite("patch", `/${actionWithFollowUp.body.action.id}/status`, {
+    expectedTicketVersion: actionWithFollowUp.body.ticketVersion, revision: 1, status: "CANCELLED",
+  });
+  expect(cancelBlocked.status).toBe(400);
+  const action = await createAction({ expectedTicketVersion: actionWithFollowUp.body.ticketVersion, followUpRequired: false, followUpNote: null });
+  const cancelled = await staffWrite("patch", `/${action.body.action.id}/status`, {
+    expectedTicketVersion: action.body.ticketVersion, revision: 1, status: "CANCELLED",
+  });
+  expect(cancelled.status).toBe(200);
+  expect(cancelled.body.action).toMatchObject({ status: "CANCELLED", cancelledBy: { id: userIds[2] }, cancellationSource: "STAFF_ACTION", cancelledAt: expect.any(String) });
+});
+
+it("increments Ticket version once and appends cascade cancellation events atomically", async () => {
+  const action = await createAction({ followUpRequired: true, followUpNote: "Historical follow-up" });
+  const changed = await request(app).patch(`/api/staff/tickets/${ownedTicketId}/status`)
+    .set("Cookie", `${cookies[2]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf)
+    .set("Origin", "http://localhost:5173")
+    .send({ status: "CANCELLED", expectedTicketVersion: action.body.ticketVersion });
+  expect(changed.status).toBe(200);
+  expect(changed.body.version).toBe(action.body.ticketVersion + 1);
+  const persisted = await db.actionTaken.findUniqueOrThrow({ where: { id: action.body.action.id } });
+  expect(persisted).toMatchObject({ status: "CANCELLED", revision: 2, cancelledById: userIds[2], cancellationSource: "TICKET_CASCADE", followUpRequired: true });
+  expect(persisted.cancelledAt).toEqual(changed.body.updatedAt ? new Date(changed.body.updatedAt) : expect.any(Date));
+  expect(await db.actionEvent.findFirstOrThrow({ where: { actionId: persisted.id, revision: 2 } })).toMatchObject({ actorId: userIds[2], eventType: "TICKET_CASCADE_CANCELLED", createdAt: persisted.cancelledAt });
+});
+
 it("updates content and assignment atomically with append-only events", async () => {
   const created = await createAction();
   const id = created.body.action.id;
   const updated = await staffWrite("patch", `/${id}`, {
-    revision: 1, description: "Updated work description", assigneeId: userIds[4],
+    expectedTicketVersion: created.body.ticketVersion, revision: 1, description: "Updated work description", assigneeId: userIds[4],
     followUpRequired: true, followUpNote: "Call the requester after verification.", attachmentNotes: null,
   }, 4);
   expect(updated.status).toBe(200);
-  expect(updated.body).toMatchObject({ id, revision: 2, description: "Updated work description", assignee: { id: userIds[4] }, followUpRequired: true });
+  expect(updated.body.action).toMatchObject({ id, revision: 2, description: "Updated work description", assignee: { id: userIds[4] }, followUpRequired: true });
   const events = await staffRead(`/${id}/events`);
   expect(events.status).toBe(200);
   expect(events.body.items.map((event: { revision: number }) => event.revision)).toEqual([1, 2]);
-  expect(events.body.items[1]).toMatchObject({ actor: { id: userIds[4] }, eventType: "CONTENT_UPDATED", revision: 2 });
+  expect(events.body.items[1]).toMatchObject({ actor: { id: userIds[4] }, eventType: "ACTION_UPDATED", revision: 2 });
   expect(JSON.stringify(events.body)).not.toMatch(/passwordHash|email/);
+});
+
+it("returns a no-op Action edit without marking it as an idempotent replay", async () => {
+  const created = await createAction();
+  const id = created.body.action.id;
+  const unchanged = await staffWrite("patch", `/${id}`, {
+    expectedTicketVersion: created.body.ticketVersion, revision: 1, description: created.body.action.description,
+  });
+  expect(unchanged.status).toBe(200);
+  expect(unchanged.body).toMatchObject({ action: { id, revision: 1 }, ticketVersion: created.body.ticketVersion });
+  expect(unchanged.body).not.toHaveProperty("replayed");
+  expect(await db.actionEvent.count({ where: { actionId: id } })).toBe(1);
 });
 
 it("allows one concurrent revision update and rejects stale writes without partial events", async () => {
   const created = await createAction();
   const id = created.body.action.id;
+  let ticketVersion = created.body.ticketVersion;
   const results = await Promise.all([
-    staffWrite("patch", `/${id}`, { revision: 1, description: "Concurrent A" }),
-    staffWrite("patch", `/${id}`, { revision: 1, description: "Concurrent B" }, 4),
+    staffWrite("patch", `/${id}`, { expectedTicketVersion: ticketVersion, revision: 1, description: "Concurrent A" }),
+    staffWrite("patch", `/${id}`, { expectedTicketVersion: ticketVersion, revision: 1, description: "Concurrent B" }, 4),
   ]);
   expect(results.map(result => result.status).sort()).toEqual([200, 409]);
-  expect(results.find(result => result.status === 409)!.body.error.code).toBe("STALE_ACTION");
+  expect(results.find(result => result.status === 409)!.body.error.code).toBe("STALE_TICKET");
+  ticketVersion = results.find(result => result.status === 200)!.body.ticketVersion;
   const persisted = await db.actionTaken.findUniqueOrThrow({ where: { id } });
   expect(persisted.revision).toBe(2);
   expect(["Concurrent A", "Concurrent B"]).toContain(persisted.description);
   expect(await db.actionEvent.count({ where: { actionId: id } })).toBe(2);
-  const stale = await staffWrite("patch", `/${id}`, { revision: 1, result: "Must not persist" });
+  const stale = await staffWrite("patch", `/${id}`, { expectedTicketVersion: ticketVersion, revision: 1, result: "Must not persist" });
   expect(stale.status).toBe(409);
   expect((await db.actionTaken.findUniqueOrThrow({ where: { id } })).result).toBeNull();
 });
@@ -234,24 +345,27 @@ it("allows one concurrent revision update and rejects stale writes without parti
 it("enforces the Action lifecycle, completion Result and stable audit ordering", async () => {
   const created = await createAction();
   const id = created.body.action.id;
-  const invalid = await staffWrite("patch", `/${id}/status`, { status: "COMPLETED", revision: 1, result: "Skipped work" });
+  let ticketVersion = created.body.ticketVersion;
+  const invalid = await staffWrite("patch", `/${id}/status`, { expectedTicketVersion: ticketVersion, status: "COMPLETED", revision: 1, result: "Skipped work" });
   expect(invalid.status).toBe(409);
   expect(invalid.body.error.code).toBe("INVALID_ACTION_TRANSITION");
-  const started = await staffWrite("patch", `/${id}/status`, { status: "IN_PROGRESS", revision: 1 });
+  const started = await staffWrite("patch", `/${id}/status`, { expectedTicketVersion: ticketVersion, status: "IN_PROGRESS", revision: 1 });
+  ticketVersion = started.body.ticketVersion;
   expect(started.status).toBe(200);
-  const missingResult = await staffWrite("patch", `/${id}/status`, { status: "COMPLETED", revision: 2 });
+  const missingResult = await staffWrite("patch", `/${id}/status`, { expectedTicketVersion: ticketVersion, status: "COMPLETED", revision: 2 });
   expect(missingResult.status).toBe(400);
-  const completed = await staffWrite("patch", `/${id}/status`, { status: "COMPLETED", revision: 2, result: "Connectivity verified." });
+  const completed = await staffWrite("patch", `/${id}/status`, { expectedTicketVersion: ticketVersion, status: "COMPLETED", revision: 2, result: "Connectivity verified." }, 3);
   expect(completed.status).toBe(200);
-  expect(completed.body).toMatchObject({ status: "COMPLETED", result: "Connectivity verified.", revision: 3, completedAt: expect.any(String) });
-  const reopened = await staffWrite("patch", `/${id}/status`, { status: "IN_PROGRESS", revision: 3 });
-  expect(reopened.body).toMatchObject({ status: "IN_PROGRESS", revision: 4, completedAt: null });
-  const cancelled = await staffWrite("patch", `/${id}/status`, { status: "CANCELLED", revision: 4 });
-  expect(cancelled.body).toMatchObject({ status: "CANCELLED", revision: 5 });
-  const replanned = await staffWrite("patch", `/${id}/status`, { status: "PLANNED", revision: 5 });
-  expect(replanned.body).toMatchObject({ status: "PLANNED", revision: 6 });
+  expect(completed.body.action).toMatchObject({ status: "COMPLETED", result: "Connectivity verified.", revision: 3, completedAt: expect.any(String), performedBy: { id: userIds[3] } });
+  ticketVersion = completed.body.ticketVersion;
+  const reopened = await staffWrite("patch", `/${id}/status`, { expectedTicketVersion: ticketVersion, status: "IN_PROGRESS", revision: 3 });
+  expect(reopened.status).toBe(409);
+  expect(reopened.body.error.code).toBe("INVALID_ACTION_TRANSITION");
+  const terminalEdit = await staffWrite("patch", `/${id}`, { expectedTicketVersion: ticketVersion, revision: 3, description: "Should not change" });
+  expect(terminalEdit.status).toBe(409);
   const events = await db.actionEvent.findMany({ where: { actionId: id }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
-  expect(events.map(event => event.revision)).toEqual([1, 2, 3, 4, 5, 6]);
+  expect(events.map(event => event.revision)).toEqual([1, 2, 3]);
+  expect((await db.actionTaken.findUniqueOrThrow({ where: { id } })).performedById).toBe(userIds[3]);
 });
 
 it("coordinates assignment with deactivation and keeps the final assignee eligible", async () => {

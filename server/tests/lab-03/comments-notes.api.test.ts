@@ -66,7 +66,8 @@ it.each(["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] as S
 it.each(["RESOLVED", "CLOSED", "CANCELLED"] as Status[])("rejects indication for %s and clears it when reopened", async status => {
   await db.ticket.update({ where: { id: ticketId }, data: { status } });
   expect((await post(0, "problem-appears-resolved")).status).toBe(409);
-  const reopened = await request(app).patch(path(1, "status")).set("Cookie", `${cookies[1]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send({ status: "REOPENED" });
+  const ticket = await db.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { version: true } });
+  const reopened = await request(app).patch(path(1, "status")).set("Cookie", `${cookies[1]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send({ status: "REOPENED", expectedTicketVersion: ticket.version });
   expect(reopened.status).toBe(200);
   expect((await db.ticket.findUniqueOrThrow({ where: { id: ticketId } })).problemAppearsResolvedAt).toBeNull();
   expect((await post(0, "problem-appears-resolved")).status).toBe(200);
