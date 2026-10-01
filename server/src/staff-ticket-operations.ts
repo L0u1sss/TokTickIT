@@ -49,9 +49,26 @@ function notFound() {
 }
 
 async function requireTicket(prisma: PrismaClient, ticketId: number) {
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { id: true, status: true, ownerId: true } });
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { id: true, status: true, ownerId: true, version: true } });
   if (!ticket) throw notFound();
   return ticket;
+}
+
+function expectedVersion(body: Record<string, unknown>) {
+  const value = body.expectedTicketVersion;
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) throw validationError([{ field: "expectedTicketVersion", issue: "Must be a positive integer." }]);
+  return value;
+}
+async function lockTicket(tx: Prisma.TransactionClient, ticketId: number) {
+  await tx.$queryRaw`SELECT "id" FROM "Ticket" WHERE "id" = ${ticketId} FOR UPDATE`;
+  const ticket = await tx.ticket.findUnique({ where: { id: ticketId }, select: { id: true, status: true, ownerId: true, version: true, workflowCycle: true } });
+  if (!ticket) throw notFound();
+  return ticket;
+}
+async function writeTicket(tx: Prisma.TransactionClient, ticketId: number, expected: number, data: Record<string, unknown>, now: Date) {
+  const result = await tx.ticket.updateMany({ where: { id: ticketId, version: expected }, data: { ...data, version: { increment: 1 }, updatedAt: now } as Prisma.TicketUpdateManyMutationInput });
+  if (result.count !== 1) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
+  return expected + 1;
 }
 
 async function requireEligibleOwner(prisma: PrismaClient, ownerId: number) {
@@ -60,47 +77,72 @@ async function requireEligibleOwner(prisma: PrismaClient, ownerId: number) {
   return owner;
 }
 
-export async function claimTicket(prisma: PrismaClient, ticketId: number, actorId: number) {
+export async function claimTicket(prisma: PrismaClient, ticketId: number, actorId: number, expected: number) {
   return prisma.$transaction(async (transaction) => {
+    const now = new Date();
+    const ticket = await lockTicket(transaction, ticketId);
+    if (ticket.version !== expected) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
     await lockUserManagement(transaction);
-    const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true, ownerId: true } });
-    if (!ticket) throw notFound();
     if (ticket.status === "CLOSED" || ticket.status === "CANCELLED") throw new ApiError(409, "TICKET_NOT_ASSIGNABLE", "Closed or cancelled Tickets cannot be assigned.");
     if (ticket.ownerId !== null) throw new ApiError(409, "TICKET_ALREADY_ASSIGNED", "This Ticket already has an owner.");
     await requireEligibleOwner(transaction as unknown as PrismaClient, actorId);
-    const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { ownerId: actorId }, select: { owner: { select: userSelect }, updatedAt: true } });
-    return { owner: updated.owner, updatedAt: updated.updatedAt.toISOString() };
+    await writeTicket(transaction, ticketId, expected, { ownerId: actorId }, now);
+    const updated = await transaction.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { owner: { select: userSelect }, updatedAt: true } });
+    return { owner: updated.owner, version: expected + 1, updatedAt: updated.updatedAt.toISOString() };
   });
 }
 
-export async function assignTicket(prisma: PrismaClient, ticketId: number, ownerId: number) {
+export async function assignTicket(prisma: PrismaClient, ticketId: number, ownerId: number, expected: number) {
   return prisma.$transaction(async (transaction) => {
+    const now = new Date(); const ticket = await lockTicket(transaction, ticketId);
+    if (ticket.version !== expected) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
     await lockUserManagement(transaction);
     const owner = await requireEligibleOwner(transaction as unknown as PrismaClient, ownerId);
-    const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true } });
-    if (!ticket) throw notFound();
     if (ticket.status === "CLOSED" || ticket.status === "CANCELLED") throw new ApiError(409, "TICKET_NOT_ASSIGNABLE", "Closed or cancelled Tickets cannot be assigned.");
-    const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { ownerId: owner.id }, select: { owner: { select: userSelect }, updatedAt: true } });
-    return { owner: updated.owner, updatedAt: updated.updatedAt.toISOString() };
+    await writeTicket(transaction, ticketId, expected, { ownerId: owner.id }, now);
+    const updated = await transaction.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { owner: { select: userSelect }, updatedAt: true } });
+    return { owner: updated.owner, version: expected + 1, updatedAt: updated.updatedAt.toISOString() };
   });
 }
 
-export async function updateTicketPriority(prisma: PrismaClient, ticketId: number, itPriority: Priority) {
-  const updated = await prisma.ticket.update({ where: { id: ticketId }, data: { itPriority }, select: { itPriority: true, updatedAt: true } }).catch((error: unknown) => {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") throw notFound();
-    throw error;
+export async function updateTicketPriority(prisma: PrismaClient, ticketId: number, itPriority: Priority, expected: number) {
+  return prisma.$transaction(async tx => {
+    const now = new Date(); const ticket = await lockTicket(tx, ticketId);
+    if (ticket.version !== expected) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
+    await writeTicket(tx, ticketId, expected, { itPriority }, now);
+    const updated = await tx.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { itPriority: true, updatedAt: true } });
+    return { itPriority: updated.itPriority, version: expected + 1, updatedAt: updated.updatedAt.toISOString() };
   });
-  return { itPriority: updated.itPriority, updatedAt: updated.updatedAt.toISOString() };
 }
 
-export async function updateTicketStatus(prisma: PrismaClient, ticketId: number, nextStatus: Status) {
+export async function updateTicketStatus(prisma: PrismaClient, ticketId: number, nextStatus: Status, expected: number, actorId: number) {
   return prisma.$transaction(async (transaction) => {
-    const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true, ownerId: true } });
-    if (!ticket) throw notFound();
+    const now = new Date(); const ticket = await lockTicket(transaction, ticketId);
+    if (ticket.version !== expected) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
     if (!permittedStatusTransition(ticket.status, nextStatus)) throw new ApiError(409, "INVALID_STATUS_TRANSITION", `Cannot change status from ${ticket.status} to ${nextStatus}.`);
+    if (nextStatus === "CLOSED" && ticket.status !== "RESOLVED") throw new ApiError(409, "INVALID_STATUS_TRANSITION", "Only resolved Tickets can be closed.");
     const terminal = nextStatus === "CLOSED" || nextStatus === "CANCELLED";
-    const updated = await transaction.ticket.update({ where: { id: ticketId }, data: { status: nextStatus, ...(nextStatus === "REOPENED" ? { problemAppearsResolvedAt: null, problemAppearsResolvedById: null } : {}), ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) }, select: { status: true, updatedAt: true } });
-    return { status: updated.status, updatedAt: updated.updatedAt.toISOString() };
+    if (nextStatus === "CANCELLED") {
+      const actions = await transaction.actionTaken.findMany({
+        where: { ticketId, workflowCycle: ticket.workflowCycle, status: { in: ["PLANNED", "IN_PROGRESS"] } },
+        select: { id: true, status: true, revision: true }, orderBy: { id: "asc" },
+      });
+      for (const action of actions) {
+        const changed = await transaction.actionTaken.updateMany({ where: { id: action.id, revision: action.revision }, data: {
+          status: "CANCELLED", cancelledAt: now, cancelledById: actorId,
+          cancellationSource: "TICKET_CASCADE", updatedAt: now, revision: { increment: 1 },
+        } });
+        if (changed.count !== 1) throw new ApiError(409, "STALE_ACTION", "An Action changed while cancelling the Ticket.");
+        await transaction.actionEvent.create({ data: {
+          actionId: action.id, actorId,
+          eventType: "TICKET_CASCADE_CANCELLED", fromStatus: action.status, toStatus: "CANCELLED", revision: action.revision + 1,
+          changedFields: { fields: ["status", "cancelledAt", "cancelledById", "cancellationSource"] }, createdAt: now,
+        } });
+      }
+    }
+    await writeTicket(transaction, ticketId, expected, { status: nextStatus, ...(nextStatus === "REOPENED" ? { workflowCycle: { increment: 1 }, resolvedAt: null, problemAppearsResolvedAt: null, problemAppearsResolvedById: null } : {}), ...(nextStatus === "RESOLVED" ? { resolvedAt: now } : {}), ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) }, now);
+    const updated = await transaction.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { status: true, updatedAt: true } });
+    return { status: updated.status, version: expected + 1, updatedAt: updated.updatedAt.toISOString() };
   });
 }
 
@@ -117,6 +159,7 @@ export async function getStaffTicketDetail(prisma: PrismaClient, ticketId: numbe
   if (!ticket) throw notFound();
   return {
     ...ticket,
+    version: ticket.version,
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
     attachments: ticket.attachments.map(attachment => ({
@@ -157,14 +200,14 @@ staffTicketOperationsRouter.get("/tickets/:id/attachments/:attId/download", rout
     res.set({ "Content-Type": attachment.mimeType, "Content-Length": String(attachment.sizeBytes), "Content-Disposition": `attachment; filename="${safeFileName}"`, "X-Content-Type-Options": "nosniff" });
   res.send(bytes);
 }));
-staffTicketOperationsRouter.post("/tickets/:id/claim", route(async (req, res) => res.json(await claimTicket(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id))));
+staffTicketOperationsRouter.post("/tickets/:id/claim", route(async (req, res) => { const body = bodyObject(req.body); res.json(await claimTicket(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, expectedVersion(body))); }));
 staffTicketOperationsRouter.patch("/tickets/:id/owner", route(async (req, res) => {
-  const body = bodyObject(req.body); const value = body.ownerId;
+  const body = bodyObject(req.body); const value = body.ownerId; const version = expectedVersion(body);
   if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) throw validationError([{ field: "ownerId", issue: "Must be a positive integer." }]);
-  res.json(await assignTicket(getPrisma(), parsePositivePathId(req.params.id, "id"), value));
+  res.json(await assignTicket(getPrisma(), parsePositivePathId(req.params.id, "id"), value, version));
 }));
-staffTicketOperationsRouter.patch("/tickets/:id/it-priority", route(async (req, res) => res.json(await updateTicketPriority(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(bodyObject(req.body), "itPriority", Object.values(Priority))))));
-staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(bodyObject(req.body), "status", Object.values(Status))))));
+staffTicketOperationsRouter.patch("/tickets/:id/it-priority", route(async (req, res) => { const body = bodyObject(req.body); res.json(await updateTicketPriority(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(body, "itPriority", Object.values(Priority)), expectedVersion(body))); }));
+staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => { const body = bodyObject(req.body); res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(body, "status", Object.values(Status)), expectedVersion(body), res.locals.authenticatedUser.id)); }));
 staffTicketOperationsRouter.get("/tickets/:id/comments", route(async (req, res) => { const id = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), id); res.json({ items: await listComments(getPrisma(), id) }); }));
 staffTicketOperationsRouter.post("/tickets/:id/comments", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, req.body, false))));
 staffTicketOperationsRouter.get("/tickets/:id/internal-notes", route(async (req, res) => { const ticketId = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), ticketId); const items = await getPrisma().internalNote.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: communicationSelect }); res.json({ items: items.map(item => ({ ...item, createdAt: item.createdAt.toISOString() })) }); }));

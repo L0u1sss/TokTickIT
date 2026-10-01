@@ -167,6 +167,7 @@ model ActionTaken {
   ticketId           Int
   workflowCycle      Int                 @default(1)
   clientRequestId    String              @db.Uuid
+  createFingerprint  String              @db.Char(64)
   description        String              @db.VarChar(2000)
   result             String?             @db.VarChar(2000)
   status             ActionStatus        @default(PLANNED)

@@ -209,6 +209,7 @@ export async function seedDatabase(prisma: PrismaClient) {
         ticketId: selectedTicketId,
         workflowCycle: action.workflowCycle,
         clientRequestId: action.clientRequestId,
+        createFingerprint: "0".repeat(64),
         description: action.description,
         result: action.result,
         status: action.status,

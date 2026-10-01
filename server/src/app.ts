@@ -17,6 +17,7 @@ import { staffQueueRouter } from "./staff-queue.js";
 import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
 import { parsePositivePathId } from "./path-contract.js";
 import { getOwnedTicketDetail } from "./ticket-detail-service.js";
+import { requesterActionsRouter, staffActionsRouter } from "./actions-taken.js";
 import {
   downloadOwnedAttachment,
   removeOwnedAttachment,
@@ -76,6 +77,8 @@ app.use("/api/admin", requireStaffCsrf);
 app.use(express.json());
 app.use("/api/admin", userManagementRouter);
 app.use("/api/tickets", requesterCommunicationsRouter);
+app.use("/api/tickets", requesterActionsRouter);
+app.use("/api/staff", staffActionsRouter);
 app.use("/api/staff", staffTicketOperationsRouter);
 app.use("/api/staff", staffQueueRouter);
 
