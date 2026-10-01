@@ -71,7 +71,8 @@ try{
     } });
       // Represent an existing staff adjustment after correct priority initialization.
       if (i % 2 === 0) await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "MEDIUM" } });
-      if (staffFlow && i === 2) {
+      // Fresh attachment-bearing tickets for the initial attempt and both CI retries.
+      if (staffFlow && [2, 4, 6].includes(i)) {
         const storageKey = randomUUID(), bytes = Buffer.from("%PDF-1.4\nStaff attachment continuity\n%%EOF");
         await writeFile(path.join(attachmentDirectory, storageKey), bytes);
         await db.attachment.create({ data: { ticketId: ticket.id, originalName: "existing.pdf", storageKey, sizeBytes: bytes.length, mimeType: "application/pdf", uploadedByRequesterId: requester.id } });
