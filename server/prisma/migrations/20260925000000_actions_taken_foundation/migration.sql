@@ -14,6 +14,7 @@ CREATE TABLE "ActionTaken" (
   "ticketId" INTEGER NOT NULL,
   "workflowCycle" INTEGER NOT NULL DEFAULT 1,
   "clientRequestId" UUID NOT NULL,
+  "createFingerprint" CHAR(64) NOT NULL,
   "description" VARCHAR(2000) NOT NULL,
   "result" VARCHAR(2000),
   "status" "ActionStatus" NOT NULL DEFAULT 'PLANNED',

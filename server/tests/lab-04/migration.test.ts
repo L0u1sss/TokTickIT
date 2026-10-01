@@ -187,19 +187,23 @@ describe("Issue #53 Actions Taken migration", () => {
     expect(tied.map(action => action.id)).toEqual(cameraActions.map(action => action.id).sort((left, right) => left - right));
     await expect(db.actionTaken.create({ data: {
       ticketId: audited.ticketId, clientRequestId: randomUUID(), description: "Missing conditional note",
+      createFingerprint: "1".repeat(64),
       recordedById: audited.recordedById, assigneeId: audited.assigneeId, followUpRequired: true,
     } })).rejects.toThrow();
     await expect(db.actionTaken.create({ data: {
       ticketId: audited.ticketId, clientRequestId: randomUUID(), description: "Invalid completion",
+      createFingerprint: "2".repeat(64),
       recordedById: audited.recordedById, assigneeId: audited.assigneeId, status: "COMPLETED",
       result: "Completed without performer", completedAt: new Date(),
     } })).rejects.toThrow();
     await expect(db.actionTaken.create({ data: {
       ticketId: audited.ticketId, clientRequestId: randomUUID(), description: "Active Action with completion provenance",
+      createFingerprint: "3".repeat(64),
       recordedById: audited.recordedById, performedById: audited.assigneeId, assigneeId: audited.assigneeId, status: "IN_PROGRESS",
     } })).rejects.toThrow();
     await expect(db.actionTaken.create({ data: {
       ticketId: audited.ticketId, clientRequestId: randomUUID(), description: "Cancelled without provenance",
+      createFingerprint: "4".repeat(64),
       recordedById: audited.recordedById, assigneeId: audited.assigneeId, status: "CANCELLED",
     } })).rejects.toThrow();
     const invalidEvent = {
@@ -221,6 +225,7 @@ describe("Issue #53 Actions Taken migration", () => {
     await expect(db.$executeRawUnsafe('TRUNCATE TABLE "ActionEvent"')).rejects.toThrow();
     await expect(db.actionTaken.create({ data: {
       ticketId: audited.ticketId, clientRequestId: audited.clientRequestId, description: "Duplicate retry identity",
+      createFingerprint: "5".repeat(64),
       recordedById: audited.recordedById, assigneeId: audited.assigneeId,
     } })).rejects.toThrow();
     expect(new Set((await db.ticket.findMany({ where: { ticketNumber: { startsWith: "TKT-2026-9" } }, select: { status: true } })).map(ticket => ticket.status))).toEqual(new Set(["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"]));
@@ -260,7 +265,7 @@ describe("Issue #53 Actions Taken migration", () => {
     expect(await db.actionEvent.count()).toBe(0);
 
     const ticket = await db.ticket.findFirstOrThrow();
-    await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), description: "Recovery guard fixture", recordedById: references.staff.id, assigneeId: references.staff.id } });
+    await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), createFingerprint: "6".repeat(64), description: "Recovery guard fixture", recordedById: references.staff.id, assigneeId: references.staff.id } });
     expect(rollbackBeforeUse).toThrow();
     expect(await db.actionTaken.count()).toBe(1);
   }, 60000);

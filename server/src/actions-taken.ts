@@ -4,7 +4,7 @@ import { getPrisma } from "./prisma.js";
 import { ApiError, validationError } from "./errors.js";
 import { parsePositivePathId } from "./path-contract.js";
 import { requireOwnedTicket } from "./attachment-service.js";
-import { lockUserManagement } from "./user-management.js";
+import { lockActionAssignee } from "./user-management.js";
 import { createHash } from "node:crypto";
 
 const staffRoles = ["IT_STAFF", "ADMINISTRATOR"] as const;
@@ -193,19 +193,14 @@ function createFingerprint(input: CreateInput, actorId: number) {
 }
 
 function sameCreate(action: ActionDtoSource, input: CreateInput, actorId: number) {
-  const firstEvent = (action as ActionDtoSource & { events?: Array<{ changedFields: Prisma.JsonValue }> }).events?.[0];
-  const fields = firstEvent?.changedFields as { fields?: unknown } | undefined;
-  const values = Array.isArray(fields?.fields) ? fields.fields[0] as Record<string, unknown> : undefined;
-  if (!values) return false;
-  return values.clientRequestId === input.clientRequestId
-    && values.actorId === actorId
-    && values.fingerprint === createFingerprint(input, actorId);
+  return (action as ActionDtoSource & { createFingerprint?: string }).createFingerprint === createFingerprint(input, actorId)
+    && action.recordedBy.id === actorId;
 }
 
 async function existingCreate(prisma: PrismaClient, ticketId: number, input: CreateInput, actorId: number) {
   const existing = await prisma.actionTaken.findUnique({
     where: { ticketId_clientRequestId: { ticketId, clientRequestId: input.clientRequestId } },
-    select: { ...actionSelect, events: { where: { revision: 1 }, take: 1, select: { changedFields: true } } },
+    select: { ...actionSelect, createFingerprint: true },
   });
   if (!existing) return null;
   if (!sameCreate(existing, input, actorId)) {
@@ -225,29 +220,31 @@ async function createAction(prisma: PrismaClient, ticketId: number, actorId: num
       requireActionable(ticket.status);
       const existingLocked = await tx.actionTaken.findUnique({ where: { ticketId_clientRequestId: { ticketId, clientRequestId: input.clientRequestId } }, select: { id: true } });
       if (existingLocked) {
-        const replayResult = await existingCreate(tx as unknown as PrismaClient, ticketId, input, actorId);
-        if (replayResult) return { action: replayResult.action, ticketVersion: ticket.version, replayed: true as const };
+        const replayResult = await tx.actionTaken.findUniqueOrThrow({
+          where: { ticketId_clientRequestId: { ticketId, clientRequestId: input.clientRequestId } },
+          select: { ...actionSelect, createFingerprint: true },
+        });
+        if (sameCreate(replayResult, input, actorId)) return { action: dto(replayResult), ticketVersion: ticket.version, replayed: true as const };
         throw new ApiError(409, "IDEMPOTENCY_CONFLICT", "clientRequestId was already used for different Action data.");
       }
       if (ticket.version !== input.expectedTicketVersion) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
-      await lockUserManagement(tx);
+      await lockActionAssignee(tx, input.assigneeId);
       await requireEligibleAssignee(tx, input.assigneeId);
       const { expectedTicketVersion: _version, ...createData } = input;
       const action = await tx.actionTaken.create({
-        data: { ticketId, workflowCycle: ticket.workflowCycle, recordedById: actorId, status: "PLANNED", ...createData },
+        data: { ticketId, workflowCycle: ticket.workflowCycle, recordedById: actorId, createFingerprint: createFingerprint(input, actorId), status: "PLANNED", ...createData },
         select: actionSelect,
       });
       const ticketVersion = await incrementTicketVersion(tx, ticketId, input.expectedTicketVersion, now);
       await tx.actionEvent.create({
         data: {
           actionId: action.id, actorId, eventType: "ACTION_CREATED", fromStatus: null, toStatus: "PLANNED", revision: 1,
-          changedFields: { fields: ["description", { field: "description", clientRequestId: input.clientRequestId, actorId, fingerprint: createFingerprint(input, actorId) }, "result", "assigneeId", "followUpRequired", "followUpNote", "attachmentNotes", "status"] },
+          changedFields: { fields: ["description", "result", "assigneeId", "followUpRequired", "followUpNote", "attachmentNotes", "status"] },
         },
       });
-      return { action, ticketVersion, replayed: false as const };
+      return { action: dto(action), ticketVersion, replayed: false as const };
     });
-    if (created.replayed) return { ...created.action, ticketVersion: created.ticketVersion };
-    return { action: dto(created.action as ActionDtoSource), replayed: false as const, ticketVersion: created.ticketVersion };
+    return created;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const concurrentReplay = await existingCreate(prisma, ticketId, input, actorId);
@@ -284,13 +281,13 @@ async function updateAction(prisma: PrismaClient, ticketId: number, actionId: nu
     };
     if (!next.followUpRequired && !("followUpNote" in input)) next.followUpNote = null;
     validateFollowUp(next.followUpRequired, next.followUpNote);
-    await requireEligibleAssignee(tx, next.assigneeId);
     const changedFields = editableFields.filter(field => {
       const oldValue = field === "assigneeId" ? current.assignee.id : current[field as Exclude<EditableField, "assigneeId">];
       return oldValue !== next[field];
     });
-    if (!changedFields.length) return { action: dto(current), ticketVersion: ticket.version, replayed: true as const };
-    await lockUserManagement(tx);
+    if (!changedFields.length) return { action: dto(current), ticketVersion: ticket.version };
+    await lockActionAssignee(tx, next.assigneeId);
+    await requireEligibleAssignee(tx, next.assigneeId);
     const changed = await tx.actionTaken.updateMany({
       where: { id: actionId, ticketId, revision: expectedRevision },
       data: { ...next, revision: { increment: 1 } },
@@ -334,7 +331,10 @@ async function transitionAction(prisma: PrismaClient, ticketId: number, actionId
     if (nextStatus === "COMPLETED" && !result) throw validationError([{ field: "result", issue: "Completed Actions require a Result." }]);
     if ((nextStatus === "COMPLETED" || nextStatus === "CANCELLED") && current.followUpRequired) throw validationError([{ field: "followUpRequired", issue: "Clear follow-up before completing or cancelling an Action." }]);
     if (nextStatus === "COMPLETED" && current.assignee.id !== actorId) throw new ApiError(403, "ACTION_ASSIGNEE_REQUIRED", "Only the current Action assignee may complete it.");
-    if (nextStatus === "COMPLETED") await requireEligibleAssignee(tx, current.assignee.id);
+    if (nextStatus === "COMPLETED") {
+      await lockActionAssignee(tx, current.assignee.id);
+      await requireEligibleAssignee(tx, current.assignee.id);
+    }
     const completedAt = nextStatus === "COMPLETED" ? now : null;
     const cancellation = nextStatus === "CANCELLED" ? { cancelledAt: now, cancelledById: actorId, cancellationSource: "STAFF_ACTION" as const } : { cancelledAt: null, cancelledById: null, cancellationSource: null };
     const changed = await tx.actionTaken.updateMany({
