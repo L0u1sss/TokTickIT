@@ -1,6 +1,6 @@
 # TokTickIT Lab 4 — REST API Contract
 
-> Proposed contract for Issue #52. Paths extend the Lab 3 API. Lab 4 explicitly changes claim, owner, IT Priority, and status write payloads to require `expectedTicketVersion`; other unchanged Lab 1–3 routes retain their prior contract.
+> Proposed contract for Issue #52. Paths extend the Lab 3 API. Lab 4 explicitly changes claim, owner, IT Priority, status, and Action write payloads to require `expectedTicketVersion`; other unchanged Lab 1–3 routes retain their prior contract.
 
 ## 1. Conventions
 
@@ -81,7 +81,7 @@ POST /api/staff/tickets/:id/actions
 }
 ```
 
-The initial status is `PLANNED`; `recordedBy` and timestamps come from the session/backend. Cancellation provenance fields are initially null. First success returns `201 { action, replayed:false, ticketVersion }` and `Location`; an exact retry for the same Ticket/request ID returns `200 { action, replayed:true, ticketVersion }` even though that success advanced the Ticket version. `ticketVersion` is the current parent version after the operation (or current version on replay) and is the token for the next Ticket/Action write. The idempotency fingerprint excludes `expectedTicketVersion`. Reusing the key with different normalized Action content returns `409 IDEMPOTENCY_CONFLICT`. A new create checks `expectedTicketVersion` after locking the parent and returns `409 STALE_TICKET` on mismatch.
+The initial status is `PLANNED`; `recordedBy` and timestamps come from the session/backend, and `performedBy` is null until completion. Cancellation provenance fields are initially null. First success returns `201 { action, replayed:false, ticketVersion }` and `Location`; an exact retry for the same Ticket/request ID returns `200 { action, replayed:true, ticketVersion }` even though that success advanced the Ticket version. `ticketVersion` is the current parent version after the operation (or current version on replay) and is the token for the next Ticket/Action write. The fingerprint of normalized original create intent, including authenticated recorder but excluding `expectedTicketVersion`, is retained as metadata on the immutable `description` changed-fields entry of the create event, not compared to the mutable current Action projection. Reusing the key with different normalized Action content returns `409 IDEMPOTENCY_CONFLICT`. A new create checks `expectedTicketVersion` after locking the parent and returns `409 STALE_TICKET` on mismatch.
 
 An individual Action can be retrieved with either role-appropriate path:
 
@@ -98,7 +98,7 @@ The requester route performs the same owned-Ticket check as the requester list r
 PATCH /api/staff/tickets/:ticketId/actions/:actionId
 ```
 
-Body contains `expectedTicketVersion`, `revision`, and one or more of `description`, `result`, `assigneeId`, `followUpRequired`, `followUpNote`, `attachmentNotes`. Status changes are not accepted here. Only non-terminal Actions on actionable Tickets (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`) can be edited. Success returns `200 { action: ActionTaken, ticketVersion }`; `ticketVersion` is the incremented parent version and must be used for the next write. A non-actionable Ticket returns `409 TICKET_NOT_ACTIONABLE`; a parent version mismatch returns `409 STALE_TICKET`; an Action revision mismatch returns `409 STALE_ACTION`. Ineligible assignee returns `409 INVALID_ACTION_ASSIGNEE`. The Action update, one parent version increment, and append-only event are committed atomically.
+Body contains `expectedTicketVersion`, `revision`, and one or more of `description`, `result`, `assigneeId`, `followUpRequired`, `followUpNote`, `attachmentNotes`. Status changes are not accepted here. Only non-terminal Actions on actionable Tickets (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`) can be edited. Success returns `200 { action: ActionTaken, ticketVersion }`; `ticketVersion` is the incremented parent version and must be used for the next write. A non-actionable Ticket returns `409 TICKET_NOT_ACTIONABLE`; a parent version mismatch returns `409 STALE_TICKET`; an Action revision mismatch returns `409 STALE_ACTION`. Ineligible assignee returns `409 INVALID_ACTION_ASSIGNEE`. The Action update, one parent version increment, and append-only event are committed atomically. Explicit no-op edits return the current versions without writing.
 
 ### 3.4 Transition Action
 

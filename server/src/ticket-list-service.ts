@@ -4,6 +4,7 @@ import type { TicketListQuery } from "./ticket-query.js";
 
 const ticketSummarySelection = Prisma.validator<Prisma.TicketSelect>()({
   id: true,
+  version: true,
   ticketNumber: true,
   summary: true,
   requestedPriority: true,
@@ -28,6 +29,7 @@ function publicStatus(status: Status): string {
 function serializeTicketSummary(ticket: TicketSummaryRow) {
   return {
     id: ticket.id,
+    version: ticket.version,
     ticketNumber: ticket.ticketNumber,
     summary: ticket.summary,
     requestedPriority: ticket.requestedPriority,

@@ -37,6 +37,7 @@ type TicketWithRelations = Prisma.TicketGetPayload<{
 
 export interface TicketDetailResponse {
   id: number;
+  version: number;
   ticketNumber: string;
   summary: string;
   description: string;
@@ -89,6 +90,7 @@ export function serializeTicket(ticket: TicketWithRelations): TicketDetailRespon
 
   return {
     id: ticket.id,
+    version: ticket.version,
     ticketNumber: ticket.ticketNumber,
     summary: ticket.summary,
     description: ticket.description,

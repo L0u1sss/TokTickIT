@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.js";
 type Person = { id: number; displayName: string; email: string };
 type Communication = { id: number; content: string; createdAt: string; author: Person };
 type Ticket = { id: number; ticketNumber: string; summary: string; category: { name: string };
+  version: number;
   requester: Person; owner: Person | null; requestedPriority: string; itPriority: string; status: string;
   createdAt: string; updatedAt: string; description?: string; relatedSystem?: { name: string };
   problemAppearsResolvedAt?: string | null;
@@ -111,7 +112,7 @@ export default function StaffTicketQueue() {
   const terminal = detail?.status === "CLOSED" || detail?.status === "CANCELLED";
   const changeStatus = (nextStatus: string) => {
     if (["RESOLVED", "CLOSED", "CANCELLED", "REOPENED"].includes(nextStatus) && !window.confirm(`Confirm changing this Ticket to ${label(nextStatus)}?`)) return;
-    void runOperation(`tickets/${detail?.id}/status`, "PATCH", { status: nextStatus });
+    void runOperation(`tickets/${detail?.id}/status`, "PATCH", { status: nextStatus, expectedTicketVersion: detail?.version });
   };
   return <main id="main-content" tabIndex={-1} className="requester-page"><section className="requester-card staff-queue">
     <h1>{isDetail ? "Ticket Detail" : "Ticket Queue"}</h1>
@@ -141,9 +142,9 @@ export default function StaffTicketQueue() {
     {!loading && !error && detail && <article><h2>{detail.ticketNumber}: {detail.summary}</h2><TicketFields ticket={detail} /><h3>Operational actions</h3>
       {operationMessage && <p role="status">{operationMessage}</p>}{operationError && <p role="alert">Unable to save: {operationError}</p>}
       <div className="staff-operation-controls">
-        <button type="button" disabled={saving || terminal || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", {})}>Claim Ticket</button>
-        <label>Ticket Owner<select aria-label="Ticket Owner" disabled={saving || terminal} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value) }); }}><option value="">Unassigned</option>{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
-        <label>IT Priority<select aria-label="IT Priority" disabled={saving} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+      <button type="button" disabled={saving || terminal || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", { expectedTicketVersion: detail.version })}>Claim Ticket</button>
+        <label>Ticket Owner<select aria-label="Ticket Owner" disabled={saving || terminal} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value), expectedTicketVersion: detail.version }); }}><option value="">Unassigned</option>{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
+        <label>IT Priority<select aria-label="IT Priority" disabled={saving} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value, expectedTicketVersion: detail.version })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
         <label>Status<select aria-label="Status" disabled={saving} value={detail.status} onChange={event => changeStatus(event.target.value)}>{allowedStatusOptions.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
       </div>
       <h3>Description</h3><p className="staff-description">{detail.description}</p><p>Related system: {detail.relatedSystem?.name}</p>
