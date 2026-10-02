@@ -261,3 +261,11 @@ Final local results on this feature worktree (2026-10-03):
 | Whitespace / conflict markers | Passed | `git diff --check`, `git diff --cached --check`; all merge conflicts resolved |
 
 Total browser checks: 30 passing tests. Desktop and mobile dashboard screenshots were visually inspected for layout/wrapping. Hosted CI is verified separately against the pushed feature commit; these local checks do not claim final-main, peer approval, whole-product performance, or a completed manual reflow checklist.
+
+## 13. PR #67 browser-runner regression repair - 2026-10-03
+
+[CI run #77](https://github.com/L0u1sss/TokTickIT/actions/runs/37072283879) on `64eefa1` passed server/client tests but failed during authentication fixture setup with `requesterDashboard is not defined`. The follow-up runner edit removed the mode declaration/routing, administrator fixtures, resolvedAt timestamps, and direct database-count evidence while retaining references to the deleted variable. Client lint independently reproduced four `no-undef` errors.
+
+Restore the complete browser runner from previously verified commit `3746ced`, including Requester dashboard mode and the fixtures required by dashboard/Actions suites. Move server/client lint immediately after dependency installation so undefined runner variables fail before browser installation, migrations and E2E. No API, UI, authorization, data contract, or existing test is weakened. Revalidate both lint commands and the authentication, Requester dashboard and Actions real-API browser suites; verify the new hosted CI against the pushed feature head.
+
+Local follow-up results: client and server lint passed; authentication E2E 1/1, Requester dashboard E2E 2/2, and Actions E2E 7/7 passed against isolated migrated schemas. The product source is unchanged; full regression is rerun by hosted CI.

@@ -67,6 +67,14 @@ jobs:
         run: npm ci
         working-directory: server
 
+      - name: Lint server
+        run: npm run lint
+        working-directory: server
+
+      - name: Lint client
+        run: npm run lint
+        working-directory: client
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
         working-directory: client
@@ -131,14 +139,6 @@ jobs:
 
       - name: Run live end-to-end suite
         run: npm run test:e2e
-        working-directory: client
-
-      - name: Lint server
-        run: npm run lint
-        working-directory: server
-
-      - name: Lint client
-        run: npm run lint
         working-directory: client
 
       - name: Build server
