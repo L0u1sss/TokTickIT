@@ -109,6 +109,10 @@ jobs:
         run: npm run test:actions:e2e
         working-directory: client
 
+      - name: Run Ticket resolution browser suite
+        run: npm run test:workflow:e2e
+        working-directory: client
+
       - name: Run staff workflow browser suite
         run: npm run test:staff:e2e
         working-directory: client
@@ -158,5 +162,6 @@ jobs:
           name: lab-04-actions-taken-evidence
           path: |
             artifacts/lab-04/screenshots/actions-taken/
+            artifacts/lab-04/screenshots/ticket-workflow/
             client/test-results/live-e2e/
           if-no-files-found: ignore

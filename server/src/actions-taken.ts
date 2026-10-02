@@ -271,8 +271,8 @@ async function updateAction(prisma: PrismaClient, ticketId: number, actionId: nu
     if (ticket.version !== expectedTicketVersion) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
     await tx.$queryRaw`SELECT "id" FROM "ActionTaken" WHERE "id" = ${actionId} AND "ticketId" = ${ticketId} FOR UPDATE`;
     const current = await findAction(tx, ticketId, actionId);
-    if (current.status === "COMPLETED" || current.status === "CANCELLED") throw new ApiError(409, "INVALID_ACTION_TRANSITION", "Terminal Actions cannot be edited.");
     if (current.revision !== expectedRevision) throw new ApiError(409, "STALE_ACTION", "This Action changed. Reload it before saving.");
+    if (current.status === "COMPLETED" || current.status === "CANCELLED") throw new ApiError(409, "INVALID_ACTION_TRANSITION", "Terminal Actions cannot be edited.");
     const next = {
       description: "description" in input ? text(input.description, "description", 2000)! : current.description,
       result: "result" in input ? text(input.result, "result", 2000, true) : current.result,

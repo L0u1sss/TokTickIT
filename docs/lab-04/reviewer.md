@@ -1,5 +1,14 @@
 # TokTickIT Lab 4 — Peer Review Record
 
+## PR #66 Workflow Contract Follow-up — 2026-10-03
+
+- Pull request: https://github.com/L0u1sss/TokTickIT/pull/66
+- Branch: `feat/lab4-ticket-workflow`; staging dependency: `7102116`.
+- Reviewer and approval: Pending. No review comments or inline review threads were returned by the GitHub read performed for this follow-up.
+- Local verification: [test record](./tests.md#pr66-validation). Local tests are not peer approval or hosted CI.
+
+Follow-up checks against the Lab 4 handout and current engineering contract identified the earlier timestamp-only concurrency contract and minimum-only resolution gate as incompatible with the merged Action APIs. The implementation now shares integer Ticket versions and parent locking, checks current-cycle completed work/active work/follow-up, and preserves cancellation/reopen provenance and history. The client, regression fixtures, workflow browser evidence and CI command use the same contract. Peer review should verify the final pushed head before approval; no approval is claimed here.
+
 > This file records real review evidence only. Do not invent reviewer identity, comments, approvals, test results, or links.
 
 ## Contract Review — Issue #52

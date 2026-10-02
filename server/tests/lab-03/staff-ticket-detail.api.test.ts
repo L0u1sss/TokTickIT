@@ -108,7 +108,7 @@ const allowed: Record<Status, Status[]> = {
 };
 it.each(Object.values(Status).flatMap(from => Object.values(Status).map(to => [from, to] as const)))("enforces %s -> %s and persists ownership correctly", async (from, to) => {
   await db.ticket.update({ where: { id: ticketId }, data: { status: from, ownerId: ids[1] } });
-  const resolutionAction = to === "RESOLVED" ? await db.actionTaken.create({ data: { ticketId, clientRequestId: randomUUID(), description: "Lab 3 transition evidence", result: "Verified", status: "COMPLETED", performedById: ids[1], assigneeId: ids[1], completedAt: new Date() } }) : null;
+  const resolutionAction = to === "RESOLVED" ? await db.actionTaken.create({ data: { ticketId, workflowCycle: (await db.ticket.findUniqueOrThrow({ where: { id: ticketId } })).workflowCycle, clientRequestId: randomUUID(), createFingerprint: "f".repeat(64), recordedById: ids[1], description: "Lab 3 transition evidence", result: "Verified", status: "COMPLETED", performedById: ids[1], assigneeId: ids[1], completedAt: new Date() } }) : null;
   const valid = allowed[from].includes(to), terminal = to === "CLOSED" || to === "CANCELLED";
   const result = await write("/status", { status: to });
   expect(result.status).toBe(valid ? 200 : 409);
