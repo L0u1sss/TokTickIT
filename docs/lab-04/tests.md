@@ -202,7 +202,7 @@ The [CI workflow](../../.github/workflows/ci.yml) includes `lab4-staging` trigge
 
 ## 11. PR #65 review alignment — 2026-10-03
 
-The PR description follows the implemented lifecycle: `PLANNED → IN_PROGRESS | CANCELLED`, `IN_PROGRESS → COMPLETED | CANCELLED`; `COMPLETED` and `CANCELLED` are immutable. There is no Reopen/Restore Action control. Continued work requires a new Action. The evidence counts are 20 Action component tests, 19 client files / 141 tests, and 7 real-API Action browser tests; the original local artifacts retain their original worktree attribution.
+The required PR description correction follows the implemented lifecycle: `PLANNED → IN_PROGRESS | CANCELLED`, `IN_PROGRESS → COMPLETED | CANCELLED`; `COMPLETED` and `CANCELLED` are immutable. There is no Reopen/Restore Action control. Continued work requires a new Action. The evidence counts are 20 Action component tests, 19 client files / 141 tests, and 7 real-API Action browser tests; the original local artifacts retain their original worktree attribution. Updating the remote PR description through the connector returned HTTP 403 (`Resource not accessible by integration`); the prepared replacement remains pending publication.
 
 Hosted [CI run #69](https://github.com/L0u1sss/TokTickIT/actions/runs/36941288267), associated with reviewed head `8beb2de01e81bb0d9dd8af1e83f3beaeca220567`, completed successfully. Its [job](https://github.com/L0u1sss/TokTickIT/actions/runs/36941288267/job/110633116302) passed server/client tests, Actions E2E, authentication/admin/staff/comments/responsive/requester browser regressions, lint, builds, and evidence uploads. This verifies that head only; the documentation follow-up needs its own hosted run and is not claimed green in advance.
 
