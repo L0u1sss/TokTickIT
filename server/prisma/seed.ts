@@ -122,6 +122,13 @@ export async function seedDatabase(prisma: PrismaClient) {
     })),
   ]);
 
+  // Live requester regressions supply their own Ticket fixtures. Keep demo
+  // history intact by skipping its creation rather than deleting audit events.
+  if (process.env.SEED_REFERENCE_DATA_ONLY === "true") {
+    console.log(`Seeded reference data and accounts; demo Tickets and Actions were skipped.`);
+    return;
+  }
+
   const [lab4Schema] = await prisma.$queryRaw<Array<{ exists: boolean }>>`
     SELECT EXISTS (
       SELECT 1 FROM information_schema.tables

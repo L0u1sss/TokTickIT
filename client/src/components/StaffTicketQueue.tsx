@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CommunicationSection } from "./TicketCommunication.js";
+import { ActionsTaken } from "./ActionsTaken.js";
 import { useAuth } from "../context/AuthContext.js";
 
 type Person = { id: number; displayName: string; email: string };
@@ -27,6 +28,19 @@ const priorities = ["LOW", "MEDIUM", "HIGH"];
 const label = (value: string) => ({ updatedAt: "Last Updated", createdAt: "Created Date", ticketNumber: "Ticket Number", itPriority: "IT Priority", asc: "Ascending", desc: "Descending" }[value]
   ?? value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
 class QueueError extends Error { constructor(public code: string) { super(code); } }
+const validVersion = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value > 0;
+const operationMessages: Record<string, string> = {
+  STALE_TICKET: "This Ticket changed after you opened it. Your Action drafts are kept. Reload Ticket, then review and reapply the change.",
+  STALE_ACTION: "An Action changed while this Ticket was being updated. Your Action drafts are kept. Reload Ticket, then review the latest Actions before retrying.",
+  FORBIDDEN: "You no longer have permission to change this Ticket. Reload Ticket to check your access.",
+  NOT_FOUND: "This Ticket could not be found. Reload Ticket to check its current state.",
+  RESOLUTION_GATE_NOT_MET: "The Ticket cannot be resolved yet. Complete an Action in the current workflow cycle, record its Result, finish active Actions, and clear outstanding follow-up before trying again.",
+  TICKET_ALREADY_ASSIGNED: "This Ticket already has an owner. Reload Ticket to see the current owner.",
+  TICKET_NOT_ASSIGNABLE: "The Ticket's current status does not allow assignment. Reload Ticket to see the current state.",
+  INVALID_ASSIGNEE: "The selected owner is no longer active or eligible. Refresh owner choices and select an active staff member.",
+  INVALID_STATUS_TRANSITION: "That Ticket status change is no longer allowed. Reload Ticket and choose an available status.",
+  VALIDATION_ERROR: "The change could not be validated. Reload Ticket, review the selected values, and try again.",
+};
 async function get<T>(path: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/api/staff/${path}`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) {
@@ -57,7 +71,7 @@ function TicketFields({ ticket }: { ticket: Ticket }) {
   </dl>;
 }
 export default function StaffTicketQueue() {
-  const { refresh } = useAuth();
+  const { user, refresh } = useAuth();
   const [location, setLocation] = useState(window.location.pathname.startsWith("/staff/tickets") ? window.location.pathname + window.location.search : "/staff/tickets");
   const [revision, setRevision] = useState(0);
   const [queue, setQueue] = useState<Queue | null>(null), [detail, setDetail] = useState<Ticket | null>(null);
@@ -66,6 +80,10 @@ export default function StaffTicketQueue() {
   const [ownerRevision, setOwnerRevision] = useState(0);
   const [saving, setSaving] = useState(false), [operationMessage, setOperationMessage] = useState("");
   const [operationError, setOperationError] = useState("");
+  const [actionsBusy, setActionsBusy] = useState(false), [operationNeedsReload, setOperationNeedsReload] = useState(false);
+  const [actionsRefresh, setActionsRefresh] = useState(0);
+  const savingRef = useRef(false), actionsBusyRef = useRef(false), needsReloadRef = useRef(false);
+  const loadedDetailPath = useRef("");
   const pathname = location.split("?")[0], search = location.includes("?") ? location.slice(location.indexOf("?")) : "";
   const isDetail = pathname !== "/staff/tickets";
   useEffect(() => {
@@ -74,10 +92,12 @@ export default function StaffTicketQueue() {
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setError(""); setQueue(null); setDetail(null);
+    const preserveDetail = isDetail && loadedDetailPath.current === pathname;
+    setLoading(!preserveDetail); setError(""); setQueue(null);
+    if (!preserveDetail) { setDetail(null); loadedDetailPath.current = ""; setOperationMessage(""); setOperationError(""); setOperationNeedsReload(false); needsReloadRef.current = false; }
     const load = async () => {
       try {
-        if (isDetail) { const data = await get<Ticket>(`tickets/${pathname.split("/").pop()}`, controller.signal); if (!data?.id || !data.category || !data.requester) throw new QueueError("FAILURE"); if (!controller.signal.aborted) setDetail(data); }
+        if (isDetail) { const data = await get<Ticket>(`tickets/${pathname.split("/").pop()}`, controller.signal); if (!data?.id || !data.category || !data.requester || !validVersion(data.version)) throw new QueueError("FAILURE"); if (!controller.signal.aborted) { loadedDetailPath.current = pathname; setDetail(data); } }
         else { const data = await get<Queue>(`tickets${search}`, controller.signal); if (!Array.isArray(data?.items) || !data.pagination) throw new QueueError("FAILURE"); if (!controller.signal.aborted) setQueue(data); }
       } catch (e) {
         if (controller.signal.aborted) return;
@@ -94,6 +114,30 @@ export default function StaffTicketQueue() {
       .catch(() => { if (!controller.signal.aborted) setOwnerError(true); });
     return () => controller.abort();
   }, [ownerRevision]);
+  const onActionsBusyChange = useCallback((busy: boolean) => { actionsBusyRef.current = busy; setActionsBusy(busy); }, []);
+  const onTicketNeedsReloadChange = useCallback((needsReload: boolean) => {
+    if (loadedDetailPath.current === pathname) { needsReloadRef.current = needsReload; setOperationNeedsReload(needsReload); }
+  }, [pathname]);
+  const onTicketVersionChange = useCallback((version: number) => {
+    const ticketId = Number(pathname.split("/").pop());
+    if (validVersion(version)) setDetail(current => current?.id === ticketId ? { ...current, version } : current);
+  }, [pathname]);
+  const onAssigneesReload = useCallback(() => setOwnerRevision(value => value + 1), []);
+  const reloadTicket = useCallback(async () => {
+    const ticketId = Number(pathname.split("/").pop());
+    try {
+      const data = await get<Ticket>(`tickets/${ticketId}`, new AbortController().signal);
+      if (data.id !== ticketId || !data.category || !data.requester || !validVersion(data.version)) throw new QueueError("FAILURE");
+      setDetail(current => current?.id === ticketId ? data : current);
+      if (loadedDetailPath.current === pathname) { needsReloadRef.current = false; setOperationNeedsReload(false); setOperationError(""); }
+      return { version: data.version, status: data.status };
+    } catch (failure) {
+      const code = failure instanceof QueueError ? failure.code : "FAILURE";
+      if (["AUTHENTICATION_REQUIRED", "PASSWORD_CHANGE_REQUIRED"].includes(code)) void refresh();
+      if (loadedDetailPath.current === pathname && ["FORBIDDEN", "NOT_FOUND"].includes(code)) { loadedDetailPath.current = ""; setError(code); setDetail(null); }
+      throw failure;
+    }
+  }, [pathname, refresh]);
   const navigate = (path: string) => { window.history.pushState({}, "", path); setLocation(path); };
   const params = new URLSearchParams(search);
   const filtered = ["search", "status", "requestedPriority", "itPriority", "ownerId"].some(key => params.has(key));
@@ -103,11 +147,35 @@ export default function StaffTicketQueue() {
   </select></label>;
   const page = (number: number) => { const next = new URLSearchParams(search); next.set("page", String(number)); navigate(`/staff/tickets?${next}`); };
   const runOperation = async (path: string, method: string, body?: unknown) => {
-    setSaving(true); setOperationError(""); setOperationMessage("");
-    try { await mutate(path, method, body); setOperationMessage("Saved successfully."); setRevision(value => value + 1); }
-    catch (operation) { setOperationError(operation instanceof QueueError ? operation.code : "Unable to save changes."); }
-    finally { setSaving(false); }
+    if (savingRef.current || actionsBusyRef.current || needsReloadRef.current) return;
+    savingRef.current = true; setSaving(true); setOperationError(""); setOperationMessage("");
+    let accepted = false;
+    try {
+      const result = await mutate<Partial<Pick<Ticket, "owner" | "itPriority" | "status" | "updatedAt">> & { version: number }>(path, method, body);
+      accepted = true;
+      if (!validVersion(result.version)) throw new QueueError("FAILURE");
+      if (loadedDetailPath.current !== pathname) return;
+      setDetail(current => current && path.startsWith(`tickets/${current.id}/`) ? { ...current, ...result } : current);
+      setActionsRefresh(value => value + 1);
+      await reloadTicket();
+      setOperationMessage("Saved successfully.");
+    } catch (operation) {
+      if (loadedDetailPath.current !== pathname) return;
+      const code = operation instanceof QueueError ? operation.code : "FAILURE";
+      setOperationError(accepted ? "The change was saved, but the Ticket could not be refreshed. Your Action drafts are kept. Reload Ticket before making another change." : operationMessages[code] ?? "Unable to save changes. Your Action drafts are kept. Reload Ticket before trying again.");
+      if (!["RESOLUTION_GATE_NOT_MET", "INVALID_ASSIGNEE"].includes(code) || accepted) { needsReloadRef.current = true; setOperationNeedsReload(true); }
+      if (code === "INVALID_ASSIGNEE") onAssigneesReload();
+      if (["AUTHENTICATION_REQUIRED", "PASSWORD_CHANGE_REQUIRED"].includes(code)) void refresh();
+    } finally { savingRef.current = false; setSaving(false); }
   };
+  const recoverOperation = async () => {
+    if (savingRef.current || actionsBusyRef.current) return;
+    savingRef.current = true; setSaving(true);
+    try { await reloadTicket(); setActionsRefresh(value => value + 1); setOperationError(""); setOperationMessage("Ticket reloaded. Review the current state and reapply your change; your Action drafts are kept."); }
+    catch { setOperationError("Unable to reload the Ticket. Your Action drafts are kept. Try Reload Ticket again."); }
+    finally { savingRef.current = false; setSaving(false); }
+  };
+  const operationsDisabled = saving || actionsBusy || operationNeedsReload;
   const allowedStatusOptions = detail ? [detail.status, ...(statusTransitions[detail.status] ?? [])] : [];
   const terminal = detail?.status === "CLOSED" || detail?.status === "CANCELLED";
   const changeStatus = (nextStatus: string) => {
@@ -140,13 +208,18 @@ export default function StaffTicketQueue() {
     {error && <div role="alert"><p>{error === "FORBIDDEN" ? "Forbidden: You do not have access to this screen." : error === "INVALID_QUERY" ? "Invalid queue query. Reset filters to continue." : error === "NOT_FOUND" ? "Ticket not found." : "Unable to load tickets. Try again."}</p>
       {error === "FORBIDDEN" ? <a href="/">Return to your home</a> : error === "INVALID_QUERY" ? <button onClick={reset}>Reset filters</button> : <button onClick={() => setRevision(n => n + 1)}>Retry</button>}</div>}
     {!loading && !error && detail && <article><h2>{detail.ticketNumber}: {detail.summary}</h2><TicketFields ticket={detail} /><h3>Operational actions</h3>
-      {operationMessage && <p role="status">{operationMessage}</p>}{operationError && <p role="alert">Unable to save: {operationError}</p>}
+      {operationMessage && <p role="status" aria-live="polite">{operationMessage}</p>}{operationError && <div role="alert"><p>Unable to save: {operationError}</p>
+        {operationNeedsReload && <button type="button" disabled={saving || actionsBusy} onClick={() => void recoverOperation()}>Reload Ticket</button>}
+        {operationError === operationMessages.INVALID_ASSIGNEE && <button type="button" onClick={onAssigneesReload}>Refresh owner choices</button>}
+      </div>}
+      {saving && <p role="status">Updating Ticket…</p>}
       <div className="staff-operation-controls">
-      <button type="button" disabled={saving || terminal || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", { expectedTicketVersion: detail.version })}>Claim Ticket</button>
-        <label>Ticket Owner<select aria-label="Ticket Owner" disabled={saving || terminal} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value), expectedTicketVersion: detail.version }); }}><option value="">Unassigned</option>{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
-        <label>IT Priority<select aria-label="IT Priority" disabled={saving} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value, expectedTicketVersion: detail.version })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
-        <label>Status<select aria-label="Status" disabled={saving} value={detail.status} onChange={event => changeStatus(event.target.value)}>{allowedStatusOptions.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+      <button type="button" disabled={operationsDisabled || terminal || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", { expectedTicketVersion: detail.version })}>Claim Ticket</button>
+        <label>Ticket Owner<select aria-label="Ticket Owner" disabled={operationsDisabled || terminal} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value), expectedTicketVersion: detail.version }); }}><option value="">Unassigned</option>{detail.owner && !owners.some(owner => owner.id === detail.owner?.id) && <option value={detail.owner.id}>{detail.owner.displayName} (unavailable for new assignment)</option>}{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
+        <label>IT Priority<select aria-label="IT Priority" disabled={operationsDisabled} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value, expectedTicketVersion: detail.version })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+        <label>Status<select aria-label="Status" disabled={operationsDisabled} value={detail.status} onChange={event => changeStatus(event.target.value)}>{allowedStatusOptions.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
       </div>
+      {ownerError && <div role="alert">Owner choices could not be loaded. <button type="button" onClick={onAssigneesReload}>Retry owners</button></div>}
       <h3>Description</h3><p className="staff-description">{detail.description}</p><p>Related system: {detail.relatedSystem?.name}</p>
       <section aria-label="Attachments" className="communication-section"><h3>Attachments</h3>
         {detail.attachments?.length ? <ul>{detail.attachments.map(attachment => <li key={attachment.id}>
@@ -156,6 +229,8 @@ export default function StaffTicketQueue() {
         </li>)}</ul> : <p>No attachments.</p>}
       </section>
       {detail.problemAppearsResolvedAt && <p role="status">Requester reports the problem appears resolved: {new Date(detail.problemAppearsResolvedAt).toLocaleString()}</p>}
+      <ActionsTaken key={detail.id + "actions"} ticketId={detail.id} staff assignees={owners} ticketVersion={detail.version} ticketStatus={detail.status} currentUserId={user?.id}
+        onTicketVersionChange={onTicketVersionChange} onReloadTicket={reloadTicket} ticketBusy={saving} ticketNeedsReload={operationNeedsReload} onTicketNeedsReloadChange={onTicketNeedsReloadChange} onBusyChange={onActionsBusyChange} refreshKey={actionsRefresh} onAssigneesReload={onAssigneesReload} />
       <CommunicationSection key={detail.id + "comments"} ticketId={detail.id} staff />
       <CommunicationSection key={detail.id + "notes"} ticketId={detail.id} staff internal />
     </article>}

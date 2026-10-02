@@ -1,5 +1,36 @@
 
-# TokTickIT - IT Service Desk (Lab 1–3)
+# TokTickIT - IT Service Desk
+
+## Lab 4 Actions Taken — Issue #55
+
+Staff and Administrators can list, create, assign, edit, start, complete and cancel
+Actions on `/staff/tickets/:id#actions`. Requesters see the shared, read-only list
+on their own Ticket Detail; Internal Notes remain private. The assigned staff
+member is recorded as performer only on completion. Completed/cancelled Actions
+are immutable, and resolved/closed/cancelled Tickets must be reopened before new
+work can be recorded. Complete requires a Result and cleared follow-up; staff
+cancellation also requires cleared follow-up.
+
+Ticket and Action writes share the displayed Ticket version. If another user
+changes the work, use **Reload Actions** or **Reload Ticket**, review the retained
+draft, then save explicitly. A lost create response retains its request ID, so
+retrying after reload does not create another Action.
+
+Use the existing additive migration and Prisma generation instructions below.
+For the live UI test, configure a dedicated, test-marked `TEST_DATABASE_URL` in
+`server/.env`, distinct from `DATABASE_URL`, and install Playwright Chromium:
+
+```powershell
+npm --prefix client exec playwright install chromium
+npm --prefix client run test:actions:e2e
+```
+
+The runner creates a unique temporary schema, deploys migrations there, tests the
+real API with Staff/Admin/Requester sessions, and drops only that schema afterward.
+It includes desktop/tablet/mobile, keyboard, axe and overflow checks. Screenshots
+are written to `artifacts/lab-04/screenshots/actions-taken/`.
+See [the UI contract](docs/lab-04/ui-spec.md), [API contract](docs/lab-04/api-spec.md)
+and [test traceability](docs/lab-04/tests.md).
 
 ## Lab 3 authentication and identity migration — Issues #30–#31
 

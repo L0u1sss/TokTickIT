@@ -6,7 +6,7 @@ const refresh = vi.fn();
 vi.mock("../../src/context/AuthContext.js", () => ({ useAuth: () => ({ refresh }) }));
 const person = { id: 1, displayName: "Mali", email: "mali@example.test" };
 const ticket = { id: 1, ticketNumber: "TK-2026-000001", summary: "<script>printer</script>", category: { name: "Hardware" }, requester: person, owner: null,
-  requestedPriority: "HIGH", itPriority: "MEDIUM", status: "OPEN", createdAt: "2026-09-01T00:00:00Z", updatedAt: "2026-09-02T00:00:00Z" };
+  version: 1, requestedPriority: "HIGH", itPriority: "MEDIUM", status: "OPEN", createdAt: "2026-09-01T00:00:00Z", updatedAt: "2026-09-02T00:00:00Z" };
 const result = { items: [ticket], pagination: { page: 1, pageSize: 20, totalItems: 21, totalPages: 2 } };
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 function mock(queue: () => Promise<Response>) {
@@ -54,7 +54,7 @@ describe("Staff Ticket Queue", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" })); await screen.findByText(/21 tickets/);
   });
   it("opens read-only detail and returns to queue", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(/\/(comments|internal-notes)$/.test(url) ? { items: [] } : url.endsWith("assignees") ? { items: [] } : url.endsWith("/1") ? { ...ticket, description: "Printer offline", relatedSystem: { name: "Office" } } : result)));
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(/\/(comments|internal-notes|actions)$/.test(url) ? { items: [] } : url.endsWith("assignees") ? { items: [] } : url.endsWith("/1") ? { ...ticket, description: "Printer offline", relatedSystem: { name: "Office" } } : result)));
     render(<StaffTicketQueue />); await screen.findByText(/21 tickets/);
     await userEvent.click(screen.getAllByRole("link", { name: /View ticket/ })[0]);
     await screen.findByText("Printer offline"); expect(window.location.pathname).toBe("/staff/tickets/1");
@@ -62,7 +62,7 @@ describe("Staff Ticket Queue", () => {
   });
   it("confirms important status changes and sends the CSRF header", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    const fetch = vi.fn(async (url: string, init?: RequestInit) => { void init; return response(/\/(comments|internal-notes)$/.test(url) ? { items: [] } : url.endsWith("assignees") ? { items: [] } : url.endsWith("/1") ? { ...ticket, description: "Printer offline", relatedSystem: { name: "Office" } } : result); });
+    const fetch = vi.fn(async (url: string, init?: RequestInit) => { void init; return response(/\/(comments|internal-notes|actions)$/.test(url) ? { items: [] } : url.endsWith("assignees") ? { items: [] } : url.endsWith("/1") ? { ...ticket, description: "Printer offline", relatedSystem: { name: "Office" } } : result); });
     vi.stubGlobal("fetch", fetch); Object.defineProperty(document, "cookie", { configurable: true, value: "toktickit_csrf=test-token" });
     render(<StaffTicketQueue />); await screen.findByText(/21 tickets/);
     await userEvent.click(screen.getAllByRole("link", { name: /View ticket/ })[0]); await screen.findByText("Printer offline");

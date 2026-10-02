@@ -257,7 +257,7 @@ describe("Requester Ticket Detail", () => {
     await user.upload(screen.getByLabelText("Choose attachment"), file);
     await user.click(screen.getByRole("button", { name: "Upload attachment" }));
 
-    const error = await screen.findByRole("alert");
+    const error = await screen.findByText("We couldn't upload this attachment. Try again.");
     expect(error).toHaveTextContent("We couldn't upload this attachment. Try again.");
     expect(error).not.toHaveTextContent(/storage|secret/);
     expect(screen.getByText("retry.png")).toBeInTheDocument();
