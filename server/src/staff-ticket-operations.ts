@@ -121,6 +121,17 @@ export async function updateTicketStatus(prisma: PrismaClient, ticketId: number,
     if (ticket.version !== expected) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
     if (!permittedStatusTransition(ticket.status, nextStatus)) throw new ApiError(409, "INVALID_STATUS_TRANSITION", `Cannot change status from ${ticket.status} to ${nextStatus}.`);
     if (nextStatus === "CLOSED" && ticket.status !== "RESOLVED") throw new ApiError(409, "INVALID_STATUS_TRANSITION", "Only resolved Tickets can be closed.");
+    if (nextStatus === "RESOLVED") {
+      const actions = await transaction.actionTaken.findMany({
+        where: { ticketId, workflowCycle: ticket.workflowCycle },
+        select: { status: true, result: true, followUpRequired: true },
+      });
+      const reasons: string[] = [];
+      if (!actions.some(action => action.status === "COMPLETED" && action.result?.trim())) reasons.push("MISSING_COMPLETED_WORK");
+      if (actions.some(action => action.status === "PLANNED" || action.status === "IN_PROGRESS")) reasons.push("ACTIVE_ACTIONS");
+      if (actions.some(action => action.status !== "CANCELLED" && action.followUpRequired)) reasons.push("OUTSTANDING_FOLLOW_UP");
+      if (reasons.length) throw new ApiError(409, "RESOLUTION_GATE_NOT_MET", "Complete an Action with a Result in the current workflow cycle, finish active Actions, and clear outstanding follow-up before resolving this Ticket.", reasons.map(issue => ({ field: "actions", issue })));
+    }
     const terminal = nextStatus === "CLOSED" || nextStatus === "CANCELLED";
     if (nextStatus === "CANCELLED") {
       const actions = await transaction.actionTaken.findMany({
@@ -144,6 +155,16 @@ export async function updateTicketStatus(prisma: PrismaClient, ticketId: number,
     const updated = await transaction.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { status: true, updatedAt: true } });
     return { status: updated.status, version: expected + 1, updatedAt: updated.updatedAt.toISOString() };
   });
+}
+
+function parseStatusUpdate(body: unknown) {
+  const input = bodyObject(body), allowed = ["status", "expectedTicketVersion"];
+  const details = [
+    ...Object.keys(input).filter(key => !allowed.includes(key)).map(field => ({ field, issue: "This field is not accepted." })),
+    ...allowed.filter(field => !(field in input)).map(field => ({ field, issue: "This field is required." })),
+  ];
+  if (details.length) throw validationError(details);
+  return { status: parseEnum(input, "status", Object.values(Status)), expectedTicketVersion: expectedVersion(input) };
 }
 
 const ticketDetailInclude = {
@@ -207,7 +228,10 @@ staffTicketOperationsRouter.patch("/tickets/:id/owner", route(async (req, res) =
   res.json(await assignTicket(getPrisma(), parsePositivePathId(req.params.id, "id"), value, version));
 }));
 staffTicketOperationsRouter.patch("/tickets/:id/it-priority", route(async (req, res) => { const body = bodyObject(req.body); res.json(await updateTicketPriority(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(body, "itPriority", Object.values(Priority)), expectedVersion(body))); }));
-staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => { const body = bodyObject(req.body); res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(body, "status", Object.values(Status)), expectedVersion(body), res.locals.authenticatedUser.id)); }));
+staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => {
+  const input = parseStatusUpdate(req.body);
+  res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), input.status, input.expectedTicketVersion, res.locals.authenticatedUser.id));
+}));
 staffTicketOperationsRouter.get("/tickets/:id/comments", route(async (req, res) => { const id = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), id); res.json({ items: await listComments(getPrisma(), id) }); }));
 staffTicketOperationsRouter.post("/tickets/:id/comments", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, req.body, false))));
 staffTicketOperationsRouter.get("/tickets/:id/internal-notes", route(async (req, res) => { const ticketId = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), ticketId); const items = await getPrisma().internalNote.findMany({ where: { ticketId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: communicationSelect }); res.json({ items: items.map(item => ({ ...item, createdAt: item.createdAt.toISOString() })) }); }));

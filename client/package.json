@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:auth:e2e": "node scripts/run-auth-e2e.mjs",
     "test:admin:e2e": "node scripts/run-auth-e2e.mjs --user-management",
+    "test:workflow:e2e": "node scripts/run-auth-e2e.mjs --ticket-workflow",
     "test:staff:e2e": "node scripts/run-auth-e2e.mjs --staff-flow",
     "test:actions:e2e": "node scripts/run-auth-e2e.mjs --actions-taken",
     "test:responsive": "node scripts/run-responsive-tests.mjs",

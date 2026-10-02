@@ -40,9 +40,21 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 **Verification:** The final local client suite passed 19 files/141 tests, including 20 Action component tests and 25 Staff Detail/Queue tests. Client lint and build passed. The isolated real-API flow passed 7 tests and generated 25 screenshots; it includes actual inactive-assignee rejection/recovery, role/ownership restrictions, a real stale update with draft reapplication, and a committed create followed by a lost response and same-ID replay. [tests.md](./tests.md#10-issue-55-contract-alignment-and-local-evidence--2026-10-02) links the output and screenshot evidence. CI wiring is implemented, but hosted CI, peer approval, final `main`, and complete manual keyboard/200% reflow checks are not claimed.
 
-### Prompts 6–10
+### Prompt 6 — Implement Ticket workflow (used, 2026-09-26)
 
-Pending. Add only prompts actually used for later workflow, dashboard, hardening, or release work. For each, record date, purpose, what was accepted/modified/rejected, and how it was verified.
+“ทำ Issue #56 โดยอิงจากเอกสาร Lab 4”
+
+**Use:** The original PR #66 implemented the eight-state matrix, minimum completed-Action gate, timestamp conflict checks, workflow feedback, advisory-only Requester behavior, and API/component/browser tests. This historical implementation preceded the newer integer-version and workflow-cycle contract; its earlier results do not establish compatibility with the current staging branch.
+
+### Prompt 7 — Update PR #66 against Lab 4 (used, 2026-10-03)
+
+The user linked https://github.com/L0u1sss/TokTickIT/pull/66 and requested changes based on `D:\Software_Engineering\SE+Lab+4.pdf`, preserving existing code and selecting incoming changes on conflict. The user clarified: “ขอโทษฉันหมายถึงให้ทำงานบน branch feat/lab4-ticket-workflow แล้วยกเลิกงานที่ทำบน lab4-staging อยู่”.
+
+**Use:** Read the handout and current contract, preserved backup refs and conflict snapshots, integrated incoming staging dependencies into the feature branch, and aligned status writes with the shared integer Ticket version and parent-before-child locking. Resolution now checks current-cycle completed work, active Actions, and outstanding non-cancelled follow-up; cancellation/reopen provenance and previous history remain intact. Updated workflow UI, regression fixtures, CI, and live browser evidence. Validation is recorded in [tests.md](./tests.md#pr66-validation). Work on `lab4-staging` was cancelled; no feature changes were published there.
+
+### Prompts 8–10
+
+Pending. Add only prompts actually used for later dashboard, hardening, or release work.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -51,7 +63,7 @@ Pending. Add only prompts actually used for later workflow, dashboard, hardening
 - Added optimistic revision checks and idempotent creation because the handout explicitly requires stale-update and duplicate/retry handling.
 - Updated the old UI to the merged API's required parent Ticket version and `{ action, ticketVersion }` envelope. Mocked old response shapes were insufficient to prove live compatibility, so the follow-up adds authenticated browser/API evidence rather than relying on the earlier UI pass claim.
 - Applied the approved immutable terminal lifecycle and current-assignee completion rule. The performer is absent before completion, and cancelled follow-up is historical data; these are explicit project decisions in the contract rather than wording prescribed by the handout.
-- Chose one completed Action with Result as the minimum resolution gate. This is a project decision requiring peer review; it is not presented as wording fixed by the handout.
+- Replaced the earlier minimum-only gate with the current approved BR-21 predicate: completed work with Result in the current cycle, no active Actions, and no outstanding follow-up on non-cancelled Actions. These are project decisions, not wording fixed by the handout.
 - Rejected inventing notification, SLA, Action-specific uploads, administrator analytics, or other excluded functionality.
 - Kept all test status as Planned until commands actually run.
 
@@ -67,4 +79,4 @@ The coding-agent review found that the earlier UI tests could pass while the imp
 
 ## Known Limitations of This Log
 
-Five prompts have been used and recorded. Final submission still requires 6–10 selected real prompts, final validation against the submitted commit, and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
+Seven prompts have been used and recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.

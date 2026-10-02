@@ -1,0 +1,66 @@
+PR #66 local validation record
+Date: 2026-10-03, Asia/Bangkok
+Work branch: feat/lab4-ticket-workflow
+Original PR head: ed1fe71d05b7a8cc09b04a98dc8ea659d0eebb9d
+Incoming staging dependency: 71021161e9f0c2973891922c483d54fdaba30367
+Scope: final local worktree; this is not hosted CI, peer approval or final-main evidence.
+
+Commands were executed against existing installed dependencies. Database/API/browser
+suites allocated disposable PostgreSQL schemas through the guarded isolated runners;
+they did not reset or migrate the development database.
+
+Selected observed console output, rather than a complete transcript:
+
+server: npm run build
+> tsc
+PASS (exit 0)
+
+server: npm run lint
+> eslint . --max-warnings=0
+PASS (exit 0)
+
+server: npm run test:isolated
+ Test Files  35 passed (35)
+      Tests  473 passed (473)
+   Start at  03:48:40
+   Duration  73.09s
+PASS (exit 0)
+
+client: npm run build
+> tsc && vite build
+PASS (exit 0)
+
+client: npm run lint
+> eslint . --max-warnings=0
+PASS (exit 0)
+
+client: npm test
+ Test Files  20 passed (20)
+      Tests  147 passed (147)
+   Start at  03:46:07
+   Duration  16.75s
+PASS (exit 0)
+
+client: npm run test:workflow:e2e
+  3 passed (30.4s)
+PASS (exit 0); desktop, tablet and mobile.
+Final focus-preserving screenshot run: 3 passed (27.3s), exit 0;
+see pr66-workflow-e2e.txt. Only trailing whitespace in that console log is normalized.
+
+client: npm run test:staff:e2e
+  1 passed (7.5s)
+PASS (exit 0)
+
+client: npm run test:actions:e2e
+  7 passed (57.6s)
+PASS (exit 0)
+
+Workflow screenshots: 18, across six states and three viewport sizes.
+Each captured state checks page overflow and axe WCAG serious/critical findings.
+Earlier browser attempts used the wrong checkbox selector and failed. The corrected
+full viewport run passed. This record reports the subsequent verified results.
+Existing dated regression screenshots are retained in the repository; regenerated
+staff/Action evidence is backed up under D:/Software_Engineering/backups/.
+
+Integration preserves both Git parent histories and code backups. No push, remote
+PR merge or changes to lab4-staging are included in this local validation record.

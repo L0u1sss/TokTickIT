@@ -431,3 +431,11 @@ Answer Part 9: Zen Green UI and Responsive Evidence
 
 PDF ต้องมี working links, screenshots ที่อ่านได้ และ evidence จาก final `main` branch ส่วน `docs/lab-03/report.md` ใช้เป็นต้นฉบับสำหรับจัดทำ PDF ได้ แต่ไฟล์ที่ส่งจริงต้องเป็น PDF ไฟล์เดียว
 
+
+### Lab 4 Ticket workflow (PR #66)
+
+`PATCH /api/staff/tickets/:id/status` requires `{ "status": "RESOLVED", "expectedTicketVersion": 5 }`. Use `version` from the latest Ticket Detail or aggregate-write response; `updatedAt` is for display, not concurrency. Only IT Staff and Administrators can change formal status. Requester “Problem Appears Resolved” remains advisory.
+
+Resolution requires completed work with Result in the current workflow cycle, no active Actions, and no outstanding follow-up on non-cancelled Actions. Reopen starts a new cycle without deleting prior work. Ticket cancellation preserves Action history and records cancellation actor/time/source atomically.
+
+Run `npm --prefix client run test:workflow:e2e` with the existing distinct, test-marked `TEST_DATABASE_URL` and installed Playwright Chromium. The runner allocates a disposable schema, tests desktop/tablet/mobile lifecycle and Requester visibility, then removes only its own fixtures. Screenshots are written to `artifacts/lab-04/screenshots/ticket-workflow/`; test traceability is in `docs/lab-04/tests.md`.
