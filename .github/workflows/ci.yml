@@ -6,11 +6,13 @@ on:
       - main
       - lab2-staging
       - lab3-staging
+      - lab4-staging
   push:
     branches:
       - main
       - lab2-staging
       - lab3-staging
+      - lab4-staging
 
 permissions:
   contents: read
@@ -103,6 +105,10 @@ jobs:
         run: node scripts/run-auth-e2e.mjs --staff-queue
         working-directory: client
 
+      - name: Run Actions Taken browser suite
+        run: npm run test:actions:e2e
+        working-directory: client
+
       - name: Run staff workflow browser suite
         run: npm run test:staff:e2e
         working-directory: client
@@ -143,4 +149,14 @@ jobs:
           path: |
             artifacts/lab-03/screenshots/
             client/test-results/
+          if-no-files-found: ignore
+
+      - name: Upload Lab 4 Actions Taken evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab-04-actions-taken-evidence
+          path: |
+            artifacts/lab-04/screenshots/actions-taken/
+            client/test-results/live-e2e/
           if-no-files-found: ignore

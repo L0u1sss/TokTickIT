@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { screenEvidence } from "./evidence-support.js";
 
-test("E2E-02 staff workflow persists ownership, priorities, statuses and separate communications", async ({ page }) => {
+test("E2E-02 staff workflow persists ownership, priorities, statuses and separate communications", async ({ page }, testInfo) => {
   if (!process.env.E2E_AUTH_PASSWORD) throw new Error("Run npm run test:staff:e2e for isolated fixtures.");
   await page.goto("/login");
   await page.getByLabel("Email", { exact: false }).fill("queue-browser@example.test");
@@ -9,7 +9,9 @@ test("E2E-02 staff workflow persists ownership, priorities, statuses and separat
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "User Management", exact: true })).toHaveCount(0);
-  await page.getByLabel("Search", { exact: true }).fill("TKT-2026-000002");
+  // Each retry needs an untouched ticket; earlier attempts persist real API writes.
+  const ticketNumber = `TKT-2026-${String(2 + testInfo.retry * 2).padStart(6, "0")}`;
+  await page.getByLabel("Search", { exact: true }).fill(ticketNumber);
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page.getByRole("status")).toContainText("1 tickets");
   await page.getByRole("link", { name: /View ticket/ }).click();
@@ -62,6 +64,10 @@ test("E2E-02 staff workflow persists ownership, priorities, statuses and separat
   await expect(page.getByText("private database detail")).toHaveCount(0);
   await expect(page.getByLabel("IT Priority", { exact: true })).toHaveValue("LOW");
   await page.unroute("**/api/staff/tickets/*/it-priority");
+  await expect(page.getByLabel("Status", { exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Reload Ticket", exact: true }).click();
+  await expect(page.getByLabel("Status", { exact: true })).toBeEnabled();
+  await expect(page.getByLabel("IT Priority", { exact: true })).toHaveValue("LOW");
 
   page.once("dialog", dialog => dialog.dismiss());
   await page.getByLabel("Status", { exact: true }).selectOption("RESOLVED");
@@ -74,7 +80,7 @@ test("E2E-02 staff workflow persists ownership, priorities, statuses and separat
       await expect(claim).toBeDisabled();
       const detail = await (await page.request.get(endpoint)).json();
       expect(detail.owner).toBeNull(); expect(detail.lastOwner.displayName).toBe("Niran IT Staff");
-      expect((await page.request.post(`${endpoint}/claim`, { headers, data: {} })).status()).toBe(409);
+      expect((await page.request.post(`${endpoint}/claim`, { headers, data: { expectedTicketVersion: detail.version } })).status()).toBe(409);
     }
   }
   await page.getByRole("button", { name: "Logout", exact: true }).click();

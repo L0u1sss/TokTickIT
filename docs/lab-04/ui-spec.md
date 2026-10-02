@@ -16,19 +16,19 @@ After authentication, the first role-appropriate route is Dashboard. Requesters 
 
 ## 3. IT Staff and Administrator Dashboard
 
-The page heading is “Dashboard” with last-refreshed information and Retry on failure. Metric cards show label, numeric value, and accessible drill-down action for Unassigned Open, Owned by Me, by Status, and by IT Priority. Separate compact lists show My Actions, Recently Updated Tickets, and Urgent Tickets. Each item exposes the identifiers needed to understand it and links to Ticket Detail; cards link to filtered Queue views.
+The page heading is “Dashboard” with last-refreshed information and Retry on failure. Metric cards show label, numeric value, and accessible drill-down action for Unassigned Open, Owned by Me, by Status, and by IT Priority. Separate compact lists show My Actions, Recently Updated Tickets, and Urgent Tickets. Recently Updated follows authoritative Ticket `updatedAt`: accepted Ticket/Action aggregate writes refresh recency; Public Comments, Internal Notes, and attachment-only writes do not. My Actions contains the deduplicated union of Actions recorded by, assigned to, or performed by the signed-in user; show every matching `Recorded`, `Assigned`, and `Performed` label on one row. Each item exposes the identifiers needed to understand it and links to Ticket Detail; cards link to filtered Queue views.
 
 Loading retains page structure without false zeroes. A successful zero dataset shows cards with `0` and an explanatory empty state. Forbidden and safe failures do not render stale privileged data. Administrator presentation is identical to staff for this sprint.
 
 ## 4. Requester Dashboard
 
-The page shows Open Tickets and Waiting for You metric cards plus Recently Updated and Recently Resolved lists. It never includes another Requester’s data and does not duplicate the full My Tickets controls. Cards drill into My Tickets; list items open owned Ticket Detail. Zero state provides a Create Ticket action. Failure/Retry preserves shell navigation.
+The page shows Open Tickets and Waiting for You metric cards plus Recently Updated and Recently Resolved lists. Recently Updated uses the same authoritative Ticket `updatedAt` rule as the Staff Dashboard: accepted Ticket/Action aggregate writes refresh recency; Public Comments, Internal Notes, and attachment-only writes do not. Recently Resolved means current `RESOLVED`/`CLOSED` Tickets with `resolvedAt` in the backend's rolling 168-hour window `[from,before)`; render the returned window and use its exact bounds in the drill-down. It never includes another Requester’s data and does not duplicate the full My Tickets controls. Open drill-down uses `/tickets?statusIn=NEW,OPEN,IN_PROGRESS,WAITING_FOR_REQUESTER,REOPENED`; waiting uses `/tickets?status=WAITING_FOR_REQUESTER`; recently resolved uses `/tickets?statusIn=RESOLVED,CLOSED&resolvedFrom=<from>&resolvedBefore=<before>`, with returned values URL-encoded by the client. List items open owned Ticket Detail. Zero state provides a Create Ticket action. Failure/Retry preserves shell navigation.
 
 ## 5. Actions Taken on Ticket Detail
 
 ### 5.1 List and read mode
 
-Actions appear in stable oldest-first order. Every item shows created date/time, description, result or “Not recorded”, performer, assignee, status, follow-up requirement/note, attachment notes, and updated time. Requesters see this read-only shared view on owned Tickets. Internal Notes remain in their separate staff-only area.
+Actions appear in stable oldest-first order. Every item shows created date/time, description, result or “Not recorded”, performer, assignee, status, follow-up requirement/note, attachment notes, and updated time. `Performed by` is the current assignee who completed the work; it is empty until completion. Only that assignee can complete the Action, so the displayed performer cannot accidentally identify a different staff member who merely recorded completion. The audit event records the authenticated completion actor. For cancelled Actions, display cancellation actor, timestamp, and whether cancellation came from staff or Ticket cancellation. When `followUpRequired=true` on a cancelled Action, label it as historical follow-up, not outstanding work. Requesters see this read-only shared view on owned Tickets. Internal Notes remain in their separate staff-only area.
 
 ### 5.2 Create mode
 
@@ -36,13 +36,13 @@ Staff/Admin select “Add Action”. The form contains Description, Assignee, op
 
 ### 5.3 Edit and lifecycle mode
 
-Authorized staff can open Edit, change contract-approved fields, and Save/Cancel. Lifecycle controls expose only valid next states. Complete requires Result; Cancel and reopening actions require confirmation because they alter operational meaning. A success refreshes both the Action and Ticket summary/dashboard-invalidated data.
+Authorized staff can open Edit, change contract-approved fields on non-terminal Actions, and Save/Cancel. Lifecycle controls expose only valid next states. Only the current assignee sees/enables Complete; other staff receive a clear “Only the assigned staff member can complete this Action” explanation. Complete requires Result and cleared follow-up; staff Cancel also requires cleared follow-up. `COMPLETED` and `CANCELLED` Actions are read-only terminal records; later work is a new Action, never a reopen. A Ticket-cascade-cancelled Action shows the cancellation actor/time/source and retains follow-up fields with a historical-only label. Actions are read-only and cannot be created on `RESOLVED`, `CLOSED`, or `CANCELLED` Tickets; the user must reopen the Ticket to start a new workflow cycle. Every Ticket aggregate write (claim, owner assignment/reassignment, priority, status, Action create/edit/transition) sends the displayed integer Ticket version; Action writes also send the Action revision. Reassignment/completion races resolve from server state; a former assignee receives stale/conflict feedback and must reload. On success, replace the locally held Ticket version with the returned `version`/`ticketVersion` before enabling another write, then refresh affected summaries.
 
 Inactive assignee, resolution-gate failure, and stale data have specific messages and recovery actions. The UI cannot imply that hiding a control provides authorization.
 
 ## 6. Ticket Workflow Feedback
 
-Ticket status options come from the current matrix. Moving to Resolved requires confirmation and completed-work evidence; server rejection names the missing condition without exposing private data. Requester “Problem Appears Resolved” remains wording distinct from formal “Resolve Ticket”. After success, heading badge, permitted actions, owner summary, and relevant lists refresh.
+Ticket status options come from the current matrix. Moving to Resolved requires confirmation and completed work in the current workflow cycle, with Result, no active Actions, and no outstanding follow-up on non-cancelled Actions. Cancelling a Ticket updates each active Action to a terminal cancelled record with cancellation provenance; preserved follow-up is historical-only. Claim, owner, priority, status, and Action mutation controls all submit the current Ticket version; stale conflicts preserve drafts and offer reload/reapply. Server rejection names safe reason codes without exposing private data. Requester “Problem Appears Resolved” remains wording distinct from formal “Resolve Ticket”. After success, heading badge, permitted actions, owner summary, and relevant lists refresh with the returned version.
 
 ## 7. URL and Drill-down Contract
 

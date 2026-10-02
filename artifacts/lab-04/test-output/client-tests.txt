@@ -1,0 +1,9 @@
+Command: npm --prefix client run test
+Date: 2026-10-02 (Asia/Bangkok)
+Worktree base: c00bb1a0c71d22c7cafc2bb932fc37bb014791b2
+Scope: Issue #55 implementation worktree; not a hosted CI or final main result.
+
+ Test Files  19 passed (19)
+      Tests  141 passed (141)
+   Start at  05:52:43
+   Duration  16.43s (transform 2.99s, setup 3.24s, import 8.20s, tests 51.99s, environment 20.33s)
