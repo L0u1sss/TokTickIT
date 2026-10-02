@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CommunicationSection } from "./TicketCommunication.js";
-import { ActionsTaken } from "./ActionsTaken.js";
 import { TicketWorkflow } from "./TicketWorkflow.js";
+import { ActionsTaken } from "./ActionsTaken.js";
 import { useAuth } from "../context/AuthContext.js";
 
 type Person = { id: number; displayName: string; email: string };
@@ -25,7 +25,7 @@ const operationMessages: Record<string, string> = {
   STALE_ACTION: "An Action changed while this Ticket was being updated. Your Action drafts are kept. Reload Ticket, then review the latest Actions before retrying.",
   FORBIDDEN: "You no longer have permission to change this Ticket. Reload Ticket to check your access.",
   NOT_FOUND: "This Ticket could not be found. Reload Ticket to check its current state.",
-  RESOLUTION_GATE_NOT_MET: "The Ticket cannot be resolved yet. Complete an Action in the current workflow cycle, record its Result, finish active Actions, and clear outstanding follow-up before trying again.",
+  RESOLUTION_GATE_NOT_MET: "Complete at least one Action with a Result in the current workflow cycle, finish active Actions, and clear outstanding follow-up before resolving this Ticket.",
   TICKET_ALREADY_ASSIGNED: "This Ticket already has an owner. Reload Ticket to see the current owner.",
   TICKET_NOT_ASSIGNABLE: "The Ticket's current status does not allow assignment. Reload Ticket to see the current state.",
   INVALID_ASSIGNEE: "The selected owner is no longer active or eligible. Refresh owner choices and select an active staff member.",
@@ -159,7 +159,16 @@ export default function StaffTicketQueue() {
       if (["AUTHENTICATION_REQUIRED", "PASSWORD_CHANGE_REQUIRED"].includes(code)) void refresh();
     } finally { savingRef.current = false; setSaving(false); }
   };
+  const recoverOperation = async () => {
+    if (savingRef.current || actionsBusyRef.current) return;
+    savingRef.current = true; setSaving(true);
+    try { await reloadTicket(); setActionsRefresh(value => value + 1); setOperationError(""); setOperationMessage("Ticket reloaded. Review the current state and reapply your change; your Action drafts are kept."); }
+    catch { setOperationError("Unable to reload the Ticket. Your Action drafts are kept. Try Reload Ticket again."); }
+    finally { savingRef.current = false; setSaving(false); }
+  };
+  const operationsDisabled = saving || actionsBusy || operationNeedsReload;
   const terminal = detail?.status === "CLOSED" || detail?.status === "CANCELLED";
+
   return <main id="main-content" tabIndex={-1} className="requester-page"><section className="requester-card staff-queue">
     <h1>{isDetail ? "Ticket Detail" : "Ticket Queue"}</h1>
     {isDetail ? <a href="/staff/tickets" onClick={e => { e.preventDefault(); reset(); }}>Back to Ticket Queue</a> : <>
@@ -187,15 +196,18 @@ export default function StaffTicketQueue() {
       {error === "FORBIDDEN" ? <a href="/">Return to your home</a> : error === "INVALID_QUERY" ? <button onClick={reset}>Reset filters</button> : <button onClick={() => setRevision(n => n + 1)}>Retry</button>}</div>}
     {!loading && !error && detail && <article><h2>{detail.ticketNumber}: {detail.summary}</h2><TicketFields ticket={detail} /><h3>Operational actions</h3>
       {operationMessage && <p role="status" aria-live="polite">{operationMessage}</p>}{operationError && <div role="alert"><p>Unable to save: {operationError}</p>
+        {operationError === operationMessages.RESOLUTION_GATE_NOT_MET && <a href="#actions">Review Actions Taken</a>}
         {operationNeedsReload && <button type="button" disabled={saving || actionsBusy} onClick={() => void recoverOperation()}>Reload Ticket</button>}
         {operationError === operationMessages.INVALID_ASSIGNEE && <button type="button" onClick={onAssigneesReload}>Refresh owner choices</button>}
       </div>}
       {saving && <p role="status">Updating Ticket…</p>}
       <div className="staff-operation-controls">
-        <button type="button" disabled={saving || terminal || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", {})}>Claim Ticket</button>
-        <label>Ticket Owner<select aria-label="Ticket Owner" disabled={saving || terminal} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value) }); }}><option value="">Unassigned</option>{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
-        <label>IT Priority<select aria-label="IT Priority" disabled={saving} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
-        <TicketWorkflow ticketId={detail.id} status={detail.status} expectedUpdatedAt={detail.updatedAt} disabled={saving} onReload={() => setRevision(value => value + 1)} />
+      <button type="button" disabled={operationsDisabled || terminal || Boolean(detail.owner)} onClick={() => void runOperation(`tickets/${detail.id}/claim`, "POST", { expectedTicketVersion: detail.version })}>Claim Ticket</button>
+        <label>Ticket Owner<select aria-label="Ticket Owner" disabled={operationsDisabled || terminal} value={detail.owner?.id ?? ""} onChange={event => { if (event.target.value) void runOperation(`tickets/${detail.id}/owner`, "PATCH", { ownerId: Number(event.target.value), expectedTicketVersion: detail.version }); }}><option value="">Unassigned</option>{detail.owner && !owners.some(owner => owner.id === detail.owner?.id) && <option value={detail.owner.id}>{detail.owner.displayName} (unavailable for new assignment)</option>}{owners.map(owner => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
+        <label>IT Priority<select aria-label="IT Priority" disabled={operationsDisabled} value={detail.itPriority} onChange={event => void runOperation(`tickets/${detail.id}/it-priority`, "PATCH", { itPriority: event.target.value, expectedTicketVersion: detail.version })}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+        <TicketWorkflow ticketId={detail.id} status={detail.status} expectedTicketVersion={detail.version} disabled={operationsDisabled}
+          onChange={status => runOperation(`tickets/${detail.id}/status`, "PATCH", { status, expectedTicketVersion: detail.version })}
+          onReload={recoverOperation} />
       </div>
       {ownerError && <div role="alert">Owner choices could not be loaded. <button type="button" onClick={onAssigneesReload}>Retry owners</button></div>}
       <h3>Description</h3><p className="staff-description">{detail.description}</p><p>Related system: {detail.relatedSystem?.name}</p>
@@ -207,7 +219,8 @@ export default function StaffTicketQueue() {
         </li>)}</ul> : <p>No attachments.</p>}
       </section>
       {detail.problemAppearsResolvedAt && <p role="status">Requester reports the problem appears resolved: {new Date(detail.problemAppearsResolvedAt).toLocaleString()}</p>}
-      <div id="actions"><ActionsTaken key={detail.id + "actions"} ticketId={detail.id} staff assignees={owners} /></div>
+      <div id="actions"><ActionsTaken key={detail.id + "actions"} ticketId={detail.id} staff assignees={owners} ticketVersion={detail.version} ticketStatus={detail.status} currentUserId={user?.id}
+        onTicketVersionChange={onTicketVersionChange} onReloadTicket={reloadTicket} ticketBusy={saving} ticketNeedsReload={operationNeedsReload} onTicketNeedsReloadChange={onTicketNeedsReloadChange} onBusyChange={onActionsBusyChange} refreshKey={actionsRefresh} onAssigneesReload={onAssigneesReload} /></div>
       <CommunicationSection key={detail.id + "comments"} ticketId={detail.id} staff />
       <CommunicationSection key={detail.id + "notes"} ticketId={detail.id} staff internal />
     </article>}

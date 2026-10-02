@@ -31,7 +31,9 @@ const communications = process.argv.includes("--communications");
 const staffFlow = process.argv.includes("--staff-flow");
 const ticketWorkflow = process.argv.includes("--ticket-workflow");
 const requesterDashboard = process.argv.includes("--requester-dashboard");
-const staffQueue = process.argv.includes("--staff-queue") || communications || staffFlow || ticketWorkflow || requesterDashboard;
+const actionsTaken = process.argv.includes("--actions-taken");
+const staffQueue = process.argv.includes("--staff-queue") || communications || staffFlow || actionsTaken || ticketWorkflow || requesterDashboard;
+const actionTickets = {};
 const children=[];
 function start(entry,args,cwd,env,stdio="inherit"){
   const child=spawn(process.execPath,[entry,...args],{cwd,env:{...process.env,...env},stdio,windowsHide:true});
@@ -55,12 +57,12 @@ try{
   await db.user.create({data:{displayName:"Auth Browser User",email:"auth-browser@example.test",role:"REQUESTER",passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:true}});
   await db.user.create({data:{displayName:"Inactive Browser User",email:"inactive-browser@example.test",role:"REQUESTER",isActive:false,passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:false}});
   if (requesterDashboard) await db.user.create({ data: { displayName: "Empty Dashboard User", email: "empty-dashboard@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
-  if (userManagement) await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
+  if (userManagement || actionsTaken) await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
   if (staffQueue) {
     const staff = await db.user.create({ data: { displayName: "Mali IT Staff", email: "queue-browser@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     if (staffFlow) await db.user.create({ data: { displayName: "Niran IT Staff", email: "second-staff@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     const requester = await db.user.findUniqueOrThrow({ where: { email: "auth-browser@example.test" } });
-    if (communications || staffFlow || ticketWorkflow || requesterDashboard) await db.user.update({ where: { id: requester.id }, data: { mustChangePassword: false } });
+    if (communications || staffFlow || actionsTaken || ticketWorkflow || requesterDashboard) await db.user.update({ where: { id: requester.id }, data: { mustChangePassword: false } });
     const category = await db.category.create({ data: { name: "Hardware" } });
     const system = await db.relatedSystem.create({ data: { name: "Office services" } });
     if (staffFlow) attachmentDirectory = await mkdtemp(path.join(tmpdir(), "toktickit-staff-e2e-"));
@@ -69,7 +71,7 @@ try{
       const ticket = await db.ticket.create({ data: {
       ticketNumber: `TKT-2026-${String(i).padStart(6, "0")}`, clientRequestId: randomUUID(), summary: i === 23 ? "Printer on floor 3 is offline" : `Office workstation ${i} needs support`,
       description: "The office printer cannot be reached from the shared network.", requesterId: requester.id, categoryId: category.id, relatedSystemId: system.id,
-      requestedPriority: "HIGH", itPriority: "HIGH", status: dashboardStatus, ownerId: ["CLOSED", "CANCELLED"].includes(dashboardStatus) ? null : i % 2 ? staff.id : null,
+      requestedPriority: "HIGH", itPriority: "HIGH", status: dashboardStatus, resolvedAt: ["RESOLVED", "CLOSED"].includes(dashboardStatus) ? new Date(Date.now() - (5 - i) * 3600000) : null, ownerId: ["CLOSED", "CANCELLED"].includes(dashboardStatus) ? null : i % 2 ? staff.id : null,
     } });
       // Represent an existing staff adjustment after correct priority initialization.
       if (i % 2 === 0) await db.ticket.update({ where: { id: ticket.id }, data: { itPriority: "MEDIUM" } });
@@ -78,7 +80,7 @@ try{
         const storageKey = randomUUID(), bytes = Buffer.from("%PDF-1.4\nStaff attachment continuity\n%%EOF");
         await writeFile(path.join(attachmentDirectory, storageKey), bytes);
         await db.attachment.create({ data: { ticketId: ticket.id, originalName: "existing.pdf", storageKey, sizeBytes: bytes.length, mimeType: "application/pdf", uploadedByRequesterId: requester.id } });
-        await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), description: "Existing completed staff work", result: "Connectivity restored", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
+        await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), createFingerprint: "f".repeat(64), recordedById: staff.id, description: "Existing completed staff work", result: "Connectivity restored", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
       }
     }
     if (actionsTaken) {
@@ -98,7 +100,7 @@ try{
     {DATABASE_URL:isolated.toString(),CLIENT_ORIGIN:clientUrl,PORT:apiPort,NODE_ENV:"test", ...(attachmentDirectory ? { ATTACHMENT_STORAGE_DIR: attachmentDirectory } : {})},"ignore");
   const web=start(path.join(client,"node_modules/vite/bin/vite.js"),["--host","127.0.0.1","--port",webPort,"--strictPort"],client,{VITE_API_URL:apiUrl},"ignore");
   await Promise.all([ready(apiUrl+"/api/health",api.child),ready(clientUrl,web.child)]);
-  const browserSpec = userManagement ? "e2e/lab-03/user-administration.spec.ts" : requesterDashboard ? "e2e/lab-04/dashboards.spec.ts" : ticketWorkflow ? "e2e/lab-04/ticket-resolution.spec.ts" : staffFlow ? "e2e/lab-03/staff-ticket-flow.spec.ts" : communications ? "e2e/lab-03/comments-notes.spec.ts" : staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts";
+  const browserSpec = requesterDashboard ? "e2e/lab-04/dashboards.spec.ts" : actionsTaken ? "e2e/lab-04/actions-taken-flow.spec.ts" : ticketWorkflow ? "e2e/lab-04/ticket-resolution.spec.ts" : userManagement ? "e2e/lab-03/user-administration.spec.ts" : staffFlow ? "e2e/lab-03/staff-ticket-flow.spec.ts" : communications ? "e2e/lab-03/comments-notes.spec.ts" : staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts";
   await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test",browserSpec,"--config","playwright.live.config.ts"],client,
     {E2E_CLIENT_URL:clientUrl,E2E_API_URL:apiUrl,E2E_AUTH_PASSWORD:password, ...(actionsTaken ? { E2E_ACTION_TICKETS: JSON.stringify(actionTickets) } : {})});
 }catch(error){console.error(error instanceof Error?error.message:"Auth E2E failed.");process.exitCode=1;}

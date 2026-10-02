@@ -115,40 +115,56 @@ export async function updateTicketPriority(prisma: PrismaClient, ticketId: numbe
   });
 }
 
-export async function updateTicketStatus(prisma: PrismaClient, ticketId: number, nextStatus: Status, expectedUpdatedAt: Date) {
-  try { return await prisma.$transaction(async (transaction) => {
-    const ticket = await transaction.ticket.findUnique({ where: { id: ticketId }, select: { status: true, ownerId: true, updatedAt: true } });
-    if (!ticket) throw notFound();
-    if (ticket.updatedAt.getTime() !== expectedUpdatedAt.getTime()) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before changing status.");
+export async function updateTicketStatus(prisma: PrismaClient, ticketId: number, nextStatus: Status, expected: number, actorId: number) {
+  return prisma.$transaction(async (transaction) => {
+    const now = new Date(); const ticket = await lockTicket(transaction, ticketId);
+    if (ticket.version !== expected) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
     if (!permittedStatusTransition(ticket.status, nextStatus)) throw new ApiError(409, "INVALID_STATUS_TRANSITION", `Cannot change status from ${ticket.status} to ${nextStatus}.`);
-    if (nextStatus === "RESOLVED" && await transaction.actionTaken.count({ where: { ticketId, status: "COMPLETED", result: { not: null } } }) === 0) {
-      throw new ApiError(409, "RESOLUTION_GATE_NOT_MET", "Complete at least one Action with a Result before resolving this Ticket.");
+    if (nextStatus === "CLOSED" && ticket.status !== "RESOLVED") throw new ApiError(409, "INVALID_STATUS_TRANSITION", "Only resolved Tickets can be closed.");
+    if (nextStatus === "RESOLVED") {
+      const actions = await transaction.actionTaken.findMany({
+        where: { ticketId, workflowCycle: ticket.workflowCycle },
+        select: { status: true, result: true, followUpRequired: true },
+      });
+      const reasons: string[] = [];
+      if (!actions.some(action => action.status === "COMPLETED" && action.result?.trim())) reasons.push("MISSING_COMPLETED_WORK");
+      if (actions.some(action => action.status === "PLANNED" || action.status === "IN_PROGRESS")) reasons.push("ACTIVE_ACTIONS");
+      if (actions.some(action => action.status !== "CANCELLED" && action.followUpRequired)) reasons.push("OUTSTANDING_FOLLOW_UP");
+      if (reasons.length) throw new ApiError(409, "RESOLUTION_GATE_NOT_MET", "Complete an Action with a Result in the current workflow cycle, finish active Actions, and clear outstanding follow-up before resolving this Ticket.", reasons.map(issue => ({ field: "actions", issue })));
     }
     const terminal = nextStatus === "CLOSED" || nextStatus === "CANCELLED";
-    const changed = await transaction.ticket.updateMany({ where: { id: ticketId, updatedAt: expectedUpdatedAt }, data: { status: nextStatus, ...(nextStatus === "REOPENED" ? { problemAppearsResolvedAt: null, problemAppearsResolvedById: null } : {}), ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) } });
-    if (changed.count !== 1) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before changing status.");
+    if (nextStatus === "CANCELLED") {
+      const actions = await transaction.actionTaken.findMany({
+        where: { ticketId, workflowCycle: ticket.workflowCycle, status: { in: ["PLANNED", "IN_PROGRESS"] } },
+        select: { id: true, status: true, revision: true }, orderBy: { id: "asc" },
+      });
+      for (const action of actions) {
+        const changed = await transaction.actionTaken.updateMany({ where: { id: action.id, revision: action.revision }, data: {
+          status: "CANCELLED", cancelledAt: now, cancelledById: actorId,
+          cancellationSource: "TICKET_CASCADE", updatedAt: now, revision: { increment: 1 },
+        } });
+        if (changed.count !== 1) throw new ApiError(409, "STALE_ACTION", "An Action changed while cancelling the Ticket.");
+        await transaction.actionEvent.create({ data: {
+          actionId: action.id, actorId,
+          eventType: "TICKET_CASCADE_CANCELLED", fromStatus: action.status, toStatus: "CANCELLED", revision: action.revision + 1,
+          changedFields: { fields: ["status", "cancelledAt", "cancelledById", "cancellationSource"] }, createdAt: now,
+        } });
+      }
+    }
+    await writeTicket(transaction, ticketId, expected, { status: nextStatus, ...(nextStatus === "REOPENED" ? { workflowCycle: { increment: 1 }, resolvedAt: null, problemAppearsResolvedAt: null, problemAppearsResolvedById: null } : {}), ...(nextStatus === "RESOLVED" ? { resolvedAt: now } : {}), ...(terminal && ticket.ownerId !== null ? { lastOwnerId: ticket.ownerId, ownerId: null } : {}) }, now);
     const updated = await transaction.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { status: true, updatedAt: true } });
-    return { status: updated.status, updatedAt: updated.updatedAt.toISOString() };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }); }
-  catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before changing status.");
-    throw error;
-  }
+    return { status: updated.status, version: expected + 1, updatedAt: updated.updatedAt.toISOString() };
+  });
 }
 
 function parseStatusUpdate(body: unknown) {
-  const input = bodyObject(body), allowed = ["status", "expectedUpdatedAt"];
+  const input = bodyObject(body), allowed = ["status", "expectedTicketVersion"];
   const details = [
     ...Object.keys(input).filter(key => !allowed.includes(key)).map(field => ({ field, issue: "This field is not accepted." })),
     ...allowed.filter(field => !(field in input)).map(field => ({ field, issue: "This field is required." })),
   ];
-  const status = parseEnum(input, "status", Object.values(Status));
-  const timestamp = input.expectedUpdatedAt;
-  if (typeof timestamp !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timestamp) || Number.isNaN(Date.parse(timestamp)) || new Date(timestamp).toISOString() !== timestamp) {
-    details.push({ field: "expectedUpdatedAt", issue: "Must be an ISO 8601 UTC timestamp." });
-  }
   if (details.length) throw validationError(details);
-  return { status, expectedUpdatedAt: new Date(timestamp as string) };
+  return { status: parseEnum(input, "status", Object.values(Status)), expectedTicketVersion: expectedVersion(input) };
 }
 
 const ticketDetailInclude = {
@@ -211,10 +227,10 @@ staffTicketOperationsRouter.patch("/tickets/:id/owner", route(async (req, res) =
   if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) throw validationError([{ field: "ownerId", issue: "Must be a positive integer." }]);
   res.json(await assignTicket(getPrisma(), parsePositivePathId(req.params.id, "id"), value, version));
 }));
-staffTicketOperationsRouter.patch("/tickets/:id/it-priority", route(async (req, res) => res.json(await updateTicketPriority(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(bodyObject(req.body), "itPriority", Object.values(Priority))))));
+staffTicketOperationsRouter.patch("/tickets/:id/it-priority", route(async (req, res) => { const body = bodyObject(req.body); res.json(await updateTicketPriority(getPrisma(), parsePositivePathId(req.params.id, "id"), parseEnum(body, "itPriority", Object.values(Priority)), expectedVersion(body))); }));
 staffTicketOperationsRouter.patch("/tickets/:id/status", route(async (req, res) => {
   const input = parseStatusUpdate(req.body);
-  res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), input.status, input.expectedUpdatedAt));
+  res.json(await updateTicketStatus(getPrisma(), parsePositivePathId(req.params.id, "id"), input.status, input.expectedTicketVersion, res.locals.authenticatedUser.id));
 }));
 staffTicketOperationsRouter.get("/tickets/:id/comments", route(async (req, res) => { const id = parsePositivePathId(req.params.id, "id"); await requireTicket(getPrisma(), id); res.json({ items: await listComments(getPrisma(), id) }); }));
 staffTicketOperationsRouter.post("/tickets/:id/comments", route(async (req, res) => res.status(201).json(await addCommunication(getPrisma(), parsePositivePathId(req.params.id, "id"), res.locals.authenticatedUser.id, req.body, false))));
