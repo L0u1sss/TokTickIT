@@ -56,6 +56,7 @@ export interface Attachment {
 }
 
 export interface TicketSummary {
+  resolvedAt?: string | null;
   id: number;
   ticketNumber: string;
   summary: string;
@@ -75,6 +76,9 @@ export type TicketStatusFilter = "New" | "OPEN_GROUP" | "WAITING_FOR_REQUESTER";
 export interface TicketListQuery {
   search?: string;
   status?: TicketStatusFilter;
+  statusIn?: string;
+  resolvedFrom?: string;
+  resolvedBefore?: string;
   requestedPriority?: RequestedPriority;
   categoryId?: number;
   relatedSystemId?: number;
@@ -111,6 +115,7 @@ export interface RequesterDashboardData {
   metrics: { openCount: number; waitingForRequesterCount: number };
   recentlyUpdated: TicketSummary[];
   recentlyResolved: TicketSummary[];
+  recentlyResolvedWindow: { from: string; before: string };
   generatedAt: string;
 }
 
@@ -267,6 +272,9 @@ export async function getTickets(
   const parameters = new URLSearchParams();
   if (query.search) parameters.set("search", query.search);
   if (query.status) parameters.set("status", query.status);
+  if (query.statusIn) parameters.set("statusIn", query.statusIn);
+  if (query.resolvedFrom) parameters.set("resolvedFrom", query.resolvedFrom);
+  if (query.resolvedBefore) parameters.set("resolvedBefore", query.resolvedBefore);
   if (query.requestedPriority) {
     parameters.set("requestedPriority", query.requestedPriority);
   }

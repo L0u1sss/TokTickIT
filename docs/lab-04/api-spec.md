@@ -42,12 +42,14 @@ type ActionEvent = {
   changedFields: { fields: string[] }; revision: number; createdAt: string;
 };
 
-type TicketSummary = {
+type StaffTicketSummary = {
   id: number; ticketNumber: string; summary: string; status: string;
   itPriority: "LOW" | "MEDIUM" | "HIGH"; owner: UserSummary | null;
   version: number; resolvedAt: string | null; updatedAt: string;
 };
 ```
+
+Requester dashboard/list summaries have the existing requester-safe shape: `id`, `version`, `ticketNumber`, `summary`, public display `status`, `requestedPriority`, category/system `{ id, name }`, `activeAttachmentCount`, `createdAt`, `updatedAt`, and nullable `resolvedAt`. They exclude description, requester identity, staff ownership, notes, and attachment storage keys. Staff dashboard summaries use `StaffTicketSummary` above.
 
 Text length is counted in Unicode code points after trim. Description/Result use 1–2,000; Follow-up Note/Attachment Notes use 1–1,000.
 
@@ -177,7 +179,13 @@ Requester only; identity always comes from the session.
 }
 ```
 
-Lists contain at most five `TicketSummary` items. Counts/list definitions follow BR-26–BR-27. Zero state uses numeric zero and empty arrays. Drill-down links are constructed by the client from documented My Tickets queries: open statuses use `status=OPEN_GROUP`, waiting uses `status=WAITING_FOR_REQUESTER`; detail items use `/tickets/:id`.
+Lists contain at most five `TicketSummary` items. Counts/list definitions follow BR-26–BR-27. Zero state uses numeric zero and empty arrays. Drill-down links are constructed by the client from documented My Tickets queries: open statuses use `status=OPEN_GROUP`, waiting uses `status=WAITING_FOR_REQUESTER`; recently resolved uses `statusIn=RESOLVED,CLOSED&resolvedFrom=<from>&resolvedBefore=<before>` with the exact response window URL-encoded; detail items use `/tickets/:id`.
+
+`recentlyResolved` filters current `RESOLVED`/`CLOSED` Tickets with `resolvedAt >= from AND resolvedAt < before` and orders `resolvedAt DESC, id DESC`. The window is 168 hours ending at the one `generatedAt` captured before all queries. Legacy null resolution times, older resolutions, upper-bound/future timestamps, and reopened Tickets are excluded. Metrics and lists share a repeatable-read transaction.
+
+My Tickets accepts either `status` (`New`, `OPEN_GROUP`, `WAITING_FOR_REQUESTER`) or `statusIn` (a comma-separated, nonempty, duplicate-free list of the eight exact Ticket status codes). Combining them returns `400 INVALID_QUERY`. `resolvedFrom`/`resolvedBefore` must be supplied together as valid canonical ISO 8601 UTC timestamps (`YYYY-MM-DDTHH:mm:ss.sssZ`), with `from < before`, and only `RESOLVED`/`CLOSED` selected. Unknown, repeated, invalid, or contradictory parameters return `400 INVALID_QUERY`. Every list/count still uses authenticated ownership. Existing sorting/paging is preserved; changing the Status control clears the resolution bounds.
+
+The dashboard itself accepts no query parameters (`400 INVALID_QUERY`); unauthenticated requests return `401`, Staff/Admin return `403`, and unexpected failures return the safe `500 INTERNAL_ERROR` envelope.
 
 ## 6. Staff Dashboard
 

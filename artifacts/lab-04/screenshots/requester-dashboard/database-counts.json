@@ -1,0 +1,15 @@
+{
+  "source": "Direct Prisma queries on the isolated browser fixture schema",
+  "requester": "auth-browser@example.test",
+  "metrics": {
+    "openCount": 21,
+    "waitingForRequesterCount": 1
+  },
+  "openStatuses": [
+    "NEW",
+    "OPEN",
+    "IN_PROGRESS",
+    "WAITING_FOR_REQUESTER",
+    "REOPENED"
+  ]
+}

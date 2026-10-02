@@ -12,6 +12,8 @@ export default function RequesterDashboard({ onNavigate }: { onNavigate: (path: 
     try {
       const next = await getRequesterDashboard(requestAsCurrentRequester, signal);
       if (!Number.isInteger(next?.metrics?.openCount) || !Number.isInteger(next?.metrics?.waitingForRequesterCount) || !Array.isArray(next?.recentlyUpdated) || !Array.isArray(next?.recentlyResolved)) throw new Error("Invalid dashboard response");
+      if (signal?.aborted) return;
+      if (!next.recentlyResolvedWindow || !Number.isFinite(Date.parse(next.recentlyResolvedWindow.from)) || !Number.isFinite(Date.parse(next.recentlyResolvedWindow.before)) || !Number.isFinite(Date.parse(next.generatedAt)) || next.metrics.openCount < 0 || next.metrics.waitingForRequesterCount < 0 || next.recentlyUpdated.length > 5 || next.recentlyResolved.length > 5) throw new Error("Invalid dashboard response");
       setData(next); setState("ready");
     } catch (error) { if (!(error instanceof Error && error.name === "AbortError")) setState("error"); }
   }, [requestAsCurrentRequester]);
@@ -22,6 +24,7 @@ export default function RequesterDashboard({ onNavigate }: { onNavigate: (path: 
   }, [load]);
   if (!currentRequester) return null;
   const navigate = (event: MouseEvent<HTMLAnchorElement>, path: string) => { event.preventDefault(); onNavigate(path); };
+  const resolvedPath = data ? `/tickets?${new URLSearchParams({ statusIn: "RESOLVED,CLOSED", resolvedFrom: data.recentlyResolvedWindow.from, resolvedBefore: data.recentlyResolvedWindow.before })}` : "/tickets";
   return <main className="dashboard-page" id="main-content" tabIndex={-1}>
     <header className="dashboard-heading"><div><p className="eyebrow">Requester workspace</p><h1>Dashboard</h1><p>Ticket overview for {currentRequester.displayName}</p></div>
       {data && <p>Last refreshed <time dateTime={data.generatedAt}>{displayDate(data.generatedAt)}</time></p>}</header>
@@ -33,11 +36,11 @@ export default function RequesterDashboard({ onNavigate }: { onNavigate: (path: 
         <a className="dashboard-metric" href="/tickets?status=WAITING_FOR_REQUESTER" onClick={event => navigate(event, "/tickets?status=WAITING_FOR_REQUESTER")}><span>Waiting for You</span><strong>{data.metrics.waitingForRequesterCount}</strong><span>View tickets waiting for you</span></a>
       </section>
       {data.metrics.openCount === 0 && data.recentlyUpdated.length === 0 && <section className="dashboard-zero"><h2>No Tickets yet</h2><p>Create a Ticket when you need help from the IT team.</p><a className="zen-button" href="/tickets/new" onClick={event => navigate(event, "/tickets/new")}>Create Ticket</a></section>}
-      <div className="dashboard-lists"><DashboardList title="Recently Updated" empty="No recently updated Tickets." tickets={data.recentlyUpdated} onNavigate={onNavigate} /><DashboardList title="Recently Resolved" empty="No resolved Tickets yet." tickets={data.recentlyResolved} onNavigate={onNavigate} /></div>
+      <div className="dashboard-lists"><DashboardList title="Recently Updated" empty="No recently updated Tickets." tickets={data.recentlyUpdated} onNavigate={onNavigate} /><DashboardList title="Recently Resolved" empty="No Tickets resolved in the last seven days." tickets={data.recentlyResolved} onNavigate={onNavigate} window={data.recentlyResolvedWindow} drillDown={resolvedPath} /></div>
     </>}
   </main>;
 }
 
-function DashboardList({ title, empty, tickets, onNavigate }: { title: string; empty: string; tickets: TicketSummary[]; onNavigate: (path: string) => void }) {
-  return <section className="dashboard-list"><h2>{title}</h2>{tickets.length === 0 ? <p>{empty}</p> : <ul>{tickets.map(ticket => <li key={ticket.id}><a href={`/tickets/${ticket.id}`} onClick={event => { event.preventDefault(); onNavigate(`/tickets/${ticket.id}`); }}><strong>{ticket.ticketNumber}</strong><span>{ticket.summary}</span><span>{ticket.status} · Updated <time dateTime={ticket.updatedAt}>{displayDate(ticket.updatedAt)}</time></span></a></li>)}</ul>}</section>;
+function DashboardList({ title, empty, tickets, onNavigate, window, drillDown }: { title: string; empty: string; tickets: TicketSummary[]; onNavigate: (path: string) => void; window?: { from: string; before: string }; drillDown?: string }) {
+  return <section className="dashboard-list"><h2>{title}</h2>{window && <p>Resolved in the last seven days, from <time dateTime={window.from}>{displayDate(window.from)}</time> to <time dateTime={window.before}>{displayDate(window.before)}</time> (end excluded).</p>}{drillDown && <a href={drillDown} onClick={event => { event.preventDefault(); onNavigate(drillDown); }}>View recently resolved tickets</a>}{tickets.length === 0 ? <p>{empty}</p> : <ul>{tickets.map(ticket => <li key={ticket.id}><a href={`/tickets/${ticket.id}`} onClick={event => { event.preventDefault(); onNavigate(`/tickets/${ticket.id}`); }}><strong>{ticket.ticketNumber}</strong><span>{ticket.summary}</span><span>{ticket.status} · {window ? "Resolved" : "Updated"} <time dateTime={window && ticket.resolvedAt ? ticket.resolvedAt : ticket.updatedAt}>{displayDate(window && ticket.resolvedAt ? ticket.resolvedAt : ticket.updatedAt)}</time></span></a></li>)}</ul>}</section>;
 }

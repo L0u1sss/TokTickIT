@@ -16,6 +16,7 @@ export const ticketSummarySelection = Prisma.validator<Prisma.TicketSelect>()({
   },
   createdAt: true,
   updatedAt: true,
+  resolvedAt: true,
 });
 
 type TicketSummaryRow = Prisma.TicketGetPayload<{
@@ -39,6 +40,7 @@ export function serializeTicketSummary(ticket: TicketSummaryRow) {
     activeAttachmentCount: ticket._count.attachments,
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
+    resolvedAt: ticket.resolvedAt?.toISOString() ?? null,
   };
 }
 
@@ -57,6 +59,7 @@ export async function listTickets(
           ],
         }
       : {}),
+    ...(query.resolvedFrom && query.resolvedBefore ? { resolvedAt: { gte: query.resolvedFrom, lt: query.resolvedBefore } } : {}),
     ...(query.status ? { status: { in: query.status } } : {}),
     ...(query.requestedPriority
       ? { requestedPriority: query.requestedPriority }

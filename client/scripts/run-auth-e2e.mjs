@@ -4,7 +4,7 @@ import path from "node:path";
 import { loadEnvFile } from "node:process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 
 const client= fileURLToPath(new URL("../",import.meta.url));
@@ -57,7 +57,7 @@ try{
   await db.user.create({data:{displayName:"Auth Browser User",email:"auth-browser@example.test",role:"REQUESTER",passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:true}});
   await db.user.create({data:{displayName:"Inactive Browser User",email:"inactive-browser@example.test",role:"REQUESTER",isActive:false,passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:false}});
   if (requesterDashboard) await db.user.create({ data: { displayName: "Empty Dashboard User", email: "empty-dashboard@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
-  if (userManagement || actionsTaken) await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
+  if (userManagement || actionsTaken || requesterDashboard) await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
   if (staffQueue) {
     const staff = await db.user.create({ data: { displayName: "Mali IT Staff", email: "queue-browser@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     if (staffFlow) await db.user.create({ data: { displayName: "Niran IT Staff", email: "second-staff@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
@@ -82,6 +82,14 @@ try{
         await db.attachment.create({ data: { ticketId: ticket.id, originalName: "existing.pdf", storageKey, sizeBytes: bytes.length, mimeType: "application/pdf", uploadedByRequesterId: requester.id } });
         await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), createFingerprint: "f".repeat(64), recordedById: staff.id, description: "Existing completed staff work", result: "Connectivity restored", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
       }
+    }
+    if (requesterDashboard) {
+      const other = await db.user.create({ data: { displayName: "Other Dashboard Requester", email: "other-dashboard@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
+      await db.ticket.create({ data: { ticketNumber: "TKT-2026-900001", clientRequestId: randomUUID(), summary: "Another requester private ticket", description: "Cross-owner isolation", requesterId: other.id, categoryId: category.id, relatedSystemId: system.id, requestedPriority: "HIGH", itPriority: "HIGH", status: "WAITING_FOR_REQUESTER", updatedAt: new Date(Date.now() + 3600000) } });
+      const counts = { openCount: await db.ticket.count({ where: { requesterId: requester.id, status: { in: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] } } }), waitingForRequesterCount: await db.ticket.count({ where: { requesterId: requester.id, status: "WAITING_FOR_REQUESTER" } }) };
+      const directory = path.resolve(client, "../artifacts/lab-04/screenshots/requester-dashboard");
+      await mkdir(directory, { recursive: true });
+      await writeFile(path.join(directory, "database-counts.json"), JSON.stringify({ source: "Direct Prisma queries on the isolated browser fixture schema", requester: "auth-browser@example.test", metrics: counts, openStatuses: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] }, null, 2) + "\n");
     }
     if (actionsTaken) {
       await db.user.create({ data: { displayName: "Other Action Requester", email: "other-requester@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });

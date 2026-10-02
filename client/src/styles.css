@@ -36,7 +36,7 @@
 .dashboard-lists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
 .dashboard-list, .dashboard-zero, .dashboard-error { padding: 1.25rem; border: 1px solid #b5cdbd; border-radius: 14px; background: #fff; }
 .dashboard-list ul { display: grid; gap: .65rem; padding: 0; list-style: none; }
-.dashboard-list a { display: grid; gap: .2rem; padding: .75rem; border-radius: 8px; color: #19462f; background: #f4faf6; text-decoration: none; overflow-wrap: anywhere; }
+.dashboard-list a { min-height: 44px; display: grid; gap: .2rem; padding: .75rem; border-radius: 8px; color: #19462f; background: #f4faf6; text-decoration: none; overflow-wrap: anywhere; }
 .dashboard-list a:hover, .dashboard-list a:focus-visible { background: #e3f4e9; }
 .dashboard-loading { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 .dashboard-loading div { min-height: 10rem; border-radius: 14px; background: #e4eee7; }

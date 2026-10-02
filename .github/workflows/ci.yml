@@ -113,6 +113,10 @@ jobs:
         run: npm run test:workflow:e2e
         working-directory: client
 
+      - name: Run Requester dashboard browser suite
+        run: npm run test:requester-dashboard:e2e
+        working-directory: client
+
       - name: Run staff workflow browser suite
         run: npm run test:staff:e2e
         working-directory: client
@@ -163,5 +167,6 @@ jobs:
           path: |
             artifacts/lab-04/screenshots/actions-taken/
             artifacts/lab-04/screenshots/ticket-workflow/
+            artifacts/lab-04/screenshots/requester-dashboard/
             client/test-results/live-e2e/
           if-no-files-found: ignore

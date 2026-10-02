@@ -33,7 +33,7 @@ it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted naviga
   window.history.replaceState({}, "", "/");
   vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
     url.endsWith("/api/auth/me") ? { user: { id: 1, displayName: "Session User", email: "user@example.test", role, mustChangePassword: false } }
-    : role === "REQUESTER" ? { metrics: { openCount: 0, waitingForRequesterCount: 0 }, recentlyUpdated: [], recentlyResolved: [], generatedAt: "2026-09-26T10:00:00.000Z" }
+    : role === "REQUESTER" ? { metrics: { openCount: 0, waitingForRequesterCount: 0 }, recentlyUpdated: [], recentlyResolved: [], recentlyResolvedWindow: { from: "2026-09-19T10:00:00.000Z", before: "2026-09-26T10:00:00.000Z" }, generatedAt: "2026-09-26T10:00:00.000Z" }
     : { categories: [], relatedSystems: [], items: [] }
   )))));
   render(<AuthApp />);

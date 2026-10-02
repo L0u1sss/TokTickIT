@@ -439,3 +439,9 @@ PDF ต้องมี working links, screenshots ที่อ่านได้
 Resolution requires completed work with Result in the current workflow cycle, no active Actions, and no outstanding follow-up on non-cancelled Actions. Reopen starts a new cycle without deleting prior work. Ticket cancellation preserves Action history and records cancellation actor/time/source atomically.
 
 Run `npm --prefix client run test:workflow:e2e` with the existing distinct, test-marked `TEST_DATABASE_URL` and installed Playwright Chromium. The runner allocates a disposable schema, tests desktop/tablet/mobile lifecycle and Requester visibility, then removes only its own fixtures. Screenshots are written to `artifacts/lab-04/screenshots/ticket-workflow/`; test traceability is in `docs/lab-04/tests.md`.
+
+## Lab 4 Requester Dashboard
+
+Requester login opens `/dashboard`. Counts and five-item previews use session-owned backend queries. Recently Resolved uses the last 168 hours of `resolvedAt` in a UTC half-open window; the My Tickets link preserves the exact returned bounds. Legacy null-resolution Tickets remain visible in My Tickets/Recently Updated but are excluded from Recently Resolved.
+
+Run `npm --prefix client run test:requester-dashboard:e2e` with a distinct test-marked `TEST_DATABASE_URL` and installed Playwright Chromium. The runner creates and removes only its own migrated schema; output includes database-count evidence and desktop/tablet/mobile, empty, loading, failure, and forbidden screenshots under `artifacts/lab-04/screenshots/requester-dashboard/`. CI runs this suite and uploads its evidence. See [Lab 4 traceability](docs/lab-04/tests.md) for verified scope and remaining increments.

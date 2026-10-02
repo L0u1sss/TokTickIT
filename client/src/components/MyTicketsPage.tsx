@@ -37,6 +37,9 @@ const emptyMetadata: TicketMetadata = { categories: [], relatedSystems: [] };
 const allowedQueryFields = new Set([
   "search",
   "status",
+  "statusIn",
+  "resolvedFrom",
+  "resolvedBefore",
   "requestedPriority",
   "categoryId",
   "relatedSystemId",
@@ -68,6 +71,14 @@ function queryFromLocation(locationSearch = window.location.search): LocationQue
 
   const priority = parameters.get("requestedPriority");
   const status = parameters.get("status");
+  const statusIn = parameters.get("statusIn");
+  const resolvedFrom = parameters.get("resolvedFrom"), resolvedBefore = parameters.get("resolvedBefore");
+  const validStatuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
+  if (statusIn !== null && (status !== null || statusIn.split(",").some(value => !validStatuses.includes(value)) || new Set(statusIn.split(",")).size !== statusIn.split(",").length)) invalid = true;
+  const validUtc = (value: string | null) => value !== null && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+  if (resolvedFrom !== null || resolvedBefore !== null) {
+    if (!validUtc(resolvedFrom) || !validUtc(resolvedBefore) || resolvedFrom! >= resolvedBefore! || !statusIn || statusIn.split(",").some(value => !["RESOLVED", "CLOSED"].includes(value))) invalid = true;
+  }
   const sortBy = parameters.get("sortBy");
   const sortOrder = parameters.get("sortOrder");
   const rawCategoryId = parameters.get("categoryId");
@@ -98,6 +109,8 @@ function queryFromLocation(locationSearch = window.location.search): LocationQue
       ...(["LOW", "MEDIUM", "HIGH"].includes(priority ?? "")
         ? { requestedPriority: priority as RequestedPriority }
         : {}),
+      ...(statusIn ? { statusIn } : {}),
+      ...(resolvedFrom && resolvedBefore ? { resolvedFrom, resolvedBefore } : {}),
       ...(categoryId ? { categoryId } : {}),
       ...(relatedSystemId ? { relatedSystemId } : {}),
       sortBy: (["createdAt", "ticketNumber", "summary"].includes(sortBy ?? "")
@@ -116,6 +129,9 @@ function isDefaultQuery(query: TicketListQuery) {
   return (
     !query.search &&
     !query.status &&
+    !query.statusIn &&
+    !query.resolvedFrom &&
+    !query.resolvedBefore &&
     !query.requestedPriority &&
     !query.categoryId &&
     !query.relatedSystemId &&
@@ -131,6 +147,9 @@ function queryLocation(query: TicketListQuery): string {
   const parameters = new URLSearchParams();
   if (query.search) parameters.set("search", query.search);
   if (query.status) parameters.set("status", query.status);
+  if (query.statusIn) parameters.set("statusIn", query.statusIn);
+  if (query.resolvedFrom) parameters.set("resolvedFrom", query.resolvedFrom);
+  if (query.resolvedBefore) parameters.set("resolvedBefore", query.resolvedBefore);
   if (query.requestedPriority) parameters.set("requestedPriority", query.requestedPriority);
   if (query.categoryId) parameters.set("categoryId", String(query.categoryId));
   if (query.relatedSystemId) parameters.set("relatedSystemId", String(query.relatedSystemId));
@@ -322,7 +341,9 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
     } else if (name === "requestedPriority") {
       nextQuery.requestedPriority = value ? (value as RequestedPriority) : undefined;
     } else if (name === "status") {
-      nextQuery.status = value ? (value as TicketStatusFilter) : undefined;
+      nextQuery.status = value && value !== "RESOLVED_GROUP" ? (value as TicketStatusFilter) : undefined;
+      nextQuery.statusIn = value === "RESOLVED_GROUP" ? "RESOLVED,CLOSED" : undefined;
+      nextQuery.resolvedFrom = undefined; nextQuery.resolvedBefore = undefined;
     }
     applyQuery(nextQuery);
   }
@@ -340,7 +361,7 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
 
   const hasCriteria = Boolean(
     query.search ||
-      query.status ||
+      query.status || query.statusIn ||
       query.requestedPriority ||
       query.categoryId ||
       query.relatedSystemId,
@@ -429,8 +450,8 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
             <option value="">All priorities</option>
             <option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option>
           </Filter>
-          <Filter label="Status" name="status" value={query.status ?? ""} onChange={updateFilter}>
-            <option value="">All statuses</option><option value="OPEN_GROUP">Open Tickets</option><option value="WAITING_FOR_REQUESTER">Waiting for Requester</option><option value="New">New</option>
+          <Filter label="Status" name="status" value={query.status ?? (query.statusIn === "RESOLVED,CLOSED" ? "RESOLVED_GROUP" : query.statusIn ? "CUSTOM_GROUP" : "")} onChange={updateFilter}>
+            <option value="">All statuses</option><option value="OPEN_GROUP">Open Tickets</option><option value="WAITING_FOR_REQUESTER">Waiting for Requester</option><option value="New">New</option><option value="RESOLVED_GROUP">Resolved / Closed</option>{query.statusIn && query.statusIn !== "RESOLVED,CLOSED" && <option value="CUSTOM_GROUP">Selected statuses</option>}
           </Filter>
           <Filter label="Sort" name="sort" value={`${query.sortBy}:${query.sortOrder}`} onChange={updateFilter}>
             <option value="createdAt:desc">Newest first</option><option value="createdAt:asc">Oldest first</option>
@@ -441,6 +462,7 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
             <option value="10">10</option><option value="20">20</option><option value="50">50</option>
           </Filter>
         </div>
+        {query.resolvedFrom && query.resolvedBefore && <p>Resolved from <time dateTime={query.resolvedFrom}>{displayDate(query.resolvedFrom)}</time> to <time dateTime={query.resolvedBefore}>{displayDate(query.resolvedBefore)}</time> (end excluded).</p>}
         <button className="secondary-button reset-filters" type="button" onClick={resetFilters}>Reset filters</button>
       </section>
 

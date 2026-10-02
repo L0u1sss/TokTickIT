@@ -52,9 +52,15 @@ The user linked https://github.com/L0u1sss/TokTickIT/pull/66 and requested chang
 
 **Use:** Read the handout and current contract, preserved backup refs and conflict snapshots, integrated incoming staging dependencies into the feature branch, and aligned status writes with the shared integer Ticket version and parent-before-child locking. Resolution now checks current-cycle completed work, active Actions, and outstanding non-cancelled follow-up; cancellation/reopen provenance and previous history remain intact. Updated workflow UI, regression fixtures, CI, and live browser evidence. Validation is recorded in [tests.md](./tests.md#pr66-validation). Work on `lab4-staging` was cancelled; no feature changes were published there.
 
-### Prompts 8–10
+### Prompt 8 - Align PR #67 and fix CI (used, 2026-10-03)
 
-Pending. Add only prompts actually used for later dashboard, hardening, or release work.
+The user linked [PR #67](https://github.com/L0u1sss/TokTickIT/pull/67) and requested fixing CI and completing the PR on the selected branch, using `D:\Software_Engineering\SE+Lab+4.pdf`.
+
+**Use:** Read the handout, current engineering contract and failing CI logs; integrated the already merged PR #66 on `feat/lab4-requester-dashboard`; preserved requester functionality while resolving dependency conflicts. Corrected the backend seven-day resolvedAt calculation and UTC bounds, implemented exact My Tickets drill-down and validation, restored Actions browser script/fixtures, and updated browser regression for Dashboard home. Added ownership/date-boundary/legacy/tie/drill-down/aggregate-recency tests, real browser/axe/screenshots, and direct database count evidence. Validation is in [tests.md](./tests.md#12-pr-67-requester-dashboard-contract-and-ci-alignment---2026-10-03).
+
+### Prompts 9-10
+
+Pending. Add only prompts actually used for later hardening or release work.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -79,4 +85,4 @@ The coding-agent review found that the earlier UI tests could pass while the imp
 
 ## Known Limitations of This Log
 
-Seven prompts have been used and recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
+Eight prompts have been used and recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.

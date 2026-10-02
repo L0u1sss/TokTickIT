@@ -63,6 +63,8 @@ export async function selectRequester(page: Page, requester: LiveRequester): Pro
   await page.getByLabel("Email", { exact: false }).fill(requester.email);
   await page.getByLabel("Password", { exact: false }).fill(changedPassword);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await page.getByRole("navigation", { name: "Ticket navigation" }).getByRole("link", { name: "Create Ticket", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Create Ticket" })).toBeVisible();
   await expect(page.getByText(requester.displayName, { exact: true }).first()).toBeVisible();
 }
