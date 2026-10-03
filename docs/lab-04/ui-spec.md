@@ -83,3 +83,15 @@ Baseline evidence uses desktop `1440×900`, tablet `834×1112`, and mobile `390�
 - [ ] Permitted Ticket transitions and resolution-gate feedback.
 - [ ] Keyboard focus, labels, error placement, non-color cues, wrapping, clipping, overlap, and overflow checked.
 - [ ] Temporary/duplicate/obsolete Lab UI and unfinished controls removed.
+
+
+## PR #68 Staff Dashboard Evidence ? 2026-10-03
+
+- [x] Staff and Administrator non-zero Dashboard at 1440x900, 834x1112 and 390x844; original Staff Dashboard grid CSS retained after integration.
+- [x] Every metric matches fresh direct database counts; all ownership/status/priority drill-down links preserve their filters.
+- [x] My Actions shows all matching Recorded/Assigned/Performed labels without duplicate rows; terminal history remains eligible under BR-28.
+- [x] Ticket and Action links work; `#actions` survives session restoration and scrolls to one unique Actions region after Detail loads.
+- [x] Loading, safe failure/retry, zero UI fixture and Requester Forbidden captured; privileged summaries are absent on denial.
+- [x] Captured states have no page overflow and no serious/critical axe violations; 720x450 reflow viewport also checked.
+
+See [PR #68 validation](./tests.md#pr-68-validation) for logs, screenshot links, database provenance and the distinction between injected UI fixtures, real API/service tests, automated reflow and unperformed manual review.
