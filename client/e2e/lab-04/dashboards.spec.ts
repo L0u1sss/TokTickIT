@@ -191,12 +191,13 @@ test("E2E-04 staff and administrator dashboards match database metrics, attribut
   expect(database.fixtureSchema).toBe(process.env.E2E_FIXTURE_SCHEMA);
   const labels = (value: string) => value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, character => character.toUpperCase());
   for (const email of ["queue-browser@example.test", "admin-browser@example.test"]) {
+    const dashboardResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/staff/dashboard" && response.status() === 200);
     await signIn(page, email);
     await expect(page).toHaveURL(/\/staff\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("link", { name: "User Management", exact: true })).toHaveCount(email.startsWith("admin") ? 1 : 0);
-    const response = await page.request.get(`${process.env.E2E_API_URL}/api/staff/dashboard`);
+    const response = await dashboardResponse;
     expect(response.status()).toBe(200);
     const payload = await response.json(), expected = database.staff[email];
     expect(payload.metrics).toEqual(expected.metrics);
