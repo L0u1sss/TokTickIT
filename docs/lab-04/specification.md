@@ -145,6 +145,14 @@ Migration is additive and contains no destructive backfill. Rollback that drops 
 
 Staff routes provide Action list/create/update/transition and dashboards; Requester routes provide owned Action list and dashboard. Writes require approved Origin, authenticated role, strict fields, current revision where applicable, and safe validation/conflict errors. Dashboard routes return concise aggregate schemas. Exact endpoints and payloads are in [api-spec.md](./api-spec.md).
 
+### 9.1 Performance-smoke contract (Issue #59)
+
+`PERF-01` measures the authenticated Requester, IT Staff and Administrator dashboard endpoints on an otherwise empty, migrated disposable PostgreSQL schema containing exactly **1,000 Tickets and 5,000 Actions**. Two Requesters split Ticket ownership; active Staff/Admin identities record and receive Actions. Fixtures cover all eight Ticket statuses, all three priorities, assigned/unassigned Tickets, active/terminal Actions with lifecycle-aligned audit events, and recent/old resolutions. Terminal Ticket fixtures have no active Actions. Run `ANALYZE` after loading the fixture.
+
+For each role, discard five sequential warm-up requests, then record 40 sequential HTTP round trips with monotonic time. The nearest-rank p95 (sorted sample 38 of 40) must be **≤500 ms**, every response must be `200`, and every preview list must contain at most five entries. Timing includes Express/session authorization, real database work, and JSON serialization via Supertest; it excludes fixture setup, browser rendering and WAN latency. This is a local/CI smoke budget, not a production SLA or a concurrent-load benchmark. Run it separately from normal regression to avoid competing test load: `npm --prefix server run test:performance`.
+
+Record every sample, p95, maximum, dataset counts, timestamp, Node/platform and fixture schema in `artifacts/lab-04/issue-59/dashboard-performance.json`; the verification manifest adds CPU/memory and hashes of tested source files. A failed budget remains FAIL and is investigated rather than relaxed after the run.
+
 ## 10. Acceptance Criteria
 
 - **AC-01:** A valid staff user creates an Action under the correct Ticket; creator/time are authoritative and retry creates one record.

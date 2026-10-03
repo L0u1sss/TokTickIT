@@ -1,6 +1,8 @@
 # TokTickIT Lab 4 — Test-Driven Development and Traceability Plan
 
-> Status: In progress. Local evidence applies only to the recorded commit or explicitly identified worktree; it does not establish final `main`, CI, peer approval, or unperformed manual checks.
+The latest Issue #59 worktree results and actual file inventory are recorded in [Issue #59 verification](#issue-59-verification). Older PR sections below retain their historical scope and do not establish the current worktree or final `main`.
+
+> Status: Issue #59 automated worktree verification complete; final release evidence remains pending. Local evidence applies only to the recorded commit or explicitly identified worktree; it does not establish final `main`, CI, peer approval, or unperformed manual checks.
 >
 > Contract baseline: Issue #52, `specification.md`, `api-spec.md`, and `ui-spec.md`.
 
@@ -12,50 +14,50 @@ Tests are written before or alongside implementation. Unit tests cover determini
 
 | ID | Type | Requirement / AC | Scenario and expected result | Planned automated file | Final |
 |---|---|---|---|---|---|
-| UT-01 | Unit | BR-05–BR-06, AC-02 | Unicode boundaries, trim, conditional follow-up note | `server/tests/lab-04/action-validation.test.ts` | Planned |
-| UT-02 | Unit | BR-10–BR-13, AC-03 | Every Action transition pair; terminal reversal/edit rejected; completion needs Result and cleared follow-up | `server/tests/lab-04/action-lifecycle.test.ts` | Planned |
-| UT-03 | Unit | BR-19–BR-25, AC-06 | Every Ticket transition; current-cycle resolution predicate; cycle/resolvedAt updates | `server/tests/lab-04/ticket-workflow.test.ts` | Planned |
-| UT-04 | Unit | BR-26–BR-32, AC-07–AC-08 | Seven-day window boundaries, status groups, limits, ordering, query mapping, attribution/deduplication | `server/tests/lab-04/dashboard-rules.test.ts` | Planned |
-| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data; legacy Tickets get version/cycle 1 and null resolvedAt, with zero fabricated Actions | `server/tests/lab-04/migration.test.ts` | Pass (local) |
-| DB-02 | Integration | BR-02–BR-04, BR-14–BR-16, BR-38, AC-03/AC-09 | Seed twice; stable identities/counts and 0/1/many Actions; distinct attribution; lifecycle-aligned events; staff/cascade cancellation; append-only and changedFields database guards; ordering and Action constraints | `server/tests/lab-04/migration.test.ts` | Pass (local review follow-up) |
-| DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | API transaction appends one event at the incremented Action revision; projection/event revisions remain contiguous and atomic; stale Action or Ticket version loses. Database itself enforces event revision positivity/uniqueness only. | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, recorder, assignee, performedBy, time, and returned parent version | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-03 | API | BR-02, BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel; only current assignee can complete; performedBy equals assignee; verify completion/cancellation provenance fields and immutable terminal history; reject terminal reversal/edit and non-actionable parent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-05 | API | BR-16, BR-40–BR-41, AC-04 | Concurrent edits with same parent/Action versions; one winner, stale loser, one event and one parent version increment; success returns the next parent token | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; current-cycle gate rejects active/follow-up Actions; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass locally - PR #66, 2026-10-03 |
-| API-09 | API | BR-23, BR-40–BR-41, AC-04/AC-06 | stale integer Ticket version on status transition loses; conditional update has no partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass locally - PR #66, 2026-10-03 |
-| API-15 | API | BR-23, BR-40–BR-41, AC-04 | Claim, owner assignment/reassignment, and priority writes require expectedTicketVersion; stale concurrent requests return STALE_TICKET and accepted requests increment version exactly once and return the next token | `server/tests/lab-04/ticket-mutations.api.test.ts` | Planned |
-| API-16 | API/Integration | BR-12, BR-14, BR-41, BR-43, AC-03/AC-06 | Ticket cancellation increments each current-cycle active Action revision once, sets updatedAt/cancelledAt/cancelledBy/source, appends TICKET_CASCADE_CANCELLED event with authenticated actor, preserves follow-up as historical, and makes old Action revisions stale | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass locally - PR #66, 2026-10-03 |
-| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded; exact seven-day resolved window | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass locally - PR #67; see validation below |
-| API-11 | API | BR-27/BR-30–BR-32, BR-43, AC-07 | inclusive lower/exclusive upper UTC bounds, returned drill-down bounds, statusIn validation, recentlyUpdated reflects accepted aggregate mutations through Ticket.updatedAt | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass locally - PR #67; see validation below |
-| API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; recorder/assignee/performer union and attribution | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass locally - PR #68; see validation below |
-| API-13 | API | BR-28–BR-32, BR-43, AC-08 | status/priority/high-priority/recent counts match direct DB queries; current-user Actions deduplicated; accepted Action/aggregate writes update Ticket.updatedAt and Recently Updated ordering | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass locally - PR #68; see validation below |
-| API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | all four required API files | Planned |
-| RACE-01 | Concurrent API | BR-21, BR-40–BR-42, AC-04/AC-06 | Action create/update/complete versus Ticket resolve/cancel; shared parent lock yields serial outcome and gate recheck; terminal Ticket rejects later Action writes | `server/tests/lab-04/ticket-resolution-concurrency.api.test.ts` | Planned |
-| RACE-02 | Concurrent API | BR-40–BR-41, AC-04 | Competing claim/owner/priority writes with one expected version serialize; stale loser cannot overwrite winner | `server/tests/lab-04/ticket-mutations.api.test.ts` | Planned |
-| RACE-03 | Concurrent API | BR-02, BR-04, BR-16, BR-40, AC-03–AC-04 | Reassign versus current-assignee completion: reassignment-first rejects old assignee completion; completion-first leaves terminal Action and rejects reassignment | `server/tests/lab-04/actions-concurrency.api.test.ts` | Planned |
-| UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | Pass locally - PR #68; see validation below |
-| UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass locally - PR #67; see validation below |
-| UI-03 | Component | FR-01–FR-06, BR-02/BR-04/BR-11–BR-18/BR-40–BR-42, AC-01–AC-05/AC-10 | stable ordering; null performer and recorder attribution; create/edit/assign/terminal lifecycle; assignee-only completion; required Result/cleared follow-up; conditional note, corrected-field errors and focus recovery; current Ticket/Action tokens; inactive-assignee feedback; stale/uncertain response recovery; retained drafts/request ID; protected failures | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass locally — 20 tests, Issue #55 |
-| UI-05 | Component integration | BR-23/BR-40–BR-42, AC-04/AC-10/AC-11 | Action success supplies the next Ticket-operation version; same-Ticket refresh preserves drafts; Ticket/Action writes cannot overlap; stale/uncertain operations block further writes until recovery; denied reload clears protected detail | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Pass locally — Detail/Queue suite: 25 tests, Issue #55 |
-| UI-04 | Component | FR-07–FR-08, AC-04/AC-06 | permitted status controls, confirmation, gate/stale feedback, refresh | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass locally - PR #66, 2026-10-03 |
-| STYLE-01 | UI style | FR-15, AC-12 | Zen Green tokens, non-color cues, long-text wrapping | Lab 4 component tests | Planned |
-| PERF-01 | Smoke | FR-11, AC-07–AC-08 | dashboard endpoints p95 ≤500 ms for 1,000 Tickets/5,000 Actions locally after warm-up | `server/tests/lab-04/dashboard-performance.test.ts` | Planned |
-| RV-01 | Browser | FR-15, AC-12 | both dashboards at 1440×900, 834×1112, 390×844 | `client/e2e/lab-04/dashboards.spec.ts` | Requester/Staff/Admin pass locally - PR #68; see validation below |
-| RV-02 | Browser | FR-15, AC-12 | real-API Actions create/edit/list/terminal/read-only at 1440×900, 834×1112, 390×844; long descriptions/attachment references wrap; no page overflow; mobile controls have 44×44 targets | `client/e2e/lab-04/actions-taken-flow.spec.ts` | Pass locally — 3 viewport flows, 25 total screenshots, Issue #55 |
-| A11Y-02 | Browser/component | FR-15, AC-12 | Actions accessible labels/live regions/error links; keyboard create/submit/Escape, first-invalid-field and terminal-transition focus; no serious/critical axe violations in captured Action states | `client/tests/lab-04/ActionsTaken.test.tsx; client/e2e/lab-04/actions-taken-flow.spec.ts` | Pass locally — automated Action checks, Issue #55 |
-| A11Y-01 | Browser/manual | FR-15, AC-12 | axe + landmarks/names/live regions; keyboard/focus/dialog/200% reflow | all Lab 4 E2E specs + checklist | Planned |
-| E2E-01 | Live E2E | AC-01–AC-05/AC-10 | authenticated staff/admin list/create/assign/edit/start/complete/cancel; real assignee-only completion denial; real inactive-assignee rejection/recovery; Ticket-cascade history; requester read-only/owned data; stale draft reload/reapply; lost-response replay with one stored Action; actual server versions/revisions | `client/e2e/lab-04/actions-taken-flow.spec.ts` | Pass locally — 7 tests, Issue #55 |
-| E2E-02 | Live E2E | AC-04/AC-06 | Action completion → resolve → close; advisory/reopen/cancel cases | `client/e2e/lab-04/ticket-resolution.spec.ts` | Pass locally - PR #66, 2026-10-03 |
-| E2E-03 | Live E2E | AC-07–AC-08 | role dashboards, database count evidence, drill-down, zero state | `client/e2e/lab-04/dashboards.spec.ts` | Requester/Staff/Admin pass locally - PR #68; see validation below |
-| REG-01 | Regression | AC-11 | login/change/logout and role/direct-route authorization | existing Lab 3 auth suites | Planned |
-| REG-02 | Regression | AC-11 | Create/My Tickets/Detail/Attachments/ownership/idempotency | existing Lab 2 + requester regression suites | Planned |
-| REG-03 | Regression | AC-11 | staff queue/owner/priority/status/comments/notes/download | existing Lab 3 staff suites | Planned |
-| REG-04 | Regression | AC-11 | user create/edit/deactivate/role/initial password/admin safety | existing Lab 3 admin suites | Planned |
+| UT-01 | API validation (consolidated) | BR-05–BR-06, AC-02 | Unicode boundaries, trim, conditional follow-up note | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| UT-02 | API lifecycle (consolidated) | BR-10–BR-13, AC-03 | Every Action transition pair; terminal reversal/edit rejected; completion needs Result and cleared follow-up | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| UT-03 | Unit/API | BR-19–BR-25, AC-06 | Every Ticket transition; current-cycle resolution predicate; cycle/resolvedAt updates | `server/tests/lab-04/ticket-workflow.test.ts; server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| UT-04 | API calculations (consolidated) | BR-26–BR-32, AC-07–AC-08 | Seven-day window boundaries, status groups, limits, ordering, query mapping, attribution/deduplication | `server/tests/lab-04/requester-dashboard.api.test.ts; server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data; legacy Tickets get version/cycle 1 and null resolvedAt, with zero fabricated Actions | `server/tests/lab-04/migration.test.ts` | PASS locally - Issue #59; see latest verification |
+| DB-02 | Integration | BR-02–BR-04, BR-14–BR-16, BR-38, AC-03/AC-09 | Seed twice; stable identities/counts and 0/1/many Actions; distinct attribution; lifecycle-aligned events; staff/cascade cancellation; append-only and changedFields database guards; ordering and Action constraints | `server/tests/lab-04/migration.test.ts` | PASS locally - Issue #59; see latest verification |
+| DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | API transaction appends one event at the incremented Action revision; projection/event revisions remain contiguous and atomic; stale Action or Ticket version loses. Database itself enforces event revision positivity/uniqueness only. | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, recorder, assignee, performedBy, time, and returned parent version | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-03 | API | BR-02, BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel; only current assignee can complete; performedBy equals assignee; verify completion/cancellation provenance fields and immutable terminal history; reject terminal reversal/edit and non-actionable parent | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-05 | API | BR-16, BR-40–BR-41, AC-04 | Concurrent edits with same parent/Action versions; one winner, stale loser, one event and one parent version increment; success returns the next parent token | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; current-cycle gate rejects active/follow-up Actions; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-09 | API | BR-23, BR-40–BR-41, AC-04/AC-06 | stale integer Ticket version on status transition loses; conditional update has no partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-15 | API | BR-23, BR-40–BR-41, AC-04 | Claim, owner assignment/reassignment, and priority writes require expectedTicketVersion; stale concurrent requests return STALE_TICKET and accepted requests increment version exactly once and return the next token | `server/tests/lab-04/ticket-mutations.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-16 | API/Integration | BR-12, BR-14, BR-41, BR-43, AC-03/AC-06 | Ticket cancellation increments each current-cycle active Action revision once, sets updatedAt/cancelledAt/cancelledBy/source, appends TICKET_CASCADE_CANCELLED event with authenticated actor, preserves follow-up as historical, and makes old Action revisions stale | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded; exact seven-day resolved window | `server/tests/lab-04/requester-dashboard.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-11 | API | BR-27/BR-30–BR-32, BR-43, AC-07 | inclusive lower/exclusive upper UTC bounds, returned drill-down bounds, statusIn validation, recentlyUpdated reflects accepted aggregate mutations through Ticket.updatedAt | `server/tests/lab-04/requester-dashboard.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; recorder/assignee/performer union and attribution | `server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-13 | API | BR-28–BR-32, BR-43, AC-08 | status/priority/high-priority/recent counts match direct DB queries; current-user Actions deduplicated; accepted Action/aggregate writes update Ticket.updatedAt and Recently Updated ordering | `server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-04/ticket-workflow.api.test.ts; server/tests/lab-04/requester-dashboard.api.test.ts; server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| RACE-01 | Concurrent API | BR-21, BR-40–BR-42, AC-04/AC-06 | Action create versus resolve; Action create/edit/complete versus cancel; shared parent lock yields serial outcome and gate recheck; terminal Ticket rejects later Action writes | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| RACE-02 | Concurrent API | BR-40–BR-41, AC-04 | Competing claim/owner/priority writes with one expected version serialize; stale loser cannot overwrite winner | `server/tests/lab-04/ticket-mutations.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| RACE-03 | Concurrent API | BR-02, BR-04, BR-16, BR-40, AC-03–AC-04 | Reassign versus current-assignee completion: reassignment-first rejects old assignee completion; completion-first leaves terminal Action and rejects reassignment | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #59; see latest verification |
+| UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | PASS locally - Issue #59; see latest verification |
+| UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | PASS locally - Issue #59; see latest verification |
+| UI-03 | Component | FR-01–FR-06, BR-02/BR-04/BR-11–BR-18/BR-40–BR-42, AC-01–AC-05/AC-10 | stable ordering; null performer and recorder attribution; create/edit/assign/terminal lifecycle; assignee-only completion; required Result/cleared follow-up; conditional note, corrected-field errors and focus recovery; current Ticket/Action tokens; inactive-assignee feedback; stale/uncertain response recovery; retained drafts/request ID; protected failures | `client/tests/lab-04/ActionsTaken.test.tsx` | PASS locally - Issue #59; see latest verification |
+| UI-05 | Component integration | BR-23/BR-40–BR-42, AC-04/AC-10/AC-11 | Action success supplies the next Ticket-operation version; same-Ticket refresh preserves drafts; Ticket/Action writes cannot overlap; stale/uncertain operations block further writes until recovery; denied reload clears protected detail | `client/tests/lab-03/StaffTicketDetail.test.tsx` | PASS locally - Issue #59; see latest verification |
+| UI-04 | Component | FR-07–FR-08, AC-04/AC-06 | permitted status controls, confirmation, gate/stale feedback, refresh | `client/tests/lab-04/TicketWorkflow.test.tsx` | PASS locally - Issue #59; see latest verification |
+| STYLE-01 | UI style | FR-15, AC-12 | Zen Green warning colors, non-color status labels, long-text wrapping and layout/target-size invariants | `client/e2e/lab-02/responsive.spec.ts; client/e2e/lab-04/actions-taken-flow.spec.ts; client/e2e/lab-04/dashboards.spec.ts` | PASS locally - Issue #59; see latest verification |
+| PERF-01 | Smoke | FR-11, AC-07–AC-08 | dashboard endpoints p95 ≤500 ms for 1,000 Tickets/5,000 Actions locally after warm-up | `server/tests/lab-04/dashboard-performance.test.ts` | PASS locally - Issue #59; see latest verification |
+| RV-01 | Browser | FR-15, AC-12 | both dashboards at 1440×900, 834×1112, 390×844 | `client/e2e/lab-04/dashboards.spec.ts` | PASS locally - Issue #59; see latest verification |
+| RV-02 | Browser | FR-15, AC-12 | real-API Actions create/edit/list/terminal/read-only at 1440×900, 834×1112, 390×844; long descriptions/attachment references wrap; no page overflow; mobile controls have 44×44 targets | `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally - Issue #59; see latest verification |
+| A11Y-02 | Browser/component | FR-15, AC-12 | Actions accessible labels/live regions/error links; keyboard create/submit/Escape, first-invalid-field and terminal-transition focus; no serious/critical axe violations in captured Action states | `client/tests/lab-04/ActionsTaken.test.tsx; client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally - Issue #59; see latest verification |
+| A11Y-01 | Browser/manual | FR-15, AC-12 | axe + landmarks/names/live regions; keyboard/focus/dialog/200% reflow | `client/e2e/lab-04/; docs/lab-04/ui-spec.md` | Automated checks PASS; manual zoom/screen-reader checks not run |
+| E2E-01 | Live E2E | AC-01–AC-05/AC-10 | authenticated staff/admin list/create/assign/edit/start/complete/cancel; real assignee-only completion denial; real inactive-assignee rejection/recovery; Ticket-cascade history; requester read-only/owned data; stale draft reload/reapply; lost-response replay with one stored Action; actual server versions/revisions | `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally - Issue #59; see latest verification |
+| E2E-02 | Live E2E | AC-04/AC-06 | Action completion → resolve → close; advisory/reopen/cancel cases | `client/e2e/lab-04/ticket-resolution.spec.ts` | PASS locally - Issue #59; see latest verification |
+| E2E-03 | Live E2E | AC-07–AC-08 | role dashboards, database count evidence, drill-down, zero state | `client/e2e/lab-04/dashboards.spec.ts` | PASS locally - Issue #59; see latest verification |
+| REG-01 | Regression | AC-11 | login/change/logout and role/direct-route authorization | `server/tests/lab-03/auth.api.test.ts; server/tests/lab-03/authorization.api.test.ts; client/tests/lab-03/auth-routing.test.tsx; client/e2e/lab-03/authentication.spec.ts` | PASS locally - Issue #59; see latest verification |
+| REG-02 | Regression | AC-11 | Create/My Tickets/Detail/Attachments/ownership/idempotency | `server/tests/lab-02/; server/tests/lab-03/requester-regression.api.test.ts; client/tests/lab-02/; client/e2e/lab-02/; client/e2e/lab-03/requester-regression.spec.ts` | PASS locally - Issue #59; see latest verification |
+| REG-03 | Regression | AC-11 | staff queue/owner/priority/status/comments/notes/download | `server/tests/lab-03/staff-ticket-detail.api.test.ts; server/tests/lab-03/staff-queue.api.test.ts; server/tests/lab-03/comments-notes.api.test.ts; client/tests/lab-03/StaffTicketDetail.test.tsx; client/e2e/lab-03/staff-ticket-flow.spec.ts; client/e2e/lab-03/comments-notes.spec.ts; client/e2e/lab-03/staff-queue.spec.ts` | PASS locally - Issue #59; see latest verification |
+| REG-04 | Regression | AC-11 | user create/edit/deactivate/role/initial password/admin safety | `server/tests/lab-03/users-admin.api.test.ts; client/tests/lab-03/UserManagement.test.tsx; client/e2e/lab-03/user-administration.spec.ts` | PASS locally - Issue #59; see latest verification |
 
 ## 3. Acceptance-Criteria Traceability
 
@@ -81,30 +83,34 @@ Every AC has planned automated or explicit manual evidence. Manual evidence neve
 
 ```text
 server/tests/lab-04/
-├── actions-taken.api.test.ts
-├── actions-concurrency.api.test.ts
-├── ticket-mutations.api.test.ts
-├── ticket-workflow.api.test.ts
-├── requester-dashboard.api.test.ts
-└── staff-dashboard.api.test.ts
++-- actions-taken.api.test.ts
++-- ticket-mutations.api.test.ts
++-- ticket-workflow.test.ts
++-- ticket-workflow.api.test.ts
++-- requester-dashboard.api.test.ts
++-- staff-dashboard.api.test.ts
++-- migration.test.ts
++-- dashboard-performance.test.ts
 
 client/tests/lab-04/
-├── StaffDashboard.test.tsx
-├── RequesterDashboard.test.tsx
-├── ActionsTaken.test.tsx
-└── TicketWorkflow.test.tsx
++-- StaffDashboard.test.tsx
++-- RequesterDashboard.test.tsx
++-- ActionsTaken.test.tsx
++-- TicketWorkflow.test.tsx
 
 client/e2e/lab-04/
-├── actions-taken-flow.spec.ts
-├── ticket-resolution.spec.ts
-└── dashboards.spec.ts
++-- actions-taken-flow.spec.ts
++-- ticket-resolution.spec.ts
++-- dashboards.spec.ts
 ```
 
-This tree contains both existing and planned target paths. The current increment includes `server/tests/lab-04/ticket-workflow.api.test.ts`, `client/tests/lab-04/TicketWorkflow.test.tsx`, `client/e2e/lab-04/ticket-resolution.spec.ts`, `server/tests/lab-04/actions-taken.api.test.ts`, `server/tests/lab-04/migration.test.ts`, `client/tests/lab-04/ActionsTaken.test.tsx`, and `client/e2e/lab-04/actions-taken-flow.spec.ts`. Dashboard and additional standalone concurrency target files remain planned unless separately implemented and verified. Workflow matrix/current-cycle gate and status versus Action/owner/priority races are verified in `ticket-workflow.api.test.ts`. The staff integration checks remain in `client/tests/lab-03/StaffTicketDetail.test.tsx`. Existing Lab 1–3 suites retain their current locations; additional unit/migration/performance files are allowed.
+All paths above exist. Action validation/lifecycle/reassignment races are consolidated in `actions-taken.api.test.ts`; Ticket resolution/cancellation races are in `ticket-workflow.api.test.ts`. These integrated suites exercise private validators through authenticated HTTP and real PostgreSQL. They replace the earlier proposed standalone files; no coverage is claimed from nonexistent files. `ticket-workflow.test.ts` separately checks all 64 transition pairs and the next-status controls without a database. Staff Detail integration remains in `client/tests/lab-03/StaffTicketDetail.test.tsx`.
 
 ## 5. Planned Verification Commands
 
 ```powershell
+node scripts/verify-lab4.mjs
+npm --prefix server run test:performance
 npm --prefix server run test:unit
 npm --prefix server run test:isolated
 npm --prefix server run lint
@@ -126,6 +132,7 @@ Test clean deploy, populated Lab 3 forward migration, repeated seed, and applica
 | Date/time (Asia/Bangkok) | Commit SHA | Environment | Command/CI link | Result/counts | Notes |
 |---|---|---|---|---|---|
 | TBD | TBD | TBD | TBD | Not run | Populate only after execution |
+
 
 ## 8. Issue #53 Local Evidence — 2026-09-25
 
@@ -338,3 +345,89 @@ Response to [Tanaboonnnnn's review](https://github.com/L0u1sss/TokTickIT/pull/68
 The passing browser run uses source/checkout `1a3d7bd428d1a78f6f31c800c5832645819a628f`. [Direct database evidence](../../artifacts/lab-04/screenshots/staff-dashboard/database-counts.json) records run `764612f2-48ce-4226-8210-1516732fa38b`, isolated schema `auth_e2e_test_8056f5067b5aa213`, and generation time `2026-10-03T10:35:47.111Z`. Its dirty-worktree flag reflects generated artifacts from the prior attempt; implementation and browser test source were committed before this run. Refreshed [Staff desktop](../../artifacts/lab-04/screenshots/staff-dashboard/staff-nonzero-1440.png) and [Administrator desktop](../../artifacts/lab-04/screenshots/staff-dashboard/administrator-nonzero-1440.png) show the High Priority Tickets heading. All browser states retain automated overflow/axe checks at the supported viewports.
 
 The first browser attempt compared the rendered timestamp against a separate API request and failed because each request captures its own time. The corrected assertion observes the browser's own response instead. Prior full-regression totals above and [CI #82](https://github.com/L0u1sss/TokTickIT/actions/runs/37114919659) are historical results for the previous implementation/head, not results claimed for these review fixes. Screenshot/database artifact paths are refreshed by the latest browser run; their embedded provenance takes precedence over the historical source attribution above. Independent re-review remains pending.
+
+
+<a id="issue-59-verification"></a>
+
+## Issue #59 verification - 2026-10-03
+
+Full command: `node scripts/verify-lab4.mjs`, run **18:18-18:28 Asia/Bangkok** (11:18-11:28 UTC). All 18 commands completed with exit code 0. Environment: Windows, Node v24.14.0, AMD Ryzen 5 3600, 16 GiB RAM; real PostgreSQL with disposable migrated schemas and Playwright Chromium. The [manifest](../../artifacts/lab-04/issue-59/verification.json) records exact timestamps, commands, log paths and SHA-256 hashes for the tested server/client/scripts/CI source.
+
+Provenance: branch `test/lab4-e2e-and-regression`, baseline `54238fec9b6a1bab1ad3d50e72656214aa086ba9`, plus the uncommitted changes identified by those hashes. `sourceUnchangedDuringRun` is **true**. Results are worktree evidence, not passing checks on the baseline commit alone. Documentation and generated evidence are outside the source hash inventory. Hosted CI on the final PR head, peer approval and final-main/PDF release evidence are **not run/pending**; old PR CI links remain historical.
+
+### Actual required suites and file paths
+
+| Layer | Actual file | Executed tests |
+|---|---|---:|
+| API | `server/tests/lab-04/actions-taken.api.test.ts` | 34 PASS |
+| API | `server/tests/lab-04/ticket-workflow.api.test.ts` | 79 PASS |
+| API | `server/tests/lab-04/requester-dashboard.api.test.ts` | 9 PASS |
+| API | `server/tests/lab-04/staff-dashboard.api.test.ts` | 8 PASS |
+| Concurrent operations | `server/tests/lab-04/ticket-mutations.api.test.ts` | 10 PASS |
+| Unit | `server/tests/lab-04/ticket-workflow.test.ts` | 64 PASS |
+| Migration/recovery/seed | `server/tests/lab-04/migration.test.ts` | 3 PASS |
+| Component | `client/tests/lab-04/ActionsTaken.test.tsx` | 20 PASS |
+| Component | `client/tests/lab-04/TicketWorkflow.test.tsx` | 6 PASS |
+| Component | `client/tests/lab-04/RequesterDashboard.test.tsx` | 5 PASS |
+| Component | `client/tests/lab-04/StaffDashboard.test.tsx` | 7 PASS |
+| E2E | `client/e2e/lab-04/actions-taken-flow.spec.ts` | 7 PASS |
+| E2E | `client/e2e/lab-04/ticket-resolution.spec.ts` | 3 PASS |
+| E2E | `client/e2e/lab-04/dashboards.spec.ts` | 4 PASS |
+| Performance | `server/tests/lab-04/dashboard-performance.test.ts` | 1 PASS (three role measurements) |
+
+Full [server report](../../artifacts/lab-04/issue-59/server-results.json): **39 files / 586 tests passed**. Full [client report](../../artifacts/lab-04/issue-59/client-results.json): **22 files / 161 tests passed**. JSON reports contain individual test names, actual paths and statuses; command raw logs are in the [evidence directory](../../artifacts/lab-04/issue-59/).
+
+### Browser regression and product quality
+
+| Check / actual browser file | Passed | Raw log |
+|---|---:|---|
+| Required Actions Taken E2E | 7 | [actions-e2e.txt](../../artifacts/lab-04/issue-59/actions-e2e.txt) |
+| Required Ticket resolution E2E | 3 | [resolution-e2e.txt](../../artifacts/lab-04/issue-59/resolution-e2e.txt) |
+| Required role dashboard E2E | 4 | [dashboards-e2e.txt](../../artifacts/lab-04/issue-59/dashboards-e2e.txt) |
+| `client/e2e/lab-03/authentication.spec.ts` | 1 | [authentication-e2e.txt](../../artifacts/lab-04/issue-59/authentication-e2e.txt) |
+| `client/e2e/lab-03/user-administration.spec.ts` | 1 | [administrator-e2e.txt](../../artifacts/lab-04/issue-59/administrator-e2e.txt) |
+| `client/e2e/lab-03/staff-queue.spec.ts` | 1 | [staff-queue-e2e.txt](../../artifacts/lab-04/issue-59/staff-queue-e2e.txt) |
+| `client/e2e/lab-03/staff-ticket-flow.spec.ts` | 1 | [staff-workflow-e2e.txt](../../artifacts/lab-04/issue-59/staff-workflow-e2e.txt) |
+| `client/e2e/lab-03/comments-notes.spec.ts` | 1 | [communications-e2e.txt](../../artifacts/lab-04/issue-59/communications-e2e.txt) |
+| `client/e2e/lab-02/responsive.spec.ts` | 6 | [responsive-e2e.txt](../../artifacts/lab-04/issue-59/responsive-e2e.txt) |
+| `client/e2e/lab-03/requester-regression.spec.ts` and `client/e2e/lab-02/{requester-ticket-lifecycle,ownership-isolation,requester-context,ticket-idempotency,state-recovery,accessibility}.spec.ts` | 7 | [requester-regression-e2e.txt](../../artifacts/lab-04/issue-59/requester-regression-e2e.txt) |
+
+**32 browser tests passed**, including 14 required Lab 4 tests and 18 Labs 1-3 regression tests. Coverage includes initial password change/login/logout, role navigation, Create/My Tickets/Detail, Attachments and ownership, staff claim/reassign/priority/status, Public Comments/Internal Notes, and Administrator user management. The API/unit/component regression also retains Lab 1 health/reference checks and the complete Lab 2/3 suites.
+
+Lab 4 suites capture desktop 1440x900, tablet 834x1112 and mobile 390x844 layouts; captured states check page overflow and serious/critical axe findings. Actions cover keyboard validation/focus, terminal/read-only states, long text and 44px mobile controls. The responsive regression additionally checks Zen Green warning colors and dialog focus behavior. A 720px Staff Dashboard reflow simulation is automated evidence; actual browser zoom, a complete human visual checklist and screen-reader review have not been performed by this increment.
+
+Fresh [dashboard database evidence](../../artifacts/lab-04/screenshots/staff-dashboard/database-counts.json) uses run `bdb880b4-a19f-4c9f-b4c1-8c5f8b481018`, schema `auth_e2e_test_7eaf32f5b759c307` and capture `2026-10-03T11:24:14.982Z`. The browser uses its own response timestamp and compares counts, ordered IDs and attribution to independent Prisma queries. Real zero metrics are covered in API tests; injected browser zero/failure responses establish UI-state behavior separately. [Requester screenshots](../../artifacts/lab-04/screenshots/requester-dashboard/), [Staff/Admin screenshots](../../artifacts/lab-04/screenshots/staff-dashboard/), [Actions screenshots](../../artifacts/lab-04/screenshots/actions-taken/) and [workflow screenshots](../../artifacts/lab-04/screenshots/ticket-workflow/) were refreshed by this run. Historical references to these generated paths must use the latest embedded provenance rather than imply the original PR capture is unchanged.
+
+### Performance result and recovery limits
+
+See the [contract](specification.md#91-performance-smoke-contract-issue-59) and [all samples](../../artifacts/lab-04/issue-59/dashboard-performance.json). Exactly **1,000 Tickets / 5,000 Actions / 10,375 audit events**, five warm-ups, 40 measured requests per role, concurrency 1:
+
+| Role | p95 (ms) | Budget (ms) | Actual |
+|---|---:|---:|---|
+| Requester | 31.73 | 500 | PASS |
+| IT Staff | 75.12 | 500 | PASS |
+| Administrator | 42.71 | 500 | PASS |
+
+All measured responses were 200 with bounded lists. Timing is authenticated Supertest HTTP/database/serialization, not browser/WAN or production-load performance.
+
+Migration tests independently compare populated Lab 3 Users, Tickets, Attachments, Public Comments and Internal Notes before/after migration and repeated seed. Legacy Tickets remain without fabricated Actions. Recovery compares complete legacy rows after pre-use rollback and forward reapplication, and refuses rollback once an Action exists. This verifies the documented disposable pre-use approach; no populated development/production rollback or backup operation was executed.
+
+### Actual acceptance-criterion status
+
+| AC | Actual executed evidence / file paths | Status |
+|---|---|---|
+| AC-01 | `server/tests/lab-04/actions-taken.api.test.ts`; `client/tests/lab-04/ActionsTaken.test.tsx`; `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally |
+| AC-02 | Same Action API/UI/E2E paths above plus `server/tests/lab-03/users-admin.api.test.ts` | PASS locally |
+| AC-03 | `server/tests/lab-04/actions-taken.api.test.ts`; `server/tests/lab-04/migration.test.ts`; Action component/E2E paths above | PASS locally |
+| AC-04 | `server/tests/lab-04/ticket-mutations.api.test.ts`; `server/tests/lab-04/actions-taken.api.test.ts`; `server/tests/lab-04/ticket-workflow.api.test.ts`; `client/tests/lab-03/StaffTicketDetail.test.tsx`; Action/workflow component and E2E suites | PASS locally |
+| AC-05 | `server/tests/lab-04/actions-taken.api.test.ts`; `client/tests/lab-04/ActionsTaken.test.tsx`; `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally |
+| AC-06 | `server/tests/lab-04/ticket-workflow.test.ts`; `server/tests/lab-04/ticket-workflow.api.test.ts`; `client/tests/lab-04/TicketWorkflow.test.tsx`; `client/e2e/lab-04/ticket-resolution.spec.ts` | PASS locally |
+| AC-07 | `server/tests/lab-04/requester-dashboard.api.test.ts`; `client/tests/lab-04/RequesterDashboard.test.tsx`; `client/e2e/lab-04/dashboards.spec.ts`; performance test above | PASS locally |
+| AC-08 | `server/tests/lab-04/staff-dashboard.api.test.ts`; `client/tests/lab-04/StaffDashboard.test.tsx`; `client/e2e/lab-04/dashboards.spec.ts`; performance test above | PASS locally |
+| AC-09 | `server/tests/lab-04/migration.test.ts` | PASS locally |
+| AC-10 | `server/tests/lab-04/actions-taken.api.test.ts`; `client/tests/lab-04/ActionsTaken.test.tsx`; `client/tests/lab-03/StaffTicketDetail.test.tsx`; `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally |
+| AC-11 | Existing Lab 1/2/3 server/client suites in full JSON reports; all actual browser regression paths listed above | PASS locally |
+| AC-12 | All three `client/e2e/lab-04/` specs and `client/e2e/lab-02/responsive.spec.ts` | PASS automated responsive/axe checks; additional manual checklist pending |
+| AC-13 | `docs/lab-04/reviewer.md`, `.github/workflows/ci.yml`, `docs/lab-04/ui-spec.md`, final-main/PDF release audit | Not run / pending release issue; no PASS claimed |
+
+The two traceability tables together identify planned scenarios, consolidated actual files and observed outcomes. Required APIs, components and E2E suites all ran successfully. Server/client lint/build and Prisma validation passed; `git diff --check` and source/evidence-path consistency were checked after documentation finalization. Final PR head CI and independent review must be recorded after commit/push/PR; this work does not fabricate a CI URL or reviewer approval.

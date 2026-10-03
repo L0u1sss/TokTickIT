@@ -177,6 +177,28 @@ describe("GET /api/dashboard/requester", () => {
     expect(dashboard.body.recentlyUpdated[0].version).toBe(ticket.version + 1);
   });
 
+  it.each([
+    [0, "2026-10-02T17:00:00.000Z"], // Midnight in Asia/Bangkok.
+    [1, "2026-10-03T00:00:00.000Z"], // Midnight UTC, 07:00 in Bangkok.
+  ])("uses absolute half-open bounds at timezone boundary %s", async (caseIndex, instant) => {
+    const before = new Date(instant), from = new Date(before.getTime() - 168 * 3600000);
+    await db.session.updateMany({ where: { userId: userIds[1] }, data: { expiresAt: new Date("2100-01-01T00:00:00Z") } });
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(before);
+    const dates = [from.getTime() - 1, from.getTime(), from.getTime() + 1, before.getTime() - 1, before.getTime(), before.getTime() + 1];
+    const boundaryIds: number[] = [];
+    for (const [index, milliseconds] of dates.entries()) {
+      const row = await db.ticket.create({ data: { ticketNumber: `TKT-2092-${String(userIds[1] * 100 + Number(caseIndex) * 10 + index).padStart(6, "0")}`, clientRequestId: randomUUID(), summary: `Timezone boundary ${caseIndex}/${index}`, description: "Exact timestamp boundary", requestedPriority: "MEDIUM", itPriority: "MEDIUM", status: index % 2 ? "CLOSED" : "RESOLVED", resolvedAt: new Date(milliseconds), requesterId: userIds[1], categoryId, relatedSystemId: systemId } });
+      ticketIds.push(row.id); boundaryIds.push(row.id);
+    }
+    const response = await request(app).get("/api/dashboard/requester").set("Cookie", emptyRequesterCookie).expect(200);
+    expect(response.body.recentlyResolvedWindow).toEqual({ from: from.toISOString(), before: before.toISOString() });
+    const drill = await request(app).get("/api/tickets").query({ statusIn: "RESOLVED,CLOSED", resolvedFrom: from.toISOString(), resolvedBefore: before.toISOString(), pageSize: 50 }).set("Cookie", emptyRequesterCookie).expect(200);
+    const actual = drill.body.items.filter((row: { id: number }) => boundaryIds.includes(row.id)).map((row: { id: number }) => row.id).sort((a: number, b: number) => a - b);
+    expect(actual).toEqual(boundaryIds.slice(1, 4).sort((a, b) => a - b));
+    const direct = await db.ticket.findMany({ where: { requesterId: userIds[1], status: { in: ["RESOLVED", "CLOSED"] }, resolvedAt: { gte: from, lt: before } }, orderBy: [{ resolvedAt: "desc" }, { id: "desc" }], take: 5 });
+    expect(response.body.recentlyResolved.map((row: { id: number }) => row.id)).toEqual(direct.map(row => row.id));
+  });
+
   it("returns a safe failure without exposing database details", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(db, "$transaction").mockRejectedValueOnce(new Error("postgres://admin:secret@private"));
