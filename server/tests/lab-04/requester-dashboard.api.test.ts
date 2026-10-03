@@ -110,6 +110,22 @@ describe("GET /api/dashboard/requester", () => {
     expect(response.body).toMatchObject({ metrics: { openCount: 0, waitingForRequesterCount: 0 }, recentlyUpdated: [], recentlyResolved: [] });
   });
 
+  it("intentionally includes old Tickets of every status in Recently Updated without a time cutoff", async () => {
+    const originals = await db.ticket.findMany({ where: { requesterId: userIds[0] }, orderBy: { id: "asc" } });
+    const old = new Date(Date.now() - 30 * 24 * 3600000);
+    try {
+      // Equal old timestamps also exercise the descending ID tie-breaker.
+      await db.ticket.updateMany({ where: { requesterId: userIds[0] }, data: { updatedAt: old } });
+      const response = await request(app).get("/api/dashboard/requester").set("Cookie", requesterCookie).expect(200);
+      expect(response.body.recentlyUpdated.map((row: { id: number }) => row.id)).toEqual(originals.slice(-5).reverse().map(row => row.id));
+      expect(response.body.recentlyUpdated.map((row: { status: string }) => row.status)).toEqual(["Cancelled", "Closed", "Resolved", "Reopened", "Waiting For Requester"]);
+      const cutoff = Date.parse(response.body.generatedAt) - 168 * 3600000;
+      expect(response.body.recentlyUpdated.every((row: { updatedAt: string }) => Date.parse(row.updatedAt) < cutoff)).toBe(true);
+    } finally {
+      for (const row of originals) await db.ticket.update({ where: { id: row.id }, data: { updatedAt: row.updatedAt } });
+    }
+  });
+
   it("enforces authentication, role authorization, and the query contract", async () => {
     expect((await request(app).get("/api/dashboard/requester")).status).toBe(401);
     expect((await request(app).get("/api/dashboard/requester").set("Cookie", staffCookie)).status).toBe(403);

@@ -14,8 +14,7 @@ export function AuthScreens() {
     : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
   const forbidden = Boolean(user && !user.mustChangePassword && (
     (location.startsWith("/admin/") && user.role !== "ADMINISTRATOR") ||
-    (location.startsWith("/staff/") && user.role === "REQUESTER") ||
-    (location === "/dashboard" && user.role !== "REQUESTER")
+    (location.startsWith("/staff/") && user.role === "REQUESTER")
   ));
   const path=user?(user.mustChangePassword?"/change-password":permitted || forbidden?location + window.location.search:home):"/login";
   useEffect(()=>{

@@ -22,12 +22,19 @@ it.each(["/staff/tickets", "/admin/users"])("shows Forbidden to a Requester at %
   expect(screen.queryByRole("link", { name: "User Management" })).toBeNull();
   expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/dashboard");
 });
-it("shows Forbidden to staff at the Requester dashboard", async () => {
-  window.history.replaceState({}, "", "/dashboard");
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ user: { id: 2, displayName: "Staff", email: "staff@example.test", role: "IT_STAFF", mustChangePassword: false } }))));
+it.each(["IT_STAFF", "ADMINISTRATOR"])("redirects %s from the Requester dashboard to their current role home", async role => {
+  window.history.replaceState({}, "", "/dashboard?status=OPEN_GROUP");
+  const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
+    url.endsWith("/api/auth/me") ? { user: { id: 2, displayName: "Staff", email: "staff@example.test", role, mustChangePassword: false } }
+    : { categories: [], relatedSystems: [], items: [], users: [], pagination: { page: 1, pageSize: 20, totalItems: 0, totalPages: 0 } }
+  ))));
+  vi.stubGlobal("fetch", fetchMock);
   render(<AuthApp />);
-  await screen.findByRole("heading", { name: "Forbidden" });
-  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/staff/tickets");
+  await screen.findByRole("heading", { name: role === "IT_STAFF" ? "Ticket Queue" : "User Management" });
+  await waitFor(() => expect(window.location.pathname).toBe(role === "IT_STAFF" ? "/staff/tickets" : "/admin/users"));
+  expect(window.location.search).toBe("");
+  expect(screen.queryByRole("heading", { name: "Forbidden" })).toBeNull();
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/dashboard/requester"))).toBe(false);
 });
 it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted navigation for %s", async role => {
   window.history.replaceState({}, "", "/");

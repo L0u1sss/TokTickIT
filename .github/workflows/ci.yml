@@ -124,6 +124,8 @@ jobs:
       - name: Run Requester dashboard browser suite
         run: npm run test:requester-dashboard:e2e
         working-directory: client
+        env:
+          E2E_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Run staff workflow browser suite
         run: npm run test:staff:e2e

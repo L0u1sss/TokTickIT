@@ -64,7 +64,9 @@ The user reported that CI failed again and requested a fix. Read the latest PR/h
 
 ### Prompt 10
 
-Pending. Add only an actual later prompt.
+**Actual user request (2026-10-03):** Fix the comments in PR #67 review `5399755207`.
+
+**Use:** Read the review through GitHub and inspected the existing source, original Lab 2 contract and hosted CI #78 job logs. Implemented role-home redirects for the current incremental shell and documented the pending Staff Dashboard route. Added independent mixed-status PostgreSQL regression and live-browser legacy filters/paging/reload/Back/Forward checks, literal en-dash assertions and an old-Ticket no-cutoff test. Made DB evidence run-specific with direct Prisma counts, UUID/schema/time/SHA/CI provenance and temporary-path validation. Distinguished browser safe-error UX from backend redaction, and recorded #78 counts from verified log excerpts. Ran the validation documented in [tests.md section 14](./tests.md#14-pr-67-review-5399755207-fixes---2026-10-03). No reviewer comments or approvals were posted on the user's behalf.
 
 ## Decisions Made While Reviewing AI Output
 
@@ -89,4 +91,4 @@ The coding-agent review found that the earlier UI tests could pass while the imp
 
 ## Known Limitations of This Log
 
-Nine prompts have been used and recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
+Ten actual prompts have been recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.

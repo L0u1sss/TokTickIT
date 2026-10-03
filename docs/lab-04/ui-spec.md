@@ -6,6 +6,8 @@
 
 After authentication, the first role-appropriate route is Dashboard. Requesters see Dashboard, Create Ticket, and My Tickets. IT Staff see Dashboard and Ticket Queue. Administrators see Dashboard, Ticket Queue, and User Management. The active item uses text/shape/weight in addition to color; name, role, and Logout remain visible. Forced password-change flow cannot open dashboards.
 
+PR #67 implements the Requester increment. Until the separate Staff Dashboard increment provides `/staff/dashboard`, the current role homes remain `/staff/tickets` for IT Staff and `/admin/users` for Administrators. Opening the Requester `/dashboard` as either role replaces the URL with that role home, discards Requester query parameters, and never requests Requester dashboard data. Once the Staff Dashboard lands, both roles use `/staff/dashboard` as their home and redirect target. Protected staff/admin screens still show Forbidden to unauthorized roles; direct Requester dashboard API access by Staff/Admin remains `403`.
+
 ## 2. Shared UI Rules
 
 - Reuse existing cards, tables, badges, form controls, buttons, alerts, skeleton/loading, empty, error, and responsive conventions.
@@ -23,6 +25,8 @@ Loading retains page structure without false zeroes. A successful zero dataset s
 ## 4. Requester Dashboard
 
 The page shows Open Tickets and Waiting for You metric cards plus Recently Updated and Recently Resolved lists. Recently Updated uses the same authoritative Ticket `updatedAt` rule as the Staff Dashboard: accepted Ticket/Action aggregate writes refresh recency; Public Comments, Internal Notes, and attachment-only writes do not. Recently Resolved means current `RESOLVED`/`CLOSED` Tickets with `resolvedAt` in the backend's rolling 168-hour window `[from,before)`; render the returned window and use its exact bounds in the drill-down. It never includes another Requester’s data and does not duplicate the full My Tickets controls. Open drill-down uses `/tickets?status=OPEN_GROUP`; waiting uses `/tickets?status=WAITING_FOR_REQUESTER`; recently resolved uses `/tickets?statusIn=RESOLVED,CLOSED&resolvedFrom=<from>&resolvedBefore=<before>`, with returned values URL-encoded by the client. List items open owned Ticket Detail. Zero state provides a Create Ticket action. Failure/Retry preserves shell navigation.
+
+Requester Recently Updated has no time cutoff by design: display the latest five owned Tickets across all current statuses, even when older than seven days. Recently Resolved alone has the seven-day boundary.
 
 ## 5. Actions Taken on Ticket Detail
 

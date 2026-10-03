@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { loadEnvFile } from "node:process";
 import { randomBytes, randomUUID } from "node:crypto";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 
@@ -34,6 +34,7 @@ const requesterDashboard = process.argv.includes("--requester-dashboard");
 const actionsTaken = process.argv.includes("--actions-taken");
 const staffQueue = process.argv.includes("--staff-queue") || communications || staffFlow || actionsTaken || ticketWorkflow || requesterDashboard;
 const actionTickets = {};
+const evidenceRunId = randomUUID();
 const children=[];
 function start(entry,args,cwd,env,stdio="inherit"){
   const child=spawn(process.execPath,[entry,...args],{cwd,env:{...process.env,...env},stdio,windowsHide:true});
@@ -49,8 +50,14 @@ async function ready(url,child){
     await new Promise(r=>setTimeout(r,200));
   }throw new Error("Test service startup timed out.");
 }
+async function removeEvidenceDirectory(directory) {
+  const target = path.resolve(directory);
+  if (path.dirname(target) !== path.resolve(tmpdir()) || !path.basename(target).startsWith("toktickit-dashboard-evidence-")) throw new Error("Unexpected evidence cleanup directory.");
+  await rm(target, { recursive: true, force: true });
+}
 let created=false;
 let attachmentDirectory;
+let evidenceDirectory;
 try{
   await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);created=true;
   await run(path.join(server,"node_modules/prisma/build/index.js"),["migrate","deploy"],server,{DATABASE_URL:isolated.toString()});
@@ -86,10 +93,6 @@ try{
     if (requesterDashboard) {
       const other = await db.user.create({ data: { displayName: "Other Dashboard Requester", email: "other-dashboard@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
       await db.ticket.create({ data: { ticketNumber: "TKT-2026-900001", clientRequestId: randomUUID(), summary: "Another requester private ticket", description: "Cross-owner isolation", requesterId: other.id, categoryId: category.id, relatedSystemId: system.id, requestedPriority: "HIGH", itPriority: "HIGH", status: "WAITING_FOR_REQUESTER", updatedAt: new Date(Date.now() + 3600000) } });
-      const counts = { openCount: await db.ticket.count({ where: { requesterId: requester.id, status: { in: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] } } }), waitingForRequesterCount: await db.ticket.count({ where: { requesterId: requester.id, status: "WAITING_FOR_REQUESTER" } }) };
-      const directory = path.resolve(client, "../artifacts/lab-04/screenshots/requester-dashboard");
-      await mkdir(directory, { recursive: true });
-      await writeFile(path.join(directory, "database-counts.json"), JSON.stringify({ source: "Direct Prisma queries on the isolated browser fixture schema", requester: "auth-browser@example.test", metrics: counts, openStatuses: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] }, null, 2) + "\n");
     }
     if (actionsTaken) {
       await db.user.create({ data: { displayName: "Other Action Requester", email: "other-requester@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
@@ -108,9 +111,37 @@ try{
     {DATABASE_URL:isolated.toString(),CLIENT_ORIGIN:clientUrl,PORT:apiPort,NODE_ENV:"test", ...(attachmentDirectory ? { ATTACHMENT_STORAGE_DIR: attachmentDirectory } : {})},"ignore");
   const web=start(path.join(client,"node_modules/vite/bin/vite.js"),["--host","127.0.0.1","--port",webPort,"--strictPort"],client,{VITE_API_URL:apiUrl},"ignore");
   await Promise.all([ready(apiUrl+"/api/health",api.child),ready(clientUrl,web.child)]);
+  let evidencePath;
+  if (requesterDashboard) {
+    // Query the same migrated schema used by the live API immediately before Playwright.
+    const requester = await db.user.findUniqueOrThrow({ where: { email: "auth-browser@example.test" } });
+    const openStatuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"];
+    const [openCount, waitingForRequesterCount] = await db.$transaction([
+      db.ticket.count({ where: { requesterId: requester.id, status: { in: openStatuses } } }),
+      db.ticket.count({ where: { requesterId: requester.id, status: "WAITING_FOR_REQUESTER" } }),
+    ], { isolationLevel: "RepeatableRead" });
+    const git = args => execFileSync("git", args, { cwd: client, encoding: "utf8", windowsHide: true }).trim();
+    const databaseEvidence = {
+      source: "Direct Prisma queries before browser assertions; not dashboard API output",
+      runId: evidenceRunId, fixtureSchema: schema, generatedAt: new Date().toISOString(),
+      sourceSha: process.env.E2E_SOURCE_SHA || git(["rev-parse", "HEAD"]),
+      checkoutSha: git(["rev-parse", "HEAD"]), workingTreeDirty: Boolean(git(["status", "--porcelain"])),
+      ci: process.env.GITHUB_RUN_ID ? { runId: process.env.GITHUB_RUN_ID, runNumber: process.env.GITHUB_RUN_NUMBER, attempt: process.env.GITHUB_RUN_ATTEMPT } : null,
+      requesterId: requester.id, metrics: { openCount, waitingForRequesterCount }, openStatuses,
+    };
+    evidenceDirectory = await mkdtemp(path.join(tmpdir(), "toktickit-dashboard-evidence-"));
+    evidencePath = path.join(evidenceDirectory, "database-counts.json");
+    const directory = path.resolve(client, "../artifacts/lab-04/screenshots/requester-dashboard");
+    await mkdir(directory, { recursive: true });
+    const content = JSON.stringify(databaseEvidence, null, 2) + "\n";
+    await writeFile(evidencePath, content);
+    await writeFile(path.join(directory, "database-counts.json"), content);
+  }
   const browserSpec = requesterDashboard ? "e2e/lab-04/dashboards.spec.ts" : actionsTaken ? "e2e/lab-04/actions-taken-flow.spec.ts" : ticketWorkflow ? "e2e/lab-04/ticket-resolution.spec.ts" : userManagement ? "e2e/lab-03/user-administration.spec.ts" : staffFlow ? "e2e/lab-03/staff-ticket-flow.spec.ts" : communications ? "e2e/lab-03/comments-notes.spec.ts" : staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts";
   await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test",browserSpec,"--config","playwright.live.config.ts"],client,
-    {E2E_CLIENT_URL:clientUrl,E2E_API_URL:apiUrl,E2E_AUTH_PASSWORD:password, ...(actionsTaken ? { E2E_ACTION_TICKETS: JSON.stringify(actionTickets) } : {})});
+    {E2E_CLIENT_URL:clientUrl,E2E_API_URL:apiUrl,E2E_AUTH_PASSWORD:password,
+      ...(requesterDashboard ? { E2E_DATABASE_EVIDENCE: evidencePath, E2E_EVIDENCE_RUN_ID: evidenceRunId, E2E_FIXTURE_SCHEMA: schema } : {}),
+      ...(actionsTaken ? { E2E_ACTION_TICKETS: JSON.stringify(actionTickets) } : {})});
 }catch(error){console.error(error instanceof Error?error.message:"Auth E2E failed.");process.exitCode=1;}
 finally{
   for(const {child} of children)if(child.exitCode===null)child.kill();
@@ -118,6 +149,7 @@ finally{
   await db.$disconnect();
   if(created)await admin.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
   await admin.$disconnect();
+  if (evidenceDirectory) await removeEvidenceDirectory(evidenceDirectory);
   // Only remove the exact directory returned by mkdtemp for this runner.
   if (attachmentDirectory) await rm(attachmentDirectory, { recursive: true, force: true });
 }
