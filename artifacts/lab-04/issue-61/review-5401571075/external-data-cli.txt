@@ -1,0 +1,1 @@
+Final PDF rejected: report data must stay inside the repository

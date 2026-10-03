@@ -1,0 +1,170 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "requester-list",
+  "viewport": "desktop",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 1440,
+    "viewportWidth": 1440,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 949.625,
+          "y": -132,
+          "width": 110.234375,
+          "height": 49.375,
+          "top": -132,
+          "right": 1059.859375,
+          "bottom": -82.625,
+          "left": 949.625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Create Ticket",
+        "rect": {
+          "x": 1059.859375,
+          "y": -132,
+          "width": 126.78125,
+          "height": 49.375,
+          "top": -132,
+          "right": 1186.640625,
+          "bottom": -82.625,
+          "left": 1059.859375
+        },
+        "outline": "none"
+      },
+      {
+        "name": "My Tickets",
+        "rect": {
+          "x": 1186.640625,
+          "y": -132,
+          "width": 109.359375,
+          "height": 49.375,
+          "top": -132,
+          "right": 1296,
+          "bottom": -82.625,
+          "left": 1186.640625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 1171.25,
+          "y": -58.625,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": -58.625,
+          "right": 1265.1875,
+          "bottom": -13.4375,
+          "left": 1171.25
+        },
+        "outline": "none"
+      },
+      {
+        "name": "attachment-file",
+        "rect": {
+          "x": 181,
+          "y": 1056.671875,
+          "width": 683.328125,
+          "height": 44,
+          "top": 1056.671875,
+          "right": 864.328125,
+          "bottom": 1100.671875,
+          "left": 181
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Upload attachment",
+        "rect": {
+          "x": 181,
+          "y": 1111.0625,
+          "width": 185.171875,
+          "height": 45.1875,
+          "top": 1111.0625,
+          "right": 366.171875,
+          "bottom": 1156.25,
+          "left": 181
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Download diagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnostic.pdf",
+        "rect": {
+          "x": 651.921875,
+          "y": 1241.71875,
+          "width": 110.703125,
+          "height": 44,
+          "top": 1241.71875,
+          "right": 762.625,
+          "bottom": 1285.71875,
+          "left": 651.921875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Remove diagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnosticdiagnostic.pdf",
+        "rect": {
+          "x": 770.625,
+          "y": 1241.71875,
+          "width": 94.3125,
+          "height": 44,
+          "top": 1241.71875,
+          "right": 864.9375,
+          "bottom": 1285.71875,
+          "left": 770.625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Public Comment",
+        "rect": {
+          "x": 162,
+          "y": 3193.46875,
+          "width": 1116,
+          "height": 100,
+          "top": 3193.46875,
+          "right": 1278,
+          "bottom": 3293.46875,
+          "left": 162
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Post Public Comment",
+        "rect": {
+          "x": 162,
+          "y": 3333.46875,
+          "width": 201.453125,
+          "height": 45.1875,
+          "top": 3333.46875,
+          "right": 363.453125,
+          "bottom": 3378.65625,
+          "left": 162
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Problem Appears Resolved",
+        "rect": {
+          "x": 162,
+          "y": 3520.25,
+          "width": 241.90625,
+          "height": 45.1875,
+          "top": 3520.25,
+          "right": 403.90625,
+          "bottom": 3565.4375,
+          "left": 162
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

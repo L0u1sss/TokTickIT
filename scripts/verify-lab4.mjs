@@ -1,7 +1,7 @@
 import { spawn, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
@@ -9,24 +9,41 @@ import os from "node:os";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const issueOption = process.argv.slice(2).find(arg => arg.startsWith("--issue="));
 const issue = issueOption ? Number(issueOption.slice("--issue=".length)) : 59;
-if (![59, 60].includes(issue)) throw new Error("Supported evidence issues: 59, 60.");
-const output = path.resolve(root, `artifacts/lab-04/issue-${issue}`);
-await mkdir(output, { recursive: true });
+if (![59, 60, 61].includes(issue)) throw new Error("Supported evidence issues: 59, 60, 61.");
+const runOption = process.argv.slice(2).find(arg => arg.startsWith("--run="));
+const runId = runOption?.slice("--run=".length) ?? (issue === 61 ? new Date().toISOString().replace(/[:.]/g, "-") : null);
+if (runId && !/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(runId)) throw new Error("Run names must contain only letters, digits, underscores and hyphens.");
+const output = path.resolve(root, `artifacts/lab-04/issue-${issue}`, ...(runId ? [runId] : []));
 const git = args => execFileSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true }).trim();
-const sourcePaths = git(["ls-files", "--cached", "--others", "--exclude-standard", "-z", "server", "client", "scripts", ".github"])
-  .split("\0").filter(Boolean).sort();
+const requireMain = process.argv.includes("--require-main");
+const branch = git(["branch", "--show-current"]);
+const baselineCommit = git(["rev-parse", "HEAD"]);
+const runtimeStatus = git(["status", "--short", "--", "server", "client", "scripts", ".github"]);
+if (requireMain && (branch !== "main" || baselineCommit !== git(["rev-parse", "origin/main"]) || runtimeStatus)) {
+  throw new Error("Final-main verification requires main at origin/main with clean server/client/scripts/.github sources. Fetch origin before running.");
+}
+if (runId) {
+  const exists = (await Promise.all(["verification.json", "verification-selected.json"].map(file =>
+    stat(path.join(output, file)).then(() => true, () => false)))).some(Boolean);
+  if (exists) throw new Error("This run already has evidence. Choose a new --run name to preserve the original logs.");
+}
+await mkdir(output, { recursive: true });
 async function sourceHashes() {
+  const sourcePaths = git(["ls-files", "--cached", "--others", "--exclude-standard", "-z", "server", "client", "scripts", ".github"])
+    .split("\0").filter(Boolean).sort();
   const hashes = {};
   for (const file of sourcePaths) hashes[file] = createHash("sha256").update(await readFile(path.join(root, file))).digest("hex");
   return hashes;
 }
 const source = await sourceHashes();
-const manifest = { issue, branch: git(["branch", "--show-current"]), baselineCommit: git(["rev-parse", "HEAD"]),
+const manifest = { issue, runId, branch, baselineCommit, evidenceScope: requireMain ? "final-main" : "release-candidate", requireMain,
   baselineStatus: git(["status", "--short"]), sourceHashes: source,
   startedAt: new Date().toISOString(), displayTimezone: "Asia/Bangkok", node: process.version,
   platform: process.platform, architecture: process.arch, cpu: os.cpus()[0]?.model, logicalCpus: os.cpus().length,
   memoryGiB: Math.round(os.totalmem() / 1024 ** 3), results: [],
-  hostedCI: "Not run for this uncommitted worktree; previous PR CI is historical evidence only." };
+  hostedCI: process.env.GITHUB_ACTIONS === "true" ? { runId: process.env.GITHUB_RUN_ID, sha: process.env.GITHUB_SHA,
+    url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` } :
+    "Local run; hosted CI must be verified separately for the exact submitted commit." };
 const npm = path.join(path.dirname(process.execPath), "node_modules/npm/bin/npm-cli.js");
 const steps = [
   ["server-lint", "server", [npm, "run", "lint"]],
@@ -50,7 +67,8 @@ const steps = [
   ["requester-regression-e2e", "client", [npm, "run", "test:e2e"]],
 ];
 // Selective reruns remain explicit in the manifest; they never imply all steps ran.
-const selected = process.argv.slice(2).filter(arg => !arg.startsWith("--issue="));
+const selected = process.argv.slice(2).filter(arg => !arg.startsWith("--issue=") && !arg.startsWith("--run=") && arg !== "--require-main");
+if (requireMain && selected.length) throw new Error("Final-main release verification must run every check; selective runs are candidate evidence only.");
 for (const name of selected) if (!steps.some(step => step[0] === name)) throw new Error(`Unknown check: ${name}`);
 for (const [name, directory, args] of steps.filter(step => !selected.length || selected.includes(step[0]))) {
   const startedAt = new Date().toISOString();
@@ -74,4 +92,12 @@ for (const [name, directory, args] of steps.filter(step => !selected.length || s
 manifest.finishedAt = new Date().toISOString();
 manifest.sourceUnchangedDuringRun = JSON.stringify(source) === JSON.stringify(await sourceHashes());
 if (!manifest.sourceUnchangedDuringRun) process.exitCode = 1;
+if (issue === 61) {
+  for (const lab of ["lab-03", "lab-04"]) {
+    await cp(path.join(root, "artifacts", lab, "screenshots"), path.join(output, "screenshots", lab), { recursive: true });
+  }
+  manifest.screenshotArchive = "screenshots/";
+}
+manifest.allChecksPassed = !selected.length && manifest.results.length === steps.length &&
+  manifest.results.every(result => result.exitCode === 0) && manifest.sourceUnchangedDuringRun;
 await writeFile(path.join(output, selected.length ? "verification-selected.json" : "verification.json"), JSON.stringify(manifest, null, 2) + "\n");

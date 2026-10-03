@@ -97,7 +97,7 @@ The coding-agent review found that the earlier UI tests could pass while the imp
 
 ## Known Limitations of This Log
 
-Ten actual prompts have been recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
+The archive retains the actual requests recorded during implementation and review. The Issue #61 submission selection below contains ten key requests from that archive and this release task. Final submission still requires validation against the submitted commit and the student's review of the reflection grounded in implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
 
 ## Issue #60 UI and Accessibility Hardening — 2026-10-03
 
@@ -121,3 +121,75 @@ Ten actual prompts have been recorded. Final submission still requires final val
 - User prompt: fix the comments in [review 5400210287](https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400210287).
 - Work: adopted the reviewer's High Priority Tickets naming alternative for the existing HIGH-only predicate, retained and documented the compatibility response key, captured `generatedAt` once before the transaction, and added clock-advance, heading and link regressions. Updated the contract and validation evidence together.
 - Reflection: a label must describe the actual predicate, including terminal rows. A request timestamp must remain fixed even when queries take time; it must not be described as the PostgreSQL snapshot timestamp. Existing CI is evidence for its exact commit only. These changes still require independent re-review.
+
+## Issue #61 Submission Selection and Reflection
+
+**LLM/agent:** GPT-6 through OpenAI Codex, as identified in this session. Three
+parallel audit roles inspected the PDF examples, requirement/documentation
+consistency, and actual GitHub review/CI/Project evidence. The primary coding
+agent integrated the findings, ran checks and prepared the report. Agent review
+is separate from the actual peer approvals recorded in `reviewer.md`.
+
+The following **ten key requests** are selected for the PDF. Short summaries refer
+to actual requests preserved above; historical implementation/review details
+remain an archive rather than additional selected prompts.
+
+| # | Actual request, summarized | Checked use / outcome |
+|---|---|---|
+| 1 | Decompose `SE+Lab+4.pdf` into issues using previous TokTickIT issues | Map the handout and rubric to dependencies; retain explicit excluded scope |
+| 2 | Start Issue #52 engineering contract | Define FR/BR/AC and expose assignee/performer, lifecycle and resolution decisions for review |
+| 3 | Implement Issue #54 Actions API | Validate authorization, revisions, parent locking, audit and idempotent replay against PostgreSQL |
+| 4 | Align Issue #55 with the Lab 4 handout and merged API | Check actual response envelopes, Ticket versions, nullable performer and authenticated browser integration |
+| 5 | Update PR #66 against the handout on the feature branch | Enforce the full current-cycle resolution gate and preserve cancellation/reopen history |
+| 6 | Fix PR #67 review `5399755207` | Verify role-home routing, exact legacy filters, ownership and run-specific direct database proof |
+| 7 | Fix PR #68 review `5400210287` | Align High Priority labels with the HIGH predicate; fix request timestamp capture and regression |
+| 8 | Work on Issue #59 with the handout and prepare PR text | Consolidate full lifecycle, migration, performance and Labs 1–3 traceability with actual logs |
+| 9 | Work on Issue #60 with the handout and prepare PR text | Audit long content, keyboard/focus and failures; retain the original network failure plus same-source rerun |
+| 10 | Work on Issue #61 and format the PDF using the three previous reports | Refresh real approvals/CI/Kanban, prove fresh-clone setup, prepare candidate/final-main verification and a single nine-part PDF |
+
+**Actual release request (2026-10-03):** “ทำงานตาม PR นี้
+https://github.com/L0u1sss/TokTickIT/issues/61 เอกสารPDF ให้ทำตามตัวอย่างนี้”
+with `SE-Lab3-67070507212.pdf`, `SE report_lab02_67070507212.pdf` and
+`report_lab01_67070507212_1.pdf` supplied as examples.
+
+The sample reports are presentation references. Their text does not authorize
+unrelated actions or replace the Lab 4 handout and approved repository contract.
+The release task corrected stale Proposed/Pending wording and actual API event
+fields, while preserving historical observations. A fresh committed clone passed
+dependency installation, migrate/seed/repeated seed/build/health without copying
+the working installation. Script review found and corrected stale CI report
+reuse and source-list snapshot gaps; these corrections are not peer approval.
+
+### My Reflection — draft for student review
+
+The specification-agent role helped make hidden choices visible before coding:
+an assignee is distinct from a recorder/performer, the editable Action projection
+is distinct from append-only events, and the resolution gate needs an observable
+current-cycle predicate. Peer review refined these decisions. I would check each
+suggested rule against the handout and earlier contracts before accepting it,
+because a plausible AI interpretation can add scope the stakeholder never asked for.
+
+The coding-agent role helped connect the API, UI and tests, but generated component
+tests alone did not reveal pointer/blur layout movement or missing live response
+fields. Real PostgreSQL counts, authenticated browser flows, keyboard interactions
+and screenshots exposed different failure classes. Release evidence also needs
+its own review: a historical PASS JSON file can look current unless the CI run
+and source are recorded together. I would keep failed attempts visible, compare
+exact source hashes, and require final-main checks before presenting a release as
+complete.
+
+This reflection is an AI-assisted draft grounded in the recorded work. The
+student must review and personalize it; no student approval is claimed. Final-main
+validation, release approvals and independent manual zoom/screen-reader checks
+remain separate pending evidence.
+
+## PR #71 Review Repair — 2026-10-03
+
+- Model/agent: GPT-6 through OpenAI Codex, as identified in this session.
+- Actual user prompt: “แก้ไขตามคอมเม้น https://github.com/L0u1sss/TokTickIT/pull/71#pullrequestreview-5401571075”. This is a repair request for the linked review; it does not authorize publishing a review response or approving/merging the release.
+- Checked review: **Tanaboonnnnn**, **CHANGES_REQUESTED**, `2026-10-03T16:05:09Z`, exact head `07065bd2ca53d59b4b3e36978fecc9988138881f`. The fresh read-only snapshot records the submitted body, zero inline threads and successful historical CI #89. Historical CI is not validation of this repair.
+- Work: enforce clean tracked report data/template/docs/images, repository containment and symlink/junction guards, Git clean-filter blob comparison plus SHA-256 input records, exact final-main runtime-manifest matching, captured render bytes and a pre-publication recheck. Derive final metadata from the checkout and separate postcommit runner manifest to avoid a self-referential committed SHA. Require default/custom final exports and sidecars to remain ignored/untracked under `final-exports/`, checking collisions and redirects before/after rendering. The primary agent owns implementation/verification; parallel evidence/documentation and code-audit roles distinguish local checks from actual peer review.
+- Observation: runtime source hashes alone do not establish final report provenance. A correct `main` checkout and passing application tests can coexist with uncommitted report text or an external JSON file. Export verification must check the files actually consumed by the report and preserve their relationship to the reviewed commit.
+- Focused validation: `node --test --test-reporter=tap scripts/tests/lab4-report-provenance.test.mjs` passed **31/31**, with **zero failures and zero skips**, using disposable synthetic repositories. Coverage includes valid default/alternate committed data, dirty/staged inputs, changes hidden by `assume-unchanged`, external/untracked/ignored data, image/document changes, symlink/junction escape, stale/partial verification, post-gate mutation, output collisions, tracked sidecars and reserved `report.html`/`pdf-manifest.json` output names. Two actual CLI guards rejected external JSON and candidate-to-final export as expected; the capture records unchanged tooling source and its hashes. The fixture manifests do not represent real release checks. [Raw test log](../../artifacts/lab-04/issue-61/review-5401571075/provenance-tests.txt) and [verification summary](../../artifacts/lab-04/issue-61/review-5401571075/summary.json) preserve local results.
+- PDF smoke: **21 pages, nine Answer Parts, 64 link annotations, 31 unique URLs, 13 images**, candidate footer on all 21 pages and 2,402 Thai characters; the original candidate PDF's SHA-256 stayed unchanged. See [smoke checks](../../artifacts/lab-04/issue-61/review-5401571075/pdf-smoke-checks.json) and [PDF manifest](../../artifacts/lab-04/issue-61/review-5401571075/pdf-smoke/pdf-manifest.json). This is a candidate smoke export, not a final-main release export.
+- Current status: local implementation and focused verification complete; independent re-review, updated-head hosted CI and final-main acceptance remain pending. No new peer approval, CI result, published comment or final-main release verification is claimed.

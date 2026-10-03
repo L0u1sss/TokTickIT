@@ -1,0 +1,41 @@
+{
+  "verificationManifest": "artifacts/lab-04/issue-61/release-candidate/verification.json",
+  "candidateOnly": true,
+  "baselineCommit": "bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d",
+  "runtimeSourceUnchanged": true,
+  "commands": 19,
+  "server": {
+    "files": 39,
+    "tests": 586
+  },
+  "client": {
+    "files": 22,
+    "tests": 170
+  },
+  "browsers": {
+    "actions-e2e": 7,
+    "resolution-e2e": 3,
+    "dashboards-e2e": 4,
+    "authentication-e2e": 1,
+    "administrator-e2e": 1,
+    "staff-queue-e2e": 1,
+    "staff-workflow-e2e": 1,
+    "communications-e2e": 1,
+    "responsive-e2e": 6,
+    "ui-hardening-e2e": 13,
+    "requester-regression-e2e": 7
+  },
+  "browserTotal": 45,
+  "performanceP95Ms": {
+    "REQUESTER": 13.03,
+    "IT_STAFF": 17.3,
+    "ADMINISTRATOR": 15.83
+  },
+  "negativeGuards": {
+    "requireMainOnCandidate": "rejected as expected",
+    "reuseExistingRun": "rejected as expected",
+    "CIRecorderOutsideActions": "rejected as expected",
+    "finalPDFFromCandidate": "rejected as expected"
+  },
+  "initialExploratoryRun": "candidate/verification.json: all commands passed but source changed; retained as diagnostic evidence"
+}

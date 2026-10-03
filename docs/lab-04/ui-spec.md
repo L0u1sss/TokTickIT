@@ -117,3 +117,17 @@ These completed checks describe automated browser interaction and representative
 - [x] Captured states have no page overflow and no serious/critical axe violations; 720x450 reflow viewport also checked.
 
 See [PR #68 validation](./tests.md#pr-68-validation) for logs, screenshot links, database provenance and the distinction between injected UI fixtures, real API/service tests, automated reflow and unperformed manual review.
+
+## Issue #61 Candidate Evidence
+
+The complete [Issue #61 candidate run](tests.md#issue-61-release-candidate-verification)
+re-ran the same keyboard/geometry/axe and authenticated live suites successfully,
+archiving 159 screenshots and all 63 fixture PNG/JSON pairs under
+`artifacts/lab-04/issue-61/release-candidate/screenshots/`. The [single report](report.md)
+uses readable excerpts from original screenshot bytes and records crop coordinates
+and original image hashes; it identifies live versus injected UI states explicitly.
+Representative report screenshots and Thai text were inspected after rendering.
+The published historical screenshots and earlier local checks retain their original
+scope. Actual feature peer approvals/staging CI are recorded in [reviewer.md](reviewer.md).
+Final-main acceptance and unperformed independent manual zoom/screen-reader checks
+are not inferred from the candidate report.

@@ -1,0 +1,196 @@
+{
+  "scope": "Independent read-only review of the completed release-candidate PDF; not final-main release approval",
+  "pdfSha256": "29455b6226bca8a5a934039dba9dd4fc751e1570548be439aab00d6d7962ff6e",
+  "pdfBytes": 2150672,
+  "pages": 21,
+  "partHeadings": [
+    {
+      "page": 1,
+      "part": 1
+    },
+    {
+      "page": 4,
+      "part": 2
+    },
+    {
+      "page": 5,
+      "part": 3
+    },
+    {
+      "page": 7,
+      "part": 4
+    },
+    {
+      "page": 8,
+      "part": 5
+    },
+    {
+      "page": 10,
+      "part": 6
+    },
+    {
+      "page": 14,
+      "part": 7
+    },
+    {
+      "page": 16,
+      "part": 8
+    },
+    {
+      "page": 19,
+      "part": 9
+    }
+  ],
+  "draftMarkerEveryPage": true,
+  "pdfClickableAnnotations": 64,
+  "distinctUrls": 31,
+  "thaiReadableVisualInspection": true,
+  "blankPages": [],
+  "textOutsidePage": [],
+  "sourceEditsPerformed": false,
+  "verification": {
+    "manifest": "artifacts/lab-04/issue-61/release-candidate/verification.json",
+    "results": 19,
+    "allChecksPassed": true,
+    "sourceUnchangedDuringRun": true,
+    "currentSourcesMatch": true,
+    "serverPassedTests": 586,
+    "clientPassedTests": 170,
+    "browserReportedPassedTests": 45
+  },
+  "imageSourceHashesMatch": true,
+  "images": [
+    {
+      "path": "artifacts/lab-04/issue-61/github/project-kanban.png",
+      "shaMatches": true,
+      "crop": null
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/github/staging-ci-88.png",
+      "shaMatches": true,
+      "crop": null
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/staff-dashboard/staff-nonzero-1440.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 80,
+        "y": 70,
+        "width": 1280,
+        "height": 760
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/staff-dashboard/staff-nonzero-1440.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 80,
+        "y": 1490,
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/edit-form/desktop.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 100,
+        "y": 960,
+        "width": 1240,
+        "height": 1100
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/terminal-list/desktop.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 100,
+        "y": 960,
+        "width": 1240,
+        "height": 1100
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/inactive-assignee/desktop.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 100,
+        "y": 970,
+        "width": 1240,
+        "height": 1130
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/ticket-workflow/resolution-gate/desktop.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 80,
+        "y": 100,
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/ticket-workflow/reopened/desktop.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 80,
+        "y": 100,
+        "width": 1280,
+        "height": 390
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/requester-dashboard/nonzero-1440.png",
+      "shaMatches": true,
+      "crop": null
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/requester-dashboard/nonzero-390.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/issue-60/conflict-mobile.png",
+      "shaMatches": true,
+      "crop": {
+        "x": 0,
+        "y": 2800,
+        "width": 390,
+        "height": 900
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/workflow-screens/issue-60/admin-dialog-mobile.png",
+      "shaMatches": true,
+      "crop": null
+    }
+  ],
+  "reviewerTable": {
+    "approvedHeadRows": 9,
+    "reviewer": "Tanaboonnnnn",
+    "findingsResponsesAndApprovalLinksPresent": true
+  },
+  "part3ReadableAndPassingCountsConsistent": true,
+  "resolvedFindings": [
+    "Part1 now includes reviewer link, actual findings/responses and nine approved heads",
+    "Reopened crop ends before focused skiplink artifact and shows status/owner",
+    "Terminal caption identifies audit timestamps instead of an event history list",
+    "Admin caption identifies labels/help/focus and distinguishes runtime assertions",
+    "Part3 contains passing unchanged-source candidate results and preserves initial diagnostic run limitation",
+    "Selected review link labels use readable colons without replacement/question-mark glyphs"
+  ],
+  "remainingNotes": [
+    {
+      "severity": "context",
+      "finding": "The mobile conflict image remains an explicitly identified excerpt; ActionsTaken heading at its top is partly clipped, while complete feedback/Reload and retained draft are readable."
+    }
+  ],
+  "acceptance": "PASS for release-candidate layout/content and source traceability; final-main submission still pending as explicitly marked.",
+  "previousPdfSha256": "254aa5458de7f2b0d2e83b759f322dd16b9e986a7ca33a77473ed5fba1297ea8"
+}

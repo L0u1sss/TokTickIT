@@ -1,0 +1,25 @@
+
+> toktickit-client@1.0.0 test:ui:lab4
+> node scripts/run-responsive-tests.mjs --lab4
+
+
+Running 13 tests using 1 worker
+
+(node:26524) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › REQUESTER final screens, long text and keyboard at desktop
+[2/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › IT_STAFF final screens, long text and keyboard at desktop
+[3/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › ADMINISTRATOR final screens, long text and keyboard at desktop
+[4/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › REQUESTER final screens, long text and keyboard at tablet
+[5/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › IT_STAFF final screens, long text and keyboard at tablet
+[6/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › ADMINISTRATOR final screens, long text and keyboard at tablet
+[7/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › REQUESTER final screens, long text and keyboard at mobile
+[8/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › IT_STAFF final screens, long text and keyboard at mobile
+[9/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › ADMINISTRATOR final screens, long text and keyboard at mobile
+[10/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › REQUESTER final screens, long text and keyboard at reflow
+[11/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › IT_STAFF final screens, long text and keyboard at reflow
+[12/13] e2e\lab-04\ui-hardening.spec.ts:87:5 › ADMINISTRATOR final screens, long text and keyboard at reflow
+[13/13] e2e\lab-04\ui-hardening.spec.ts:155:1 › safe failure and conflict retain Action and communication drafts; recovery prevents repeated writes
+  13 passed (2.0m)

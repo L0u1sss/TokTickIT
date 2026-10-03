@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "fetchedAtUtc": "2026-10-03 16:11:46 UTC",
+  "source": "Read-only GitHub connector: get_pr_info, list_pull_request_reviews, fetch_pr_comments, list_pull_request_review_threads, fetch_commit_workflow_runs; public GitHub REST workflow-run endpoint confirms CI head and timestamps",
+  "repository": "L0u1sss/TokTickIT",
+  "pullRequest": {
+    "url": "https://github.com/L0u1sss/TokTickIT/pull/71",
+    "number": 71,
+    "state": "open",
+    "merged": false,
+    "mergeable": true,
+    "draft": false,
+    "body": "## Problem\r\n\r\nIssue #61 requires a reviewed Lab 4 release with reproducible setup, accurate\r\nFR/BR/AC and test traceability, actual peer-review/CI/Project evidence, and one\r\nreadable PDF in Answer Part 1–9 order. The integrated implementation is on\r\n`lab4-staging`, while remote `main` still contains the Lab 3 release. Several\r\ndocumentation statuses and API response descriptions were historical, and the\r\nverification runner needed separate candidate/final-main evidence with preserved\r\nrun logs.\r\n\r\n## Changes\r\n\r\n- Update README structure, current role behavior, actual seed fixtures, setup,\r\n  demo and release verification instructions. Reconcile API event/envelope/user\r\n  summaries with source and mark the implemented specification's remaining final\r\n  release gate explicitly.\r\n- Record all nine actual peer approvals for PRs #62–70 at their final heads,\r\n  material findings/responses and CI URLs. Capture the real public Kanban,\r\n  staging CI and PR approval; #52–60 are Done while #61 remains In progress.\r\n- Add a safe fresh-clone setup audit, named immutable verification runs, a strict\r\n  complete final-main gate, source-file re-enumeration and screenshot/database\r\n  evidence archives. Save hosted CI reports under the current run ID and record\r\n  executed test-step outcomes, checkout SHA and source hashes.\r\n- Prepare a single 21-page A4 PDF using the supplied Lab 1/2/3 report examples:\r\n  exact nine sections, Thai font, clickable links, readable screenshot excerpts\r\n  from unmodified original images, metric predicates, traceability and ten actual\r\n  key prompts with an AI-assisted reflection draft.\r\n- Add editable report data/template, PDF image/hash/link manifest and an export\r\n  gate that independently verifies the complete final-main manifest and current\r\n  source. The candidate PDF visibly labels final-main evidence as pending.\r\n\r\n## Validation\r\n\r\nLocal candidate verification on **2026-10-03, 22:11–22:20 Asia/Bangkok**, on\r\n`chore/lab4-release-preparation` based on `bab4fc1`, passed **19/19 commands** with\r\n`sourceUnchangedDuringRun: true` and `allChecksPassed: true`.\r\n\r\n| Check | Actual result |\r\n|---|---|\r\n| Server regression | **39 files / 586 tests passed** |\r\n| Client regression | **22 files / 170 tests passed** |\r\n| Required Lab 4 live E2E | **14 passed**: Actions 7, workflow 3, dashboards 4 |\r\n| Labs 1–3 browser regression | **18 passed** |\r\n| UI/keyboard/accessibility audit | **13 passed**, 63 fixture screenshot/JSON pairs |\r\n| Dashboard p95 / 500 ms budget | Requester **13.03 ms**, Staff **17.30 ms**, Admin **15.83 ms** |\r\n| Lint/build/Prisma | **Passed** |\r\n\r\nThe manifest, raw logs, JSON reports, fresh direct database proof and **159\r\nscreenshots** are archived in `artifacts/lab-04/issue-61/release-candidate/`.\r\nRuntime file hashes identify the verified worktree in addition to its baseline\r\ncommit; these are local candidate results, not final-main evidence.\r\n\r\nFresh-clone setup passed dependency installation, Prisma generate/migrate,\r\ntwo seed runs with unchanged records/credentials, both builds and API health\r\n`200`. The demo contained 10 Users, 8 Tickets and 6 Actions. The audit also passed\r\nwith an inherited `SEED_REFERENCE_DATA_ONLY=true`, because it explicitly enables\r\nthe documented full demo seed. Only its disposable test schema was removed.\r\n\r\nAll **31 external PDF URLs** returned HTTP `200`; all six review/comment anchors\r\nexist. Checks and exact PDF/manifest hashes are recorded in\r\n`artifacts/lab-04/issue-61/pdf-link-checks.json`.\r\nThe links refer to the currently published approved staging evidence; newly\r\nprepared release documentation must be published and its final-main links updated\r\nbefore submission. The PDF and verification final gates correctly reject the\r\ncurrent candidate as final-main evidence.\r\n\r\nAn earlier exploratory run completed all 19 commands, but release-tool changes\r\noccurred during it. Its manifest remains in `artifacts/lab-04/issue-61/candidate/`\r\nwith `sourceUnchangedDuringRun: false` and `allChecksPassed: false`; it is retained\r\nas diagnostic evidence rather than a passing release run.\r\n\r\n**Still required for Issue #61 acceptance:** release-preparation and\r\nstaging-to-main PR review/CI, integration into main, exact-SHA final-main tests/CI,\r\nstudent personalization of reflection, final Project/Kanban capture and final\r\nPDF export. Independent manual zoom/screen-reader inspection remains unperformed\r\nand is disclosed as a limitation. Local candidate\r\nresults and historical feature approvals do not establish these gates.\r\n\r\n## Dependencies\r\n\r\nRequires merged PRs #62–70 on `lab4-staging` at\r\n`bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d`. Integrated staging CI\r\n[#88](https://github.com/L0u1sss/TokTickIT/actions/runs/37129764540) passed.\r\n\r\nBranch flow: `chore/lab4-release-preparation → lab4-staging → main`.\r\nThe preparation PR uses a non-closing reference so merging preparation cannot\r\nclose the release issue before post-merge verification and PDF acceptance.\r\n\r\nReference: `SE+Lab+4.pdf`, §§11–14 and required Answer Part 1–9. Description follows\r\nprevious PRs' Problem / Changes / Validation / Dependencies structure.\r\n\r\nRefs #61\r\n",
+    "title": "release(lab-04): prepare verified release candidate and nine-part submission report",
+    "base": "lab4-staging",
+    "base_sha": "bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d",
+    "head": "chore/lab4-release-preparation",
+    "head_sha": "07065bd2ca53d59b4b3e36978fecc9988138881f",
+    "head_repo_id": 1323965125,
+    "head_repo_full_name": "L0u1sss/TokTickIT",
+    "merge_commit_sha": "ad41345eb18e5f4fa318ac94a3ae5c040af1c4a5",
+    "user": {
+      "login": "L0u1sss",
+      "name": "L0u1sss",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/113091598?v=4",
+      "id": 113091598
+    },
+    "requested_reviewers": [
+      {
+        "login": "cottonlnwza",
+        "name": "cottonlnwza",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/102855472?v=4",
+        "id": 102855472
+      },
+      {
+        "login": "chaproi",
+        "name": "chaproi",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/139777453?v=4",
+        "id": 139777453
+      },
+      {
+        "login": "Chxtamos",
+        "name": "Chxtamos",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/190181471?v=4",
+        "id": 190181471
+      },
+      {
+        "login": "thananun-7203",
+        "name": "thananun-7203",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/313459748?v=4",
+        "id": 313459748
+      },
+      {
+        "login": "Peepipat-Suesoongnuen",
+        "name": "Peepipat-Suesoongnuen",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/314545086?v=4",
+        "id": 314545086
+      }
+    ],
+    "requested_team_reviewers": null,
+    "diff": null,
+    "comments": null,
+    "created_at": "2026-10-03T15:50:58Z",
+    "updated_at": "2026-10-03T16:05:09Z",
+    "closed_at": null,
+    "merged_at": null,
+    "commits": 1,
+    "changed_files": 577,
+    "additions": 89575,
+    "deletions": 77,
+    "display_url": "https://github.com/L0u1sss/TokTickIT/pull/71",
+    "display_title": "release(lab-04): prepare verified release candidate and nine-part submission report"
+  },
+  "review": {
+    "id": 5401571075,
+    "url": "https://github.com/L0u1sss/TokTickIT/pull/71#pullrequestreview-5401571075",
+    "body": "รีวิว PR #71 ที่ exact head `07065bd2ca53d59b4b3e36978fecc9988138881f` แล้วครับ 🫡🔥\n\nCI run #89 ผ่านบน exact head นี้ ✅ และภาพรวม release-preparation ทำมาดีมาก: candidate verification แยกจาก final-main ชัด, 19-check manifest, fresh-clone audit, review/CI/Project provenance, PDF 9 Parts, link/hash manifests และการไม่ claim final-main ก่อนเวลา\n\nแต่รอบนี้ยังมี blocker ที่กระทบ final-release guarantee โดยตรง:\n\n1. `build-lab4-report.mjs --final` ยังไม่บังคับว่า report inputs มาจาก clean final-main tree จริง\n   - `checkFinal()` ตรวจ `main`, `HEAD === origin/main`, final-main verification manifest และ hashes ของ `server/client/scripts/.github`\n   - แต่ไม่ได้ตรวจ working-tree cleanliness ของ `docs/lab-04/report-data.json`, `report-template.html`, docs/evidence ที่ PDF ใช้ และไม่ได้ hash/compare report inputs กับ final-main commit\n   - ดังนั้นหลัง checkout main ที่ถูกต้อง ผู้ใช้ยังสามารถแก้ `report-data.json` หรือ template แบบ uncommitted แล้วรัน `--final` ผ่านได้ ตราบใดที่ fields ใน data อ้าง SHA/manifest ถูกต้อง\n   - นี่ชนกับ Issue #61 ที่กำหนดว่า final PDF ต้อง traceable จาก final main / repository source of truth และ final gate ต้องกันการ relabel candidate/local content เป็น final\n\n2. `--data=` ยังสามารถชี้ไป path ภายนอก repository ได้ใน final mode\n   - `dataPath = path.resolve(repoRoot, value('data', ...))` แต่ไม่มี containment checkแบบเดียวกับ image/manifest paths\n   - ทำให้ final PDF สามารถใช้ external JSON ที่ไม่ได้อยู่ใน reviewed/committed repository แล้วผ่าน `checkFinal()` ได้ ถ้า content fields ถูกตั้งให้ตรง\n   - สำหรับ candidate mode flexibility นี้พอเข้าใจได้ แต่ `--final` ควร fail-closed: final report data/template และ evidence inputs ต้องอยู่ใน repo และตรงกับ committed final-main tree\n\nขอแก้ final gate ให้ตรวจอย่างน้อย:\n- final mode ต้อง `git status --porcelain` clean สำหรับ report-producing inputs (อย่างน้อย `docs/lab-04`, `artifacts/lab-04/issue-61` ที่อ้างเป็น final evidence, และ script/template/data ที่ใช้ build)\n- `--data` ใน final mode ต้องเป็น repo-relative/inside-repo และ ideally tracked\n- hash current `report-data.json` + template + final evidence inputs ที่ใช้ PDF แล้วผูกกับ committed final-main tree หรือ final verification manifest\n- เพิ่ม negative regression: แก้ report-data/template แบบ uncommitted แล้ว `--final` ต้อง reject; external `--data` ต้อง reject\n\nนอกเหนือจากนี้โครง release audit ถือว่าแข็งมาก และเอกสารซื่อสัตย์เรื่องสิ่งที่ยัง pending ดีครับ โดยเฉพาะการแยก feature approvals / staging CI / candidate verification / final-main acceptance ออกจากกัน\n\nรอบนี้จึงขอ **Request Changes** เฉพาะ final PDF provenance gate ครับ เพราะมันเป็นแกน acceptance ของ Issue #61 โดยตรง ปิดจุดนี้แล้วรอบถัดไปมีโอกาส Approve สูงมากครับ 🔥",
+    "state": "CHANGES_REQUESTED",
+    "author": "Tanaboonnnnn",
+    "submittedAt": "2026-10-03T16:05:09Z",
+    "reviewedCommit": "07065bd2ca53d59b4b3e36978fecc9988138881f",
+    "reviewedCommitSource": "Review submission body explicitly names exact head; it equals PR head at fetch time"
+  },
+  "reviewThreads": [],
+  "discussionSummary": {
+    "reviewSubmissions": 1,
+    "inlineComments": 0,
+    "issueConversationComments": 0
+  },
+  "exactHeadWorkflowRuns": {
+    "queriedCommit": "07065bd2ca53d59b4b3e36978fecc9988138881f",
+    "queryEvent": "pull_request",
+    "firstPageOnly": true,
+    "runs": [
+      {
+        "id": 37134699085,
+        "name": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 89,
+        "jobs_url": "https://api.github.com/repos/L0u1sss/TokTickIT/actions/runs/37134699085/jobs",
+        "logs_url": "https://api.github.com/repos/L0u1sss/TokTickIT/actions/runs/37134699085/logs",
+        "workflow_id": 343212695,
+        "html_url": "https://github.com/L0u1sss/TokTickIT/actions/runs/37134699085",
+        "head_sha": "07065bd2ca53d59b4b3e36978fecc9988138881f",
+        "event": "pull_request",
+        "created_at": "2026-10-03T15:51:03Z",
+        "updated_at": "2026-10-03T16:01:11Z",
+        "directRestFetchedAtUtc": "2026-10-03 16:23:28 UTC",
+        "directRestUrl": "https://api.github.com/repos/L0u1sss/TokTickIT/actions/runs/37134699085"
+      }
+    ]
+  },
+  "scope": "Historical reviewed-head CI and actual changes-requested review. No review response, approval, thread resolution, merge, publication or new CI was performed."
+}

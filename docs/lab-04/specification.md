@@ -1,6 +1,6 @@
 # TokTickIT Lab 4 — Sprint Engineering Specification
 
-> Status: Proposed contract for peer review before implementation
+> Status: Implemented contract through Issue #60; final release acceptance is tracked in Issue #61. This status records implementation scope, not final-main verification or peer approval.
 >
 > Source: `SE+Lab+4.pdf`, the Lab 3 contract, and GitHub Issue #52
 > Any implementation change must update this contract and its test traceability first.
@@ -176,7 +176,7 @@ Record every sample, p95, maximum, dataset counts, timestamp, Node/platform and 
 - [ ] Backend authorization, validation, idempotency, audit, concurrency, and safe failures are tested.
 - [ ] Actions, Ticket workflow, both dashboards, and drill-down operate end-to-end.
 - [ ] Labs 1–3 regression, lint, builds, unit/API/UI/E2E, performance smoke, responsive, and accessibility checks pass on final SHA.
-- [ ] No secrets, generated reports, private uploads, placeholders, broken links, or known console errors are committed.
+- [ ] No secrets, temporary build/browser reports, private uploads, placeholders, broken links, or known console errors are committed. Selected test logs, JSON provenance and screenshots under `artifacts/lab-04/` are intentional submission evidence.
 - [ ] `reviewer.md` records real review comments/responses/approval; `ai-use.md` records actual prompts and reflection.
 - [ ] Feature branches merge into `lab4-staging`, then a reviewed release PR merges into `main`; Project/Kanban matches reality.
 - [ ] Final evidence uses the exact Answer Part 1–9 order required by the handout.
@@ -187,4 +187,13 @@ The handout lists assign/complete/cancel and inactive-assignee rejection in its 
 
 ## 13. Branch and Review Flow
 
-Each issue branch starts from current `lab4-staging`, targets `lab4-staging` in its implementation PR, passes scoped and regression checks, receives peer review, and uses `Refs #<issue>`. After all Sprint 4 issues are Done, the release PR from `lab4-staging` to `main` uses `Closes` for the release issue only after final CI and approval.
+Each issue branch starts from current `lab4-staging`, targets `lab4-staging` in its implementation PR, passes scoped and regression checks, receives peer review, and uses `Refs #<issue>`. After the implementation dependencies have been reviewed and integrated, a reviewed release PR merges `lab4-staging` into `main`. That PR uses `Refs #61` while release acceptance remains incomplete; close the release issue only after final-main verification, CI, approval and submission evidence are recorded.
+
+Issue #61 follows `chore/lab4-release-preparation → lab4-staging → main`.
+Prepare and review the release changes on the feature branch first, then review
+the staging-to-main release PR. After integration, run the complete verification
+from final `main` and record its SHA, CI, database comparisons and screenshots.
+The release issue and final Project/Kanban state are complete only after the
+nine-part PDF and all acceptance evidence correspond to that final source.
+Historical feature-worktree results establish their recorded scope; the
+unchecked Product Definition of Done above remains the final release gate.

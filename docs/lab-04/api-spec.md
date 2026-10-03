@@ -1,6 +1,6 @@
 # TokTickIT Lab 4 — REST API Contract
 
-> Proposed contract for Issue #52. Paths extend the Lab 3 API. Lab 4 explicitly changes claim, owner, IT Priority, status, and Action write payloads to require `expectedTicketVersion`; other unchanged Lab 1–3 routes retain their prior contract.
+> Implemented contract through Issue #60, originating in Issue #52. Paths extend the Lab 3 API. Lab 4 explicitly changes claim, owner, IT Priority, status, and Action write payloads to require `expectedTicketVersion`; other unchanged Lab 1–3 routes retain their prior contract. Final release evidence is tracked in Issue #61.
 
 ## 1. Conventions
 
@@ -8,7 +8,7 @@
 - All routes except `/api/health` and authentication require the existing `toktickit_session`; responses use `Cache-Control: no-store`.
 - Unsafe browser methods require the approved `Origin`. Staff/admin writes also retain the Lab 3 CSRF control.
 - Unknown fields, duplicate query keys, malformed IDs, invalid enums, and non-integer revisions are rejected rather than ignored.
-- Errors use `{ "error": { "code": string, "message": string, "fieldErrors"?: object, "requestId": string } }`. A safe `500 INTERNAL_ERROR` contains no implementation detail.
+- Errors use `{ "error": { "code": string, "message": string, "details"?: { "field": string, "issue": string }[], "fieldErrors"?: Record<string,string>, "requestId": string } }`. When details are present, middleware also derives `fieldErrors` for field-level feedback; consumers use `details` for multiple issues on the same field. A safe `500 INTERNAL_ERROR` contains no implementation detail.
 - Resource ownership failures may return safe `404`; role failures return `403`; stale/invalid state returns `409`.
 
 ## 2. Schemas
@@ -16,7 +16,7 @@
 ```ts
 type ActionStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
-type UserSummary = { id: number; displayName: string; role: "IT_STAFF" | "ADMINISTRATOR" };
+type UserSummary = { id: number; displayName: string; role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR" };
 
 type ActionTaken = {
   id: number; ticketId: number; description: string; result: string | null;
@@ -36,7 +36,7 @@ type ActionSummary = Pick<ActionTaken,
 };
 
 type ActionEvent = {
-  id: number; actionId: number; actor: UserSummary;
+  id: number; actor: UserSummary;
   eventType: "ACTION_CREATED" | "ACTION_UPDATED" | "ACTION_COMPLETED" | "ACTION_CANCELLED" | "TICKET_CASCADE_CANCELLED";
   fromStatus: ActionStatus | null; toStatus: ActionStatus | null;
   changedFields: { fields: string[] }; revision: number; createdAt: string;
@@ -50,6 +50,12 @@ type StaffTicketSummary = {
 ```
 
 Requester dashboard/list summaries have the existing requester-safe shape: `id`, `version`, `ticketNumber`, `summary`, public display `status`, `requestedPriority`, category/system `{ id, name }`, `activeAttachmentCount`, `createdAt`, `updatedAt`, and nullable `resolvedAt`. They exclude description, requester identity, staff ownership, notes, and attachment storage keys. Staff dashboard summaries use `StaffTicketSummary` above.
+
+`UserSummary.role` is the user's current role. Historical Action participants
+remain referenced after permitted account changes, so a terminal Action can
+display a former staff member whose current role is Requester. New/current
+Action assignment still requires active IT Staff or Administrator eligibility
+under BR-08–BR-09; historical read data grants no write permission.
 
 Text length is counted in Unicode code points after trim. Description/Result use 1–2,000; Follow-up Note/Attachment Notes use 1–1,000.
 
@@ -120,7 +126,7 @@ PATCH /api/staff/tickets/:ticketId/actions/:actionId/status
 GET /api/staff/tickets/:ticketId/actions/:actionId/events
 ```
 
-Staff/Admin only. Returns bounded `ActionEvent` metadata in `createdAt ASC, id ASC`, including event type, authenticated actor, Action revision, and event time. `changedFields` is exactly `{ "fields": string[] }` with at least one non-empty field name. `ACTION_UPDATED` includes non-terminal status transitions such as `PLANNED → IN_PROGRESS`; completion/cancellation use their dedicated event types. Manual cancellation uses `ACTION_CANCELLED`; Ticket cascade cancellation uses `TICKET_CASCADE_CANCELLED`. Events cannot be created, updated, or deleted through the API; the database rejects updates, deletes, and truncation. Requester Action responses do not expose changed-field history.
+Staff/Admin only. Returns `200 { "items": ActionEvent[] }` with all events for the selected Action in `createdAt ASC, id ASC`; this endpoint currently has no pagination or row limit. The path identifies the Action, and each event includes event type, authenticated actor, Action revision, and event time without repeating `actionId`. `changedFields` is exactly `{ "fields": string[] }` with at least one non-empty field name. `ACTION_UPDATED` includes non-terminal status transitions such as `PLANNED → IN_PROGRESS`; completion/cancellation use their dedicated event types. Manual cancellation uses `ACTION_CANCELLED`; Ticket cascade cancellation uses `TICKET_CASCADE_CANCELLED`. Events cannot be created, updated, or deleted through the API; the database rejects updates, deletes, and truncation. Requester Action responses do not expose changed-field history.
 
 ## 4. Ticket Workflow Extension
 

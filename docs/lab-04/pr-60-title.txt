@@ -1,1 +1,0 @@
-fix(lab-04): harden Zen Green UI, accessibility, and failure recovery
