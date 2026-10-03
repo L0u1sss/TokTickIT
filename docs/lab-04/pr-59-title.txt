@@ -1,1 +1,0 @@
-test(lab-04): verify complete lifecycle, migration, and Labs 1-3 regression

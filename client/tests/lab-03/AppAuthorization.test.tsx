@@ -7,6 +7,15 @@ vi.mock("../../src/components/StaffDashboard.js", () => ({ default: () => <h1>Da
 const identity={id:1,displayName:"Person",email:"person@example.test",role:"IT_STAFF",mustChangePassword:false};
 afterEach(()=>{cleanup();vi.unstubAllGlobals();sessionStorage.clear();window.history.replaceState({},"","/");});
 describe("UI-03 authentication shell subset",()=>{
+  it.each(["/staff/dashboard?source=audit#overview", "/staff/tickets?status=OPEN_GROUP", "/staff/tickets/42#actions"])("keeps the correct screen and navigation with URL context: %s", async path => {
+    window.history.replaceState({}, "", path);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ user: identity }))));
+    render(<AuthApp />);
+    const dashboard = path.startsWith("/staff/dashboard");
+    await screen.findByRole("heading", { name: dashboard ? "Dashboard" : "Ticket Queue" });
+    expect(screen.getByRole("link", { name: dashboard ? "Dashboard" : "Ticket Queue" })).toHaveAttribute("aria-current", "page");
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe(path);
+  });
   it("does not expose identity while session restore is loading or failed, and supports retry",async()=>{
     const fetchMock=vi.fn().mockRejectedValueOnce(new Error("network secret")).mockResolvedValueOnce(new Response(JSON.stringify({user:identity})));
     vi.stubGlobal("fetch",fetchMock);render(<AuthApp/>);

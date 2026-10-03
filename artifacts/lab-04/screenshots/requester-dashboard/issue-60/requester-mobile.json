@@ -1,0 +1,128 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "requester",
+  "viewport": "mobile",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 390,
+    "viewportWidth": 390,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 16,
+          "y": 283.578125,
+          "width": 119.328125,
+          "height": 73.375,
+          "top": 283.578125,
+          "right": 135.328125,
+          "bottom": 356.953125,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Create Ticket",
+        "rect": {
+          "x": 135.328125,
+          "y": 283.578125,
+          "width": 119.34375,
+          "height": 73.375,
+          "top": 283.578125,
+          "right": 254.671875,
+          "bottom": 356.953125,
+          "left": 135.328125
+        },
+        "outline": "none"
+      },
+      {
+        "name": "My Tickets",
+        "rect": {
+          "x": 254.671875,
+          "y": 283.578125,
+          "width": 119.328125,
+          "height": 73.375,
+          "top": 283.578125,
+          "right": 374,
+          "bottom": 356.953125,
+          "left": 254.671875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 16,
+          "y": 226.390625,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": 226.390625,
+          "right": 109.9375,
+          "bottom": 271.578125,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Open Tickets3View open tickets",
+        "rect": {
+          "x": 12,
+          "y": 630.875,
+          "width": 366,
+          "height": 143.1875,
+          "top": 630.875,
+          "right": 378,
+          "bottom": 774.0625,
+          "left": 12
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Waiting for You1View tickets waiting for you",
+        "rect": {
+          "x": 12,
+          "y": 790.0625,
+          "width": 366,
+          "height": 143.1875,
+          "top": 790.0625,
+          "right": 378,
+          "bottom": 933.25,
+          "left": 12
+        },
+        "outline": "none"
+      },
+      {
+        "name": "TKT-2026-000042Network diagnostic LongSummaryLongSummaryLong",
+        "rect": {
+          "x": 33,
+          "y": 1007.890625,
+          "width": 324,
+          "height": 246.375,
+          "top": 1007.890625,
+          "right": 357,
+          "bottom": 1254.265625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "View recently resolved tickets",
+        "rect": {
+          "x": 33,
+          "y": 1453.90625,
+          "width": 324,
+          "height": 48,
+          "top": 1453.90625,
+          "right": 357,
+          "bottom": 1501.90625,
+          "left": 33
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

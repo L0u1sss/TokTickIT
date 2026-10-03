@@ -18,6 +18,7 @@ export function AuthScreens() {
     (location.startsWith("/staff/") && user.role === "REQUESTER")
   ));
   const path=user?(user.mustChangePassword?"/change-password":permitted || forbidden?location + window.location.search + window.location.hash:home):"/login";
+  const pathname = path.split(/[?#]/)[0];
   useEffect(()=>{
     if(!loading && !error)window.history.replaceState({},"",path);
     heading.current?.focus();
@@ -30,13 +31,13 @@ export function AuthScreens() {
   if(forbidden) return <main className="requester-page"><h1 ref={heading} tabIndex={-1}>Forbidden</h1><p>You do not have access to this screen.</p><a href={home}>Return to your home</a><LogoutButton /></main>;
   if(user.role === "REQUESTER") return <App key={user.id} />;
   return <div className="app-shell">
-    <a className="skip-link" href="#main-content">Skip to main content</a>
+    <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); document.getElementById("main-content")?.focus(); }}>Skip to main content</a>
     <header className="app-header"><div className="app-header-inner">
       <span className="app-brand">TokTickIT <strong>IT Service Desk</strong></span>
-      <nav className="app-navigation" aria-label="Main navigation"><a className={`app-navigation-link${path === "/staff/dashboard" ? " active" : ""}`} href="/staff/dashboard" aria-current={path === "/staff/dashboard" ? "page" : undefined}>Dashboard</a><a className={`app-navigation-link${path.startsWith("/staff/tickets") ? " active" : ""}`} href="/staff/tickets" aria-current={path === "/staff/tickets" ? "page" : undefined}>Ticket Queue</a>{user.role === "ADMINISTRATOR" && <a className={`app-navigation-link${path === "/admin/users" ? " active" : ""}`} href="/admin/users" aria-current={path === "/admin/users" ? "page" : undefined}>User Management</a>}</nav>
+      <nav className="app-navigation" aria-label="Main navigation"><a className={`app-navigation-link${pathname === "/staff/dashboard" ? " active" : ""}`} href="/staff/dashboard" aria-current={pathname === "/staff/dashboard" ? "page" : undefined}>Dashboard</a><a className={`app-navigation-link${pathname.startsWith("/staff/tickets") ? " active" : ""}`} href="/staff/tickets" aria-current={pathname.startsWith("/staff/tickets") ? "page" : undefined}>Ticket Queue</a>{user.role === "ADMINISTRATOR" && <a className={`app-navigation-link${pathname === "/admin/users" ? " active" : ""}`} href="/admin/users" aria-current={pathname === "/admin/users" ? "page" : undefined}>User Management</a>}</nav>
       <div className="requester-menu"><strong>{user.displayName}</strong><span>{user.role.replaceAll("_"," ")}</span><LogoutButton/></div>
     </div></header>
-    {path === "/staff/dashboard" ? <StaffDashboard /> : path.startsWith("/staff/tickets") ? <StaffTicketQueue /> : <UserManagement />}
+    {pathname === "/staff/dashboard" ? <StaffDashboard /> : pathname.startsWith("/staff/tickets") ? <StaffTicketQueue /> : <UserManagement />}
   </div>;
 }
 

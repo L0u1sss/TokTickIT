@@ -1,0 +1,226 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "it_staff-queue",
+  "viewport": "mobile",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 390,
+    "viewportWidth": 390,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 16,
+          "y": 217.984375,
+          "width": 179,
+          "height": 49.375,
+          "top": 217.984375,
+          "right": 195,
+          "bottom": 267.359375,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Ticket Queue",
+        "rect": {
+          "x": 195,
+          "y": 217.984375,
+          "width": 179,
+          "height": 49.375,
+          "top": 217.984375,
+          "right": 374,
+          "bottom": 267.359375,
+          "left": 195
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 280.0625,
+          "y": 160.796875,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": 160.796875,
+          "right": 374,
+          "bottom": 205.984375,
+          "left": 280.0625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "",
+        "rect": {
+          "x": 33,
+          "y": 419.09375,
+          "width": 324,
+          "height": 46.78125,
+          "top": 419.09375,
+          "right": 357,
+          "bottom": 465.875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Status",
+        "rect": {
+          "x": 33,
+          "y": 512.265625,
+          "width": 324,
+          "height": 45.78125,
+          "top": 512.265625,
+          "right": 357,
+          "bottom": 558.046875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Requested Priority",
+        "rect": {
+          "x": 33,
+          "y": 604.4375,
+          "width": 324,
+          "height": 45.78125,
+          "top": 604.4375,
+          "right": 357,
+          "bottom": 650.21875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "IT Priority",
+        "rect": {
+          "x": 33,
+          "y": 696.609375,
+          "width": 324,
+          "height": 45.78125,
+          "top": 696.609375,
+          "right": 357,
+          "bottom": 742.390625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Owner",
+        "rect": {
+          "x": 33,
+          "y": 788.78125,
+          "width": 324,
+          "height": 45.78125,
+          "top": 788.78125,
+          "right": 357,
+          "bottom": 834.5625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Sort by",
+        "rect": {
+          "x": 33,
+          "y": 880.953125,
+          "width": 324,
+          "height": 45.78125,
+          "top": 880.953125,
+          "right": 357,
+          "bottom": 926.734375,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Order",
+        "rect": {
+          "x": 33,
+          "y": 973.125,
+          "width": 324,
+          "height": 45.78125,
+          "top": 973.125,
+          "right": 357,
+          "bottom": 1018.90625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "",
+        "rect": {
+          "x": 33,
+          "y": 1065.296875,
+          "width": 324,
+          "height": 46.78125,
+          "top": 1065.296875,
+          "right": 357,
+          "bottom": 1112.078125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Apply filters",
+        "rect": {
+          "x": 33,
+          "y": 1128.078125,
+          "width": 324,
+          "height": 44,
+          "top": 1128.078125,
+          "right": 357,
+          "bottom": 1172.078125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Clear filters",
+        "rect": {
+          "x": 33,
+          "y": 1188.078125,
+          "width": 324,
+          "height": 44,
+          "top": 1188.078125,
+          "right": 357,
+          "bottom": 1232.078125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Previous",
+        "rect": {
+          "x": 33,
+          "y": 2260.796875,
+          "width": 93.65625,
+          "height": 44,
+          "top": 2260.796875,
+          "right": 126.65625,
+          "bottom": 2304.796875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Next",
+        "rect": {
+          "x": 142.65625,
+          "y": 2260.796875,
+          "width": 67.109375,
+          "height": 44,
+          "top": 2260.796875,
+          "right": 209.765625,
+          "bottom": 2304.796875,
+          "left": 142.65625
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

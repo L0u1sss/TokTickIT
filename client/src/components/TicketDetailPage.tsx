@@ -100,6 +100,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
   const mainContent = useRef<HTMLElement>(null);
   const removalDialog = useRef<HTMLElement>(null);
   const removalTrigger = useRef<HTMLElement | null>(null);
+  const removalPending = useRef(false);
   const hasFocusedRoute = useRef(false);
 
   const load = useCallback(async () => {
@@ -304,6 +305,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
   }
 
   function closeRemoval() {
+    if (removalPending.current) return;
     setRemoving(null);
     setReason("");
     setReasonError("");
@@ -312,14 +314,14 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
 
   async function confirmRemoval(event: FormEvent) {
     event.preventDefault();
-    if (!ticket || !removing) return;
+    if (!ticket || !removing || removalPending.current) return;
     const trimmedReason = reason.trim();
     const validation = validateRemovalReason(reason);
     if (validation) {
       setReasonError(validation);
       return;
     }
-    setRemovalBusy(true);
+    removalPending.current = true; setRemovalBusy(true);
     setReasonError("");
     try {
       const removed = await removeAttachment(
@@ -354,6 +356,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
         setReasonError("We couldn't remove this attachment. Try again.");
       }
     } finally {
+      removalPending.current = false;
       setRemovalBusy(false);
     }
   }

@@ -7,7 +7,10 @@ import path from "node:path";
 import os from "node:os";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const output = path.resolve(root, "artifacts/lab-04/issue-59");
+const issueOption = process.argv.slice(2).find(arg => arg.startsWith("--issue="));
+const issue = issueOption ? Number(issueOption.slice("--issue=".length)) : 59;
+if (![59, 60].includes(issue)) throw new Error("Supported evidence issues: 59, 60.");
+const output = path.resolve(root, `artifacts/lab-04/issue-${issue}`);
 await mkdir(output, { recursive: true });
 const git = args => execFileSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true }).trim();
 const sourcePaths = git(["ls-files", "--cached", "--others", "--exclude-standard", "-z", "server", "client", "scripts", ".github"])
@@ -18,7 +21,7 @@ async function sourceHashes() {
   return hashes;
 }
 const source = await sourceHashes();
-const manifest = { issue: 59, branch: git(["branch", "--show-current"]), baselineCommit: git(["rev-parse", "HEAD"]),
+const manifest = { issue, branch: git(["branch", "--show-current"]), baselineCommit: git(["rev-parse", "HEAD"]),
   baselineStatus: git(["status", "--short"]), sourceHashes: source,
   startedAt: new Date().toISOString(), displayTimezone: "Asia/Bangkok", node: process.version,
   platform: process.platform, architecture: process.arch, cpu: os.cpus()[0]?.model, logicalCpus: os.cpus().length,
@@ -43,10 +46,11 @@ const steps = [
   ["staff-workflow-e2e", "client", [npm, "run", "test:staff:e2e"]],
   ["communications-e2e", "client", ["scripts/run-auth-e2e.mjs", "--communications"]],
   ["responsive-e2e", "client", [npm, "run", "test:responsive"]],
+  ["ui-hardening-e2e", "client", [npm, "run", "test:ui:lab4"]],
   ["requester-regression-e2e", "client", [npm, "run", "test:e2e"]],
 ];
 // Selective reruns remain explicit in the manifest; they never imply all steps ran.
-const selected = process.argv.slice(2);
+const selected = process.argv.slice(2).filter(arg => !arg.startsWith("--issue="));
 for (const name of selected) if (!steps.some(step => step[0] === name)) throw new Error(`Unknown check: ${name}`);
 for (const [name, directory, args] of steps.filter(step => !selected.length || selected.includes(step[0]))) {
   const startedAt = new Date().toISOString();

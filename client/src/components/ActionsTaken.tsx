@@ -282,6 +282,9 @@ function ActionForm({ title, draft, setDraft, assignees, disabled, errors, onErr
     setDraft({ ...draft, [field]: value }); const nextErrors = { ...errors }; delete nextErrors[field]; onErrorsChange(nextErrors);
   };
   return <form className="action-form" noValidate onSubmit={onSubmit} onBlur={event => {
+    // Submit validates the whole draft. Inserting blur feedback during pointer
+    // down can move the submit button before pointer up and swallow the click.
+    if (event.relatedTarget instanceof HTMLButtonElement && event.relatedTarget.type === "submit") return;
     const field = (Object.keys(fieldNames) as (keyof Draft)[]).find(key => id(key) === event.target.id);
     if (!field) return;
     const nextErrors = { ...errors }, issue = validate(draft)[field];

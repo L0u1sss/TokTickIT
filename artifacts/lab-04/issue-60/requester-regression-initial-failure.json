@@ -1,0 +1,11 @@
+{
+  "check": "requester-regression-e2e",
+  "initialStatus": "FAIL",
+  "failure": "net::ERR_NETWORK_CHANGED",
+  "request": "POST /api/tickets/2/comments",
+  "traceStartedDateTime": "2026-10-03T12:54:53.396Z",
+  "observedUi": "Unable to post. Your draft has been kept. Please retry.",
+  "missingSuccess": "Public Comment posted.",
+  "source": "Playwright trace.zip network snapshot and browser console, inspected before rerun",
+  "limitation": "The selected runner overwrites the command raw log. This file preserves the inspected failure diagnosis, not a reconstructed raw log."
+}

@@ -1,0 +1,693 @@
+
+> toktickit-client@1.0.0 test
+> vitest run --reporter=default --reporter=json --outputFile=D:\Software_Engineering\toktickit\artifacts\lab-04\issue-60\client-results.json
+
+
+ RUN  v4.1.10 D:/Software_Engineering/toktickit/client
+
+ ✓ tests/lab-03/TicketCommunication.test.tsx (11 tests) 1870ms
+   ✓ clears previously visible private entries and closes posting after 401  410ms
+   ✓ clears previously visible private entries and closes posting after 403  415ms
+   ✓ clears previously visible private entries and closes posting after 404  396ms
+ ✓ tests/lab-04/RequesterDashboard.test.tsx (5 tests) 2205ms
+     ✓ shows loading, authoritative metrics, ordered bounded summaries, and working drill-down links  1124ms
+     ✓ uses the exact backend resolution window in the My Tickets drill-down  620ms
+ ✓ tests/lab-03/Login.test.tsx (3 tests) 2219ms
+     ✓ restores no session, validates fields and focuses linked errors  421ms
+     ✓ shows generic safe failure, preserves email, clears password and sends cookies  867ms
+     ✓ disables duplicate submit while login is pending then routes to forced change  928ms
+ ✓ tests/lab-03/ChangePassword.test.tsx (2 tests) 2240ms
+     ✓ validates on blur and submit with Unicode code points and matching confirmation  1170ms
+     ✓ saves password and shows authenticated name/role without the selector  1066ms
+ ✓ tests/lab-02/MyTicketsPage.test.tsx (17 tests) 4185ms
+     ✓ hides stale results while loading, then renders the owned semantic table  404ms
+     ✓ maps search, filters, sort, and page size to URL/API state and resets page  1034ms
+     ✓ maps every documented priority, sort, and page-size option  1181ms
+ ✓ tests/lab-03/StaffTicketQueue.test.tsx (9 tests) 3443ms
+     ✓ shows loading then safe ticket data, labels and detail links  452ms
+     ✓ resets page when applying criteria and preserves query in pagination  1322ms
+     ✓ opens read-only detail and returns to queue  324ms
+     ✓ confirms important status changes and sends the CSRF header  904ms
+ ✓ tests/lab-04/StaffDashboard.test.tsx (7 tests) 1067ms
+     ✓ shows loading, exact metrics, bounded lists, current-user Actions, and drill-down destinations  442ms
+ ❯ tests/lab-02/TicketDetailPage.test.tsx (17 tests | 1 failed) 5918ms
+     ✓ renders readable status IN_PROGRESS  451ms
+     ✓ renders readable status WAITING_FOR_REQUESTER 61ms
+     ✓ renders readable status REOPENED 54ms
+     ✓ renders readable status In Progress 54ms
+     ✓ renders complete read-only owned detail and active/removed metadata 223ms
+     ✓ shows a protected safe state for 403 28ms
+     ✓ shows a protected safe state for 404 48ms
+     ✓ shows a protected safe state for 500 32ms
+     ✓ validates a selected file and uploads an allowed attachment  1300ms
+     ✓ requires a valid reason and moves removed metadata out of active actions  946ms
+     ✓ refreshes metadata when download reports an unavailable attachment 114ms
+     ✓ rejects a file over the exact project limit before upload 193ms
+     ✓ closes the removal dialog with Escape and restores trigger focus  327ms
+     ✓ disables upload and explains recovery at five active attachments 87ms
+     ✓ retains an eligible file and exposes an explicit upload retry  333ms
+     ✓ keeps a valid removal reason after a safe retryable failure  882ms
+     × keeps the removal dialog and reason while a write is pending, then allows safe recovery 781ms
+ ✓ tests/lab-02/App.requester.test.tsx (8 tests) 597ms
+ ✓ tests/lab-01/App.test.tsx (5 tests) 112ms
+ ✓ tests/lab-04/ActionsTaken.test.tsx (20 tests) 8508ms
+   ✓ shows ordered shared records to the requester without mutation controls or audit data  341ms
+   ✓ announces validation and focuses the first invalid required field before sending  853ms
+   ✓ keeps focus in the field being corrected while the other required error remains  1155ms
+   ✓ closes a protected draft and removes previously shown records after 'FORBIDDEN'  450ms
+   ✓ closes a protected draft and removes previously shown records after 'NOT_FOUND'  387ms
+   ✓ uses each confirmed parent version and Action revision through create, edit, start and completion  1111ms
+   ✓ retains a stale edit and explicitly reloads both concurrency tokens before reapplying  805ms
+   ✓ retains create intent and its request ID across an uncertain failure while preventing duplicate submits  806ms
+   ✓ does not announce success or discard a draft when a success response violates the API contract  644ms
+   ✓ does not announce success or discard a draft when a success response violates the API contract  565ms
+   ✓ does not announce success or discard a draft when a success response violates the API contract  518ms
+ ✓ tests/lab-04/TicketWorkflow.test.tsx (7 tests) 2232ms
+   ✓ confirms meaningful transitions and sends the shared Ticket version  400ms
+   ✓ handles failed reloads safely and blocks repeated reload/retry while pending  682ms
+ ✓ tests/lab-02/RequesterContext.test.tsx (3 tests) 39ms
+ ✓ tests/lab-02/api.ticket-list.test.tsx (2 tests) 13ms
+ ✓ tests/lab-02/RequesterSelection.test.tsx (1 test) 196ms
+ ✓ tests/lab-03/AppAuthorization.test.tsx (6 tests) 912ms
+ ✓ tests/lab-02/api.ticket-detail.test.tsx (5 tests) 21ms
+ ✓ tests/lab-02/api.create-ticket.test.tsx (3 tests) 16ms
+ ✓ tests/lab-03/auth-routing.test.tsx (4 tests) 5ms
+ ✓ tests/lab-03/UserManagement.test.tsx (5 tests) 9453ms
+     ✓ shows fields, searches by name/email and one role, clears filters  1561ms
+     ✓ creates one role with an initial password and clears the sensitive form on success  3631ms
+     ✓ keeps safe conflict feedback, clears password, allows retry and cancel  3070ms
+     ✓ prevents self-deactivation and confirms a separate password reset  1016ms
+ ✓ tests/lab-03/StaffTicketDetail.test.tsx (16 tests) 12202ms
+   ✓ shows loading, safe read-only data and separate public/private sections  360ms
+   ✓ claims, reassigns and changes IT Priority with persisted reloads  1101ms
+   ✓ offers only permitted statuses and confirms cancellation before sending  307ms
+   ✓ shares the returned Action version with the next Ticket operation  2237ms
+   ✓ keeps an Action draft mounted through Ticket refresh and sends the new Ticket version  3024ms
+   ✓ preserves Action drafts on stale Ticket conflicts and requires reload before retrying  1394ms
+   ✓ prevents overlapping Ticket and Action writes in both directions  680ms
+   ✓ retains drafts and the accepted Ticket version when its subsequent refresh fails  936ms
+   ✓ explains lost write permission and clears protected detail when reload also denies access  673ms
+   ✓ blocks Ticket writes after an uncertain Action response and preserves the create request for a safe retry  939ms
+ ❯ tests/lab-02/CreateTicketPage.test.tsx (14 tests | 1 failed) 19067ms
+     ✓ shows read-only context, required fields, loading, and active metadata  940ms
+     ✓ distinguishes empty reference data and blocks submission 128ms
+     ✓ retains entered text through metadata failure and Retry  873ms
+     ✓ shows field-associated errors for untouched invalid fields  509ms
+     ✓ validates a field on blur and clears its message only after correction  545ms
+     ✓ uses Unicode character boundaries without native UTF-16 truncation  941ms
+     × submits one trimmed request, exposes busy state, and renders success 5027ms
+     ✓ uses the same clientRequestId after an outcome-unknown failure  2077ms
+     ✓ maps server field errors without clearing the form  1787ms
+     ✓ shows a blocking conflict and requires review before another submission  1962ms
+     ✓ resets to a clean form for another logical Ticket  1910ms
+     ✓ opens the protected Ticket Detail destination after success  1834ms
+     ✓ cancels a clean form to My Tickets without a confirmation 93ms
+     ✓ keeps or discards a dirty draft according to the Cancel confirmation  437ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/lab-02/CreateTicketPage.test.tsx > Create Ticket page > submits one trimmed request, exposes busy state, and renders success
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/lab-02/CreateTicketPage.test.tsx:251:3
+    249|   });
+    250|
+    251|   it("submits one trimmed request, exposes busy state, and renders suc…
+       |   ^
+    252|     const createResult = deferred<api.TicketCreateResult>();
+    253|     const createSpy = vi.spyOn(api, "createTicket").mockReturnValue(cr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/lab-02/TicketDetailPage.test.tsx > Requester Ticket Detail > keeps the removal dialog and reason while a write is pending, then allows safe recovery
+TestingLibraryElementError: Found multiple elements with the role "alert"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<p
+  class="field-error"
+  id="removal-reason-error"
+  role="alert"
+>
+  We couldn't remove this attachment. Try again.
+</p>
+
+Ignored nodes: comments, script, style
+<div
+  class="action-error"
+  role="alert"
+>
+  <p>
+    Unable to load Actions. Try again.
+  </p>
+  <button
+    class="zen-button secondary-button"
+    type="button"
+  >
+    Retry
+  </button>
+</div>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        Skip to main content
+      </a>
+      <header
+        class="app-header"
+      >
+        <div
+          class="app-header-inner"
+        >
+          <div
+            class="app-brand"
+          >
+            <span
+              aria-hidden="true"
+              class="app-brand-mark"
+            >
+              T
+            </span>
+            <span>
+              TokTickIT 
+              <strong>
+                IT Service Desk
+              </strong>
+            </span>
+          </div>
+          <nav
+            aria-label="Ticket navigation"
+            class="app-navigation"
+          >
+            <a
+              class="app-navigation-link"
+              href="/dashboard"
+            >
+              Dashboard
+            </a>
+            <a
+              class="app-navigation-link"
+              href="/tickets/new"
+            >
+              Create Ticket
+            </a>
+            <a
+              aria-current="page"
+              class="app-navigation-link active"
+              href="/tickets"
+            >
+              My Tickets
+            </a>
+          </nav>
+          <div
+            class="requester-menu"
+          >
+            <span
+              class="context-disclaimer"
+            >
+              Requester
+            </span>
+            <span
+              class="current-requester"
+            >
+              <span
+                class="current-requester-label"
+              >
+                Signed in as
+              </span>
+              <strong>
+                Mali Chantarangsu
+              </strong>
+            </span>
+            <div>
+              <button
+                class="zen-button"
+                type="button"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main
+        class="ticket-detail-page"
+        id="main-content"
+        tabindex="-1"
+      >
+        <a
+          class="detail-back-link"
+          href="/tickets"
+        >
+          Back to My Tickets
+        </a>
+        <header
+          class="ticket-detail-heading"
+        >
+          <div>
+            <p
+              class="eyebrow"
+            >
+              Ticket Detail
+            </p>
+            <h1>
+              TKT-2026-000145
+            </h1>
+          </div>
+          <span
+            class="status-badge"
+          >
+            New
+          </span>
+        </header>
+        <div
+          class="ticket-detail-layout"
+        >
+          <section
+            aria-labelledby="ticket-summary-heading"
+            class="detail-surface ticket-detail-summary"
+          >
+            <h2
+              id="ticket-summary-heading"
+            >
+              External monitor flickers
+            </h2>
+          </section>
+          <aside
+            aria-label="Ticket metadata"
+            class="detail-surface ticket-detail-metadata"
+          >
+            <h2>
+              Ticket information
+            </h2>
+            <dl>
+              <div>
+                <dt>
+                  Requester
+                </dt>
+                <dd>
+                  Mali Chantarangsu
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  Category
+                </dt>
+                <dd>
+                  Hardware
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  Related System
+                </dt>
+                <dd>
+                  Office Workstation
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  Requested Priority
+                </dt>
+                <dd>
+                  High
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  Ticket Date
+                </dt>
+                <dd>
+                  <time
+                    datetime="2026-08-20T07:15:30.000Z"
+                  >
+                    Aug 20, 2026, 2:15 PM
+                  </time>
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  Last updated
+                </dt>
+                <dd>
+                  <time
+                    datetime="2026-08-20T07:18:00.000Z"
+                  >
+                    Aug 20, 2026, 2:18 PM
+                  </time>
+                </dd>
+              </div>
+            </dl>
+          </aside>
+          <section
+            aria-labelledby="ticket-description-heading"
+            class="detail-surface ticket-detail-description"
+          >
+            <h2
+              id="ticket-description-heading"
+            >
+              Description
+            </h2>
+            <p
+              class="ticket-description"
+            >
+              Line one
+&lt;script&gt;alert('not html')&lt;/script&gt;
+            </p>
+          </section>
+          <section
+            aria-labelledby="attachments-heading"
+            class="detail-surface attachment-section"
+          >
+            <h2
+              id="attachments-heading"
+              tabindex="-1"
+            >
+              Attachments (
+              1
+              /5)
+            </h2>
+            <p
+              id="attachment-rules"
+            >
+              JPG, PNG, WEBP, or PDF; maximum 5 MB each; up to 5 active attachments.
+            </p>
+            <form
+              class="attachment-upload"
+            >
+              <label
+                for="attachment-file"
+              >
+                Choose attachment
+              </label>
+              <input
+                accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                aria-describedby="attachment-rules"
+                aria-invalid="false"
+                id="attachment-file"
+                type="file"
+              />
+              <button
+                class="zen-button"
+                disabled=""
+                type="submit"
+              >
+                Upload attachment
+              </button>
+            </form>
+            <ul
+              class="attachment-list"
+            >
+              <li>
+                <div>
+                  <strong>
+                    monitor damage.jpg
+                  </strong>
+                  <span>
+                    image/jpeg
+                     · 
+                    242.2 KB
+                     · Uploaded 
+                    <time
+                      datetime="2026-08-20T07:16:00.000Z"
+                    >
+                      Aug 20, 2026, 2:16 PM
+                    </time>
+                  </span>
+                </div>
+                <div
+                  class="attachment-actions"
+                >
+                  <button
+                    aria-label="Download monitor damage.jpg"
+                    class="secondary-button"
+                    type="button"
+                  >
+                    Download
+                  </button>
+                  <button
+                    aria-label="Remove monitor damage.jpg"
+                    class="destructive-button"
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            </ul>
+            <details
+              class="removed-attachments"
+            >
+              <summary>
+                Removed attachments (
+                1
+                )
+              </summary>
+              <ul
+                class="attachment-list"
+              >
+                <li>
+                  <div>
+                    <strong>
+                      old report.pdf
+                    </strong>
+                    <span>
+                      application/pdf
+                       · 
+                      11.7 KB
+                       · Uploaded 
+                      <time
+                        datetime="2026-08-20T07:17:00.000Z"
+                      >
+                        Aug 20, 2026, 2:17 PM
+                      </time>
+                    </span>
+                    <span>
+                      Removed 
+                      <time
+                        datetime="2026-08-20T08:00:00.000Z"
+                      >
+                        Aug 20, 2026, 3:00 PM
+                      </time>
+                    </span>
+                    <span>
+                      Reason: 
+                      <span>
+                        Uploaded a clearer report.
+                      </span>
+                    </span>
+                  </div>
+                  <span
+                    class="removed-badge"
+                  >
+                    Removed — unavailable
+                  </span>
+                </li>
+              </ul>
+            </details>
+          </section>
+        </div>
+        <div
+          class="removal-dialog-backdrop"
+        >
+          <section
+            aria-describedby="remove-attachment-description"
+            aria-labelledby="remove-attachment-title"
+            aria-modal="true"
+            class="removal-dialog"
+            role="dialog"
+          >
+            <h2
+              id="remove-attachment-title"
+            >
+              Remove attachment?
+            </h2>
+            <p
+              id="remove-attachment-description"
+            >
+              monitor damage.jpg
+               will remain in the audit history and cannot be downloaded.
+            </p>
+            <form>
+              <label
+                for="removal-reason"
+              >
+                Removal reason 
+                <span
+                  aria-hidden="true"
+                >
+                  *
+                </span>
+              </label>
+              <textarea
+                aria-describedby="removal-reason-count removal-reason-error"
+                aria-invalid="true"
+                aria-required="true"
+                id="removal-reason"
+              >
+                Uploaded a clearer image.
+              </textarea>
+              <span
+                class="character-count"
+                id="removal-reason-count"
+              >
+                25
+                 / 500
+              </span>
+              <p
+                class="field-error"
+                id="removal-reason-error"
+                role="alert"
+              >
+                We couldn't remove this attachment. Try again.
+              </p>
+              <div
+                class="form-actions"
+              >
+                <button
+                  class="secondary-button"
+                  data-removal-cancel="true"
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="destructive-button"
+                  type="submit"
+                >
+                  Remove attachment
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+        <section
+          aria-busy="false"
+          aria-labelledby="actions-heading-145"
+          class="actions-taken"
+          id="actions"
+        >
+          <div
+            class="actions-heading"
+          >
+            <div>
+              <h3
+                id="actions-heading-145"
+                tabindex="-1"
+              >
+                Actions Taken
+              </h3>
+              <p>
+                Shared with the Requester, IT Staff and Administrator. Internal Notes are separate and private.
+              </p>
+            </div>
+          </div>
+          <div
+            class="action-error"
+            role="alert"
+          >
+            <p>
+              Unable to load Actions. Try again.
+            </p>
+            <button
+              class="zen-button secondary-button"
+              type="button"
+            >
+              Retry
+            </button>
+          </div>
+        </section>
+        <section
+          aria-label="Public Comments"
+          class="communication-section communication-public"
+        >
+          <h3>
+            Public Comment
+            s
+          </h3>
+          <p>
+            Shared with the Requester, IT Staff and Administrator.
+             Entries cannot be edited or deleted.
+          </p>
+          <p>
+            No entries yet.
+          </p>
+          <form>
+            <label
+              for=":re:"
+            >
+              Public Comment
+            </label>
+            <textarea
+              aria-describedby=":re:-help"
+              aria-invalid="false"
+              aria-label="Public Comment"
+              aria-required="true"
+              id=":re:"
+            />
+            <p
+              id=":re:-help"
+            >
+              0
+              /2,000 characters. Enter 1–2,000 characters.
+            </p>
+            <button
+              class="zen-button"
+              type="submit"
+            >
+              Post Public Comment
+            </button>
+          </form>
+        </section>
+        <section
+          aria-label="Resolution indication"
+          class="communication-section"
+        >
+          <h3>
+            Problem Appears Resolved
+          </h3>
+          <p>
+            This informs IT Staff; the Ticket status stays unchanged.
+          </p>
+          <button
+            class="zen-button"
+          >
+            Problem Appears Resolved
+          </button>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/lab-02/TicketDetailPage.test.tsx:314:19
+    312|     expect(removeSpy).toHaveBeenCalledOnce();
+    313|     await act(async () => { fail(new Error("private storage detail"));…
+    314|     expect(screen.getByRole("alert")).toHaveTextContent("We couldn't r…
+       |                   ^
+    315|     expect(reason).toHaveValue("Uploaded a clearer image.");
+    316|     await user.keyboard("{Escape}");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 20 passed (22)
+      Tests  2 failed | 168 passed (170)
+   Start at  19:38:22
+   Duration  23.63s (transform 12.87s, setup 6.95s, import 19.42s, tests 76.52s, environment 38.37s)
+
+JSON report written to D:/Software_Engineering/toktickit/artifacts/lab-04/issue-60/client-results.json

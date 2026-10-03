@@ -1,5 +1,5 @@
 import { mockRequesterSession } from "../auth-fixture.js";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App.js";
@@ -294,5 +294,26 @@ describe("Requester Ticket Detail", () => {
     await user.click(within(dialog).getByRole("button", { name: "Remove attachment" }));
     expect(await screen.findByText(`${activeAttachment.fileName} was removed`)).toBeInTheDocument();
     expect(removeSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the removal dialog and reason while a write is pending, then allows safe recovery", async () => {
+    let fail!: (error: Error) => void;
+    const removeSpy = vi.spyOn(api, "removeAttachment").mockImplementation(() => new Promise((_resolve, reject) => { fail = reject; }));
+    const user = userEvent.setup();
+    renderDetail();
+    await screen.findByRole("heading", { name: ticket.ticketNumber });
+    await user.click(screen.getByRole("button", { name: `Remove ${activeAttachment.fileName}` }));
+    const reason = screen.getByLabelText(/^Removal reason/);
+    await user.type(reason, "Uploaded a clearer image.");
+    await user.click(screen.getByRole("button", { name: "Remove attachment" }));
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(reason).toHaveValue("Uploaded a clearer image.");
+    expect(removeSpy).toHaveBeenCalledOnce();
+    await act(async () => { fail(new Error("private storage detail")); });
+    expect(within(screen.getByRole("dialog")).getByRole("alert")).toHaveTextContent("We couldn't remove this attachment. Try again.");
+    expect(reason).toHaveValue("Uploaded a clearer image.");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

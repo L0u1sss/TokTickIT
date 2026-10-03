@@ -16,6 +16,7 @@
     "test:requester-dashboard:e2e": "node scripts/run-auth-e2e.mjs --requester-dashboard",
     "test:dashboards:e2e": "node scripts/run-auth-e2e.mjs --requester-dashboard",
     "test:responsive": "node scripts/run-responsive-tests.mjs",
+    "test:ui:lab4": "node scripts/run-responsive-tests.mjs --lab4",
     "test:e2e": "node scripts/run-live-e2e.mjs",
     "test:actions:e2e": "node scripts/run-auth-e2e.mjs --actions-taken"
   },

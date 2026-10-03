@@ -99,6 +99,14 @@ The coding-agent review found that the earlier UI tests could pass while the imp
 
 Ten actual prompts have been recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
 
+## Issue #60 UI and Accessibility Hardening — 2026-10-03
+
+- Model/agent: GPT-6 (Codex coding agent).
+- Actual user prompt: work on [Issue #60](https://github.com/L0u1sss/TokTickIT/issues/60) using `D:\Software_Engineering\SE+Lab+4.pdf`, then write a PR title/description following previous PRs.
+- Work: read the handout and integrated contracts; audit all roles and long-content layouts; fix query/hash routing, skip-link focus, pointer/blur validation, communication field semantics and denied visibility, workflow reload handling and pending removal/indication locks. Add reproducible keyboard/modal/layout/axe evidence and preserve real API/database verification separately from UI fixtures.
+- Observation: a mouse click can be lost when blur validation inserts content between pointer down/up; component tests in jsdom did not expose the layout movement. Removing shell clipping exposed a long-name overflow that page-width assertions had previously concealed. Browser bounds, keyboard actions and rendered screenshots complement component/API tests.
+- Evidence: `artifacts/lab-04/issue-60/` records final command results and source hashes; `ui-spec.md`/`tests.md` distinguish automated keyboard/reflow checks, screenshot inspection, pending manual zoom/screen-reader review and release/peer evidence. PR text is prepared locally; publication and review are separate from implementation.
+
 
 ## PR #68 Staff Dashboard Integration ? 2026-10-03
 
