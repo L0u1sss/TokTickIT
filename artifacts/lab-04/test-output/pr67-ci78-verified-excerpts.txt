@@ -1,0 +1,28 @@
+# CI run #78: verified excerpts from job 111055982625
+# Source PR head: ebfb0f726b71bb852995f716212c953b87b01a3c
+# Checkout: synthetic merge 50666c3a54efe939620ed635039d091ebdd48905
+# Run: https://github.com/L0u1sss/TokTickIT/actions/runs/37072823372
+# Job: https://github.com/L0u1sss/TokTickIT/actions/runs/37072823372/job/111055982625
+# Source: GitHub job logs fetched 2026-10-03; ANSI formatting removed; other lines omitted.
+
+2026-10-02T22:30:41.0082277Z HEAD is now at 50666c3 Merge ebfb0f726b71bb852995f716212c953b87b01a3c into 8d13e12e163ab9c8e1c4fe4ddfbb7520611b1ad9
+2026-10-02T22:32:25.2628616Z  Test Files  36 passed (36)
+2026-10-02T22:32:25.2631254Z       Tests  480 passed (480)
+2026-10-02T22:32:40.0535730Z  Test Files  21 passed (21)
+2026-10-02T22:32:40.0537431Z       Tests  153 passed (153)
+2026-10-02T22:32:51.9237575Z   1 passed (9.2s)
+2026-10-02T22:33:03.1935095Z   1 passed (8.8s)
+2026-10-02T22:33:15.6122560Z   1 passed (10.1s)
+2026-10-02T22:34:20.1673361Z   7 passed (1.0m)
+2026-10-02T22:34:53.9234594Z   3 passed (31.2s)
+2026-10-02T22:35:07.4855470Z   2 passed (10.9s)
+2026-10-02T22:35:18.5115926Z   1 passed (8.4s)
+2026-10-02T22:35:27.6506248Z   1 passed (6.7s)
+2026-10-02T22:35:48.0197929Z   6 passed (19.1s)
+2026-10-02T22:35:58.3862058Z   1 passed (5.7s)
+2026-10-02T22:36:05.2274493Z   1 passed (4.9s)
+2026-10-02T22:36:10.4168859Z   1 passed (3.2s)
+2026-10-02T22:36:15.2514525Z   1 passed (2.9s)
+2026-10-02T22:36:21.3574205Z   1 passed (4.2s)
+2026-10-02T22:36:26.9276992Z   1 passed (3.6s)
+2026-10-02T22:36:32.5917404Z   1 passed (3.7s)

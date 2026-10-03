@@ -16,6 +16,9 @@ test("E2E-06 the requester, ticket, attachment, and dialog workflow is keyboard 
   await page.keyboard.press("Tab"); await page.keyboard.type("Lab3-E2E-changed-password2!");
   await tabTo(page, page.getByRole("button", { name: "Sign in", exact: true }));
   await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await tabTo(page, page.getByRole("navigation", { name: "Ticket navigation" }).getByRole("link", { name: "Create Ticket", exact: true }));
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Create Ticket" })).toBeVisible();
 
   const skipLink = page.getByRole("link", { name: "Skip to main content" });

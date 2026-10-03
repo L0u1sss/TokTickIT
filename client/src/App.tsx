@@ -3,11 +3,13 @@ import AppHeader from "./components/AppHeader.js";
 import CreateTicketPage from "./components/CreateTicketPage.js";
 import MyTicketsPage from "./components/MyTicketsPage.js";
 import TicketDetailPage from "./components/TicketDetailPage.js";
+import RequesterDashboard from "./components/RequesterDashboard.js";
 import { useRequester } from "./context/RequesterContext.js";
 
 export const CREATE_TICKET_PATH = "/tickets/new";
 export const MY_TICKETS_PATH = "/tickets";
 export const REQUESTER_SELECTION_PATH = "/requester-selection";
+export const DASHBOARD_PATH = "/dashboard";
 
 function isTicketDetailPath(path: string) {
   return /^\/tickets\/[^/]+$/.test(path) && path !== CREATE_TICKET_PATH;
@@ -16,7 +18,7 @@ function isTicketDetailPath(path: string) {
 export default function App() {
   const { currentRequester } = useRequester();
   if (!currentRequester) return null;
-  return <RequesterApplication key={currentRequester.id} intendedPath={CREATE_TICKET_PATH} />;
+  return <RequesterApplication key={currentRequester.id} intendedPath={DASHBOARD_PATH} />;
 }
 
 function RequesterApplication({ intendedPath }: { intendedPath: string }) {
@@ -25,9 +27,9 @@ function RequesterApplication({ intendedPath }: { intendedPath: string }) {
     : `${window.location.pathname}${window.location.search}`;
   const initialPathname = initialPath.split("?")[0];
   const [location, setLocation] = useState(
-    initialPathname === MY_TICKETS_PATH || isTicketDetailPath(initialPathname)
+    initialPathname === DASHBOARD_PATH || initialPathname === CREATE_TICKET_PATH || initialPathname === MY_TICKETS_PATH || isTicketDetailPath(initialPathname)
       ? initialPath
-      : CREATE_TICKET_PATH,
+      : DASHBOARD_PATH,
   );
 
   useEffect(() => {
@@ -45,7 +47,7 @@ function RequesterApplication({ intendedPath }: { intendedPath: string }) {
   }, []);
 
   const pathname = location.split("?")[0];
-  const activePath = pathname === MY_TICKETS_PATH || isTicketDetailPath(pathname)
+  const activePath = pathname === DASHBOARD_PATH ? DASHBOARD_PATH : pathname === MY_TICKETS_PATH || isTicketDetailPath(pathname)
     ? MY_TICKETS_PATH
     : CREATE_TICKET_PATH;
 
@@ -62,7 +64,7 @@ function RequesterApplication({ intendedPath }: { intendedPath: string }) {
         Skip to main content
       </a>
       <AppHeader activePath={activePath} onNavigate={navigate} />
-      {isTicketDetailPath(pathname) ? (
+      {pathname === DASHBOARD_PATH ? <RequesterDashboard onNavigate={navigate} /> : isTicketDetailPath(pathname) ? (
         <TicketDetailPage
           ticketIdSegment={pathname.slice("/tickets/".length)}
           onBack={() => navigate(MY_TICKETS_PATH)}

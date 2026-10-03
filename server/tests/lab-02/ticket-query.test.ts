@@ -17,6 +17,7 @@ describe("My Tickets query normalization", () => {
     expect(parseTicketListQuery({})).toEqual({
       search: null,
       status: null,
+      statusFilter: null,
       requestedPriority: null,
       categoryId: null,
       relatedSystemId: null,
@@ -44,7 +45,8 @@ describe("My Tickets query normalization", () => {
           }),
         ).toMatchObject({
           search: "monitor",
-          status: "NEW",
+          status: ["NEW"],
+          statusFilter: "New",
           requestedPriority,
           categoryId: 3,
           relatedSystemId: 8,
@@ -55,6 +57,19 @@ describe("My Tickets query normalization", () => {
         });
       }
     }
+  });
+
+  it("accepts dashboard resolution bounds and rejects ambiguous or invalid filters", () => {
+    const bounds = { statusIn: "RESOLVED,CLOSED", resolvedFrom: "2026-09-19T10:00:00.000Z", resolvedBefore: "2026-09-26T10:00:00.000Z" };
+    expect(parseTicketListQuery(bounds)).toMatchObject({ status: ["RESOLVED", "CLOSED"], resolvedFrom: new Date(bounds.resolvedFrom), resolvedBefore: new Date(bounds.resolvedBefore) });
+    for (const invalid of [
+      { ...bounds, status: "New" }, { ...bounds, statusIn: "RESOLVED,RESOLVED" },
+      { ...bounds, statusIn: "OPEN,CLOSED" }, { ...bounds, statusIn: "CLOSED,INVALID" },
+      { ...bounds, resolvedFrom: bounds.resolvedBefore }, { ...bounds, resolvedBefore: bounds.resolvedFrom },
+      { ...bounds, resolvedFrom: "2026-02-30T10:00:00.000Z" },
+      { ...bounds, resolvedFrom: "2026-09-19T17:00:00+07:00" },
+      { ...bounds, resolvedBefore: undefined }, { ...bounds, resolvedFrom: [bounds.resolvedFrom] },
+    ]) expectInvalid(invalid);
   });
 
   it("normalizes a blank search to no search", () => {

@@ -67,6 +67,14 @@ jobs:
         run: npm ci
         working-directory: server
 
+      - name: Lint server
+        run: npm run lint
+        working-directory: server
+
+      - name: Lint client
+        run: npm run lint
+        working-directory: client
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
         working-directory: client
@@ -113,6 +121,12 @@ jobs:
         run: npm run test:workflow:e2e
         working-directory: client
 
+      - name: Run Requester dashboard browser suite
+        run: npm run test:requester-dashboard:e2e
+        working-directory: client
+        env:
+          E2E_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
       - name: Run staff workflow browser suite
         run: npm run test:staff:e2e
         working-directory: client
@@ -127,14 +141,6 @@ jobs:
 
       - name: Run live end-to-end suite
         run: npm run test:e2e
-        working-directory: client
-
-      - name: Lint server
-        run: npm run lint
-        working-directory: server
-
-      - name: Lint client
-        run: npm run lint
         working-directory: client
 
       - name: Build server
@@ -163,5 +169,6 @@ jobs:
           path: |
             artifacts/lab-04/screenshots/actions-taken/
             artifacts/lab-04/screenshots/ticket-workflow/
+            artifacts/lab-04/screenshots/requester-dashboard/
             client/test-results/live-e2e/
           if-no-files-found: ignore
