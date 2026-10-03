@@ -281,6 +281,8 @@ node scripts/verify-lab4.mjs --issue=61 --run=final-main --require-main
 
 `--require-main` ตรวจ branch, clean runtime source และ `HEAD` ตรงกับ `origin/main`; ผล candidate ไม่ถือเป็น final-main evidence แต่ละ run เก็บ manifest/logs/reports และสำเนา screenshots ใน `artifacts/lab-04/issue-61/<run>/` โดยไม่เขียนทับ run ที่มี manifest แล้ว ใช้ชื่อ run ใหม่เมื่อต้อง rerun และบันทึกเหตุผล/ผลเดิมไว้ด้วย Final hosted CI, reviewer approval, Project/Kanban และ PDF Answer Part 1–9 ต้องอ้างอิง release SHA เดียวกัน
 
+ก่อน final verification ให้ review และ commit เนื้อหา `report-data.json` (`status: final-main`), template และภาพที่อ้างอิงก่อน แล้ว export ด้วย `node scripts/build-lab4-report.mjs --final --verification=artifacts/lab-04/issue-61/final-main/verification.json` โดยไม่แก้ inputs ระหว่างสองขั้นตอน ตัว generator ตรวจ committed/clean inputs, ปฏิเสธ data นอก repo หรือ symlink และบันทึก Git blob/SHA-256 ของ inputs พร้อม digest ของ verification; SHA จริงมาจาก checkout/manifest จึงไม่ต้องใส่ SHA ของ commit ตัวเองใน JSON ไฟล์ final จะอยู่ใน ignored `artifacts/lab-04/issue-61/final-exports/<main-sha>/` รายละเอียดและคำสั่ง regression tests อยู่ใน [report build instructions](docs/lab-04/report.md#build-and-verify)
+
 เมื่อไม่ระบุ `--run` สำหรับ Issue #61 จะใช้ timestamp เป็นชื่อใหม่อัตโนมัติ ผล candidate ที่เตรียมไว้ใน PR นี้อยู่ใน `artifacts/lab-04/issue-61/release-candidate/` อ่าน [release audit](docs/lab-04/release-audit.md), [report/PDF build](docs/lab-04/report.md) และ [ผลรอบนี้](docs/lab-04/tests.md#issue-61-release-candidate-verification) ก่อน final integration
 
 ตรวจ setup จาก committed fresh clone โดยไม่คัดลอก dependencies หรือ `.env` เดิม:

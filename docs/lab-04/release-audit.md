@@ -42,17 +42,25 @@ repository contracts govern behavior and evidence.
 
 1. Review the concrete release-preparation changes and passing candidate evidence;
    merge the preparation PR into `lab4-staging` after its approval and CI.
-2. Review and merge the release PR `lab4-staging → main` with passing CI.
-   Use `Refs #61` while the final submission acceptance remains incomplete.
+2. Prepare and review the final report content, personal reflection and committed
+   screenshot evidence on the release branch; set report status to `final-main`.
+   Keep unperformed manual zoom/screen-reader checks explicit. The JSON does not
+   need its own future commit SHA. Review and merge `lab4-staging → main` with
+   passing CI; use `Refs #61` while final submission acceptance is incomplete.
 3. Fetch final `main`; run the full `--require-main` verification and verify its
-   hosted main CI. Record the exact final SHA, reviews and working evidence links.
-4. Review the personal reflection and any required visual/accessibility checks,
-   retaining unperformed manual zoom/screen-reader checks as explicit limitations; update
-   the report data to the actual final-main manifest and export the single PDF
-   with `--final`. The generator rejects a candidate presented as final.
+   hosted main CI. Preserve the generated final-main run separately from reviewed
+   inputs. The export gate requires clean report-producing docs/evidence/scripts,
+   the committed data/template/docs/image blobs, and matching runtime hashes.
+4. Export with `--final --verification=artifacts/lab-04/issue-61/final-main/verification.json`.
+   Actual branch/SHA/results come from the checkout and manifest. Outputs go into
+   ignored `final-exports/<main-sha>/`; the PDF manifest binds all reviewed input
+   hashes and the verification digest. Inputs are checked again before outputs
+   are published. Do not change report inputs after verification; further content
+   changes require a reviewed commit and a new full verification of that main SHA.
 5. Confirm the PDF is readable and linked evidence exists on the submitted
    repository, then close #61, move it to Done and capture the final Kanban.
-   Refresh the PDF's completion evidence against that actual state.
+   If completion evidence is later added to the report, commit/review it and rerun
+   final-main verification before exporting again.
 
 No approval, main merge, final-main pass, Done state or student-authored reflection
 is inferred merely from a passing local candidate run.

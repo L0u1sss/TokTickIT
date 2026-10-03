@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-10-03T16:44:08.672Z",
+  "scope": "local PR #71 review-fix worktree",
+  "baselineCommit": "07065bd2ca53d59b4b3e36978fecc9988138881f",
+  "releaseEvidence": false,
+  "regression": {
+    "command": "node --test --test-reporter=tap scripts/tests/lab4-report-provenance.test.mjs",
+    "exitCode": 0,
+    "tests": 31,
+    "passed": 31,
+    "failed": 0,
+    "skipped": 0,
+    "log": "provenance-tests.txt",
+    "fixtures": "Disposable main repositories with invented verification manifests; not actual Lab 4 release runs."
+  },
+  "cliResults": [
+    {
+      "name": "external-data",
+      "expectedRejection": true,
+      "exitCode": 1,
+      "log": "external-data-cli.txt"
+    },
+    {
+      "name": "candidate-final",
+      "expectedRejection": true,
+      "exitCode": 1,
+      "log": "candidate-final-cli.txt"
+    }
+  ],
+  "sourceUnchangedDuringRun": true,
+  "sourceHashes": {
+    "scripts/build-lab4-report.mjs": "9989d12ac6364034663ca3a92058fde2b2ea205877cb7ad62b275c66c6836e89",
+    "scripts/lab4-report-provenance.mjs": "38dd9578114c1eb4a43bbb0f7e5cc9a2b8e9f683909b6003ae28796511f0091e",
+    "scripts/tests/lab4-report-provenance.test.mjs": "53819bfb3b5f97e3169bebd42f4451c15989c9326472a0cad9f94a2754003f15",
+    ".github/workflows/ci.yml": "dea8312a4bdb31117c36edb45a0747d60a171f9e42557de30d4e2b6c05dfc492",
+    ".gitignore": "7ce5f90b844eedfcbd90ea07f056a7a764b128af7889c0ddc1c924e1e20cabe1"
+  }
+}

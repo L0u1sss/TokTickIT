@@ -77,14 +77,44 @@ This produces the single PDF, a standalone HTML preview and
 `artifacts/lab-04/issue-61/pdf-manifest.json` with image hashes and PDF links/page
 count. Candidate status is visible on every page.
 
+Before the reviewed release is merged, prepare the final report content: review
+the reflection, links and screenshot evidence, set `status` to `final-main`, and
+commit the data, template and referenced evidence. A preview without `--final`
+still has a candidate label. Do not edit committed content after verification or
+try to store the content's own commit SHA in JSON.
+
 After completing the [release gates](release-audit.md#release-completion-sequence),
-update the report data's branch/SHA/main SHA, verification manifest, actual CI/review
-links, screenshots and final Project state, then run:
+fetch and check out the reviewed `main`, run its complete verification, then pass
+the generated manifest separately:
 
 ```powershell
-node scripts/build-lab4-report.mjs --final
+node scripts/verify-lab4.mjs --issue=61 --run=final-main --require-main
+node scripts/build-lab4-report.mjs --final --verification=artifacts/lab-04/issue-61/final-main/verification.json
 ```
 
-The final build must use the current verified `main` checkout and the complete
-same-source final-main manifest. A flag alone cannot convert candidate evidence
-into final-main evidence. Recheck PDF readability and working links after export.
+The final gate requires `main` to equal `origin/main`, all 19 passing checks with
+matching runtime hashes, and clean report-producing docs/evidence/scripts. Final
+`--data` must be a tracked, regular file inside the repository; untracked, ignored,
+modified, staged or redirected data is rejected. The template, Lab 4 documents
+and embedded images must match their committed Git blobs. The export manifest
+records those blobs and SHA-256 hashes, the final main SHA and verification digest.
+
+SHA/branch/results metadata comes from the actual checkout and generated manifest,
+so reviewed JSON does not need a self-referential commit SHA. The generator retains
+validated data/template bytes, checks loaded image bytes and repeats the gate
+after rendering, before publishing outputs.
+
+Final PDF, HTML and manifest are generated under
+`artifacts/lab-04/issue-61/final-exports/<main-sha>/`; custom final `--output` must
+also stay under that ignored, untracked directory without redirects. Generated
+`final-main*` runs and final exports stay separate from committed report inputs.
+Use a new run name when rerunning. If content or screenshots need updating, review
+and commit them first, then repeat final verification against that new main SHA.
+Recheck PDF readability and working links after export.
+
+Focused provenance regression tests use disposable Git repositories and invented
+verification data, not release results:
+
+```powershell
+node --test scripts/tests/lab4-report-provenance.test.mjs
+```

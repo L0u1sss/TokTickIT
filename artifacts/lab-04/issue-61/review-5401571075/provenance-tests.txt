@@ -1,0 +1,200 @@
+TAP version 13
+# Subtest: clean committed report inputs derive final metadata from a post-commit manifest
+ok 1 - clean committed report inputs derive final metadata from a post-commit manifest
+  ---
+  duration_ms: 3108.4098
+  type: 'test'
+  ...
+# Subtest: accepts an alternate committed in-repository report data path
+ok 2 - accepts an alternate committed in-repository report data path
+  ---
+  duration_ms: 2083.0431
+  type: 'test'
+  ...
+# Subtest: rejects changed report data hidden from git status by assume-unchanged
+ok 3 - rejects changed report data hidden from git status by assume-unchanged
+  ---
+  duration_ms: 737.0042
+  type: 'test'
+  ...
+# Subtest: rejects unstaged edits to reviewed data
+ok 4 - rejects unstaged edits to reviewed data
+  ---
+  duration_ms: 607.2346
+  type: 'test'
+  ...
+# Subtest: rejects staged edits to reviewed data
+ok 5 - rejects staged edits to reviewed data
+  ---
+  duration_ms: 642.4009
+  type: 'test'
+  ...
+# Subtest: rejects unstaged edits to reviewed template
+ok 6 - rejects unstaged edits to reviewed template
+  ---
+  duration_ms: 738.961
+  type: 'test'
+  ...
+# Subtest: rejects staged edits to reviewed template
+ok 7 - rejects staged edits to reviewed template
+  ---
+  duration_ms: 777.1313
+  type: 'test'
+  ...
+# Subtest: rejects report data outside the repository even when checkout and manifest are valid
+ok 8 - rejects report data outside the repository even when checkout and manifest are valid
+  ---
+  duration_ms: 512.2149
+  type: 'test'
+  ...
+# Subtest: rejects internal untracked report data
+ok 9 - rejects internal untracked report data
+  ---
+  duration_ms: 560.2359
+  type: 'test'
+  ...
+# Subtest: rejects internal ignored report data
+ok 10 - rejects internal ignored report data
+  ---
+  duration_ms: 661.4631
+  type: 'test'
+  ...
+# Subtest: rejects modified referenced screenshot bytes
+ok 11 - rejects modified referenced screenshot bytes
+  ---
+  duration_ms: 1677.2098
+  type: 'test'
+  ...
+# Subtest: rejects modified report documents beyond the explicit data, template, and images
+ok 12 - rejects modified report documents beyond the explicit data, template, and images
+  ---
+  duration_ms: 964.7897
+  type: 'test'
+  ...
+# Subtest: rejects report data symlinks that resolve outside the repository
+ok 13 - rejects report data symlinks that resolve outside the repository
+  ---
+  duration_ms: 548.451
+  type: 'test'
+  ...
+# Subtest: recheck rejects changed report inputs after the initial gate
+    # Subtest: data
+    ok 1 - data
+      ---
+      duration_ms: 1780.5328
+      type: 'test'
+      ...
+    # Subtest: template
+    ok 2 - template
+      ---
+      duration_ms: 1919.0674
+      type: 'test'
+      ...
+    # Subtest: image
+    ok 3 - image
+      ---
+      duration_ms: 2985.8541
+      type: 'test'
+      ...
+    1..3
+ok 14 - recheck rejects changed report inputs after the initial gate
+  ---
+  duration_ms: 6686.3702
+  type: 'test'
+  ...
+# Subtest: recheck rejects a replaced passing manifest after the initial gate
+ok 15 - recheck rejects a replaced passing manifest after the initial gate
+  ---
+  duration_ms: 2987.0079
+  type: 'test'
+  ...
+# Subtest: rejects a main checkout that differs from origin/main
+ok 16 - rejects a main checkout that differs from origin/main
+  ---
+  duration_ms: 986.619
+  type: 'test'
+  ...
+# Subtest: rejects partial or stale final verification despite a passing flag
+    # Subtest: missing-check
+    ok 1 - missing-check
+      ---
+      duration_ms: 973.7976
+      type: 'test'
+      ...
+    # Subtest: stale-source
+    ok 2 - stale-source
+      ---
+      duration_ms: 1063.8525
+      type: 'test'
+      ...
+    1..2
+ok 17 - rejects partial or stale final verification despite a passing flag
+  ---
+  duration_ms: 2038.4116
+  type: 'test'
+  ...
+# Subtest: accepts generated PDF and sidecars in an ignored final-exports directory
+ok 18 - accepts generated PDF and sidecars in an ignored final-exports directory
+  ---
+  duration_ms: 2207.3624
+  type: 'test'
+  ...
+# Subtest: rejects outputs that would overwrite reviewed data or the final verification manifest
+    # Subtest: reviewed-data
+    ok 1 - reviewed-data
+      ---
+      duration_ms: 1952.5156
+      type: 'test'
+      ...
+    # Subtest: verification
+    ok 2 - verification
+      ---
+      duration_ms: 1822.3327
+      type: 'test'
+      ...
+    1..2
+ok 19 - rejects outputs that would overwrite reviewed data or the final verification manifest
+  ---
+  duration_ms: 3775.4577
+  type: 'test'
+  ...
+# Subtest: rejects a final PDF path reserved for its generated sidecars
+    # Subtest: report.html
+    ok 1 - report.html
+      ---
+      duration_ms: 2394.3854
+      type: 'test'
+      ...
+    # Subtest: pdf-manifest.json
+    ok 2 - pdf-manifest.json
+      ---
+      duration_ms: 1751.7918
+      type: 'test'
+      ...
+    1..2
+ok 20 - rejects a final PDF path reserved for its generated sidecars
+  ---
+  duration_ms: 4146.6356
+  type: 'test'
+  ...
+# Subtest: rejects a forced tracked sidecar even inside final-exports
+ok 21 - rejects a forced tracked sidecar even inside final-exports
+  ---
+  duration_ms: 2065.6298
+  type: 'test'
+  ...
+# Subtest: rejects an export directory redirected outside the repository by a symlink or junction
+ok 22 - rejects an export directory redirected outside the repository by a symlink or junction
+  ---
+  duration_ms: 1596.949
+  type: 'test'
+  ...
+1..22
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 40182.1475

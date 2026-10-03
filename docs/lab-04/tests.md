@@ -467,7 +467,7 @@ New and extended traceability:
 
 Component workers are bounded to two without increasing the existing test timeout; exploratory high-concurrency jsdom runs timed out in existing typing-heavy tests. The workflow screenshot helper restores focus by a marker in the current document and asserts the URL after axe, avoiding an exploratory stale execution-context handle failure. CI now runs the UI audit and uploads workflow/Issue #60 evidence.
 
-[Completed visual/accessibility checklist](./ui-spec.md#issue-60-visual-and-accessibility-evidence) records the exact automated scope. Manual browser zoom/screen-reader checks, hosted CI on the eventual PR head, peer approval and final-main/PDF release verification remain pending. Prepared [PR title](./pr-60-title.txt) and [description](./pr-60-description.md) follow PRs #68-69.
+[Completed visual/accessibility checklist](./ui-spec.md#issue-60-visual-and-accessibility-evidence) records the exact automated scope. Manual browser zoom/screen-reader checks, hosted CI on the eventual PR head, peer approval and final-main/PDF release verification remain pending. The published [PR #70 title and description](https://github.com/L0u1sss/TokTickIT/pull/70) follow PRs #68-69; the earlier preparation files are not present in the current repository.
 
 ## Issue #61 Release-Candidate Verification
 
@@ -512,3 +512,32 @@ current branch, and final PDF export independently rejects candidate metadata,
 missing final-main verification or mismatching current source hashes. Hosted CI
 now saves reports for its own run ID and test-step outcomes, avoiding historical
 tracked PASS reports after a skipped test step.
+
+## PR #71 Review 5401571075: Final PDF Provenance
+
+Scope: local repair on `chore/lab4-release-preparation`, baseline
+`07065bd2ca53d59b4b3e36978fecc9988138881f`, plus the worktree changes identified
+by the [focused result and source hashes](../../artifacts/lab-04/issue-61/review-5401571075/summary.json).
+The earlier complete candidate/application results above remain historical;
+this repair changes the PDF gate, its regression tests, CI and release instructions.
+
+| Check | Actual result and evidence |
+|---|---|
+| Provenance regressions | **31/31 PASS**, no failures/skips; `node --test scripts/tests/lab4-report-provenance.test.mjs`; [raw TAP log](../../artifacts/lab-04/issue-61/review-5401571075/provenance-tests.txt) |
+| Actual builder CLI guards | **2/2 expected rejections**: [external final data](../../artifacts/lab-04/issue-61/review-5401571075/external-data-cli.txt), [candidate as final](../../artifacts/lab-04/issue-61/review-5401571075/candidate-final-cli.txt) |
+| Candidate PDF smoke | **PASS**: 21 pages, Parts 1–9, 13 images, 64 clickable annotations / 31 unique URLs, Thai text and candidate footer on all pages; [independent PDF checks](../../artifacts/lab-04/issue-61/review-5401571075/pdf-smoke-checks.json), [export manifest](../../artifacts/lab-04/issue-61/review-5401571075/pdf-smoke/pdf-manifest.json) |
+| Source/syntax/whitespace | Implementation hashes stayed unchanged during the final focused run; all three changed Node modules passed `node --check`; `git diff --check` passed |
+
+The positive fixtures commit content first, then generate invented passing
+verification manifests for the resulting main SHA. They prove that clean tracked
+content and an alternate committed `--data` work without storing a self-referential
+SHA. Negative cases cover staged/unstaged data and template edits, external,
+untracked and ignored data, hidden edits with `assume-unchanged`, modified
+screenshots/documents, symlink/junction escapes, partial/stale verification,
+changes after validation, protected output collisions, tracked sidecars and
+reserved output names. Generated fixture manifests are not actual release evidence.
+
+The PDF smoke uses the real committed candidate data and original evidence;
+the original submission PDF remains at its recorded SHA-256. No actual final-main
+PDF was generated. Updated-head hosted CI and independent peer re-review remain
+pending until these fixes are published.

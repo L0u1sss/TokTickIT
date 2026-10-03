@@ -1,0 +1,22 @@
+{
+  "status": "release-candidate",
+  "pageCount": 21,
+  "answerParts": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "pdfLinkCount": 64,
+  "uniqueUrlCount": 31,
+  "candidateFooterPages": 21,
+  "thaiCharacters": 2402,
+  "smokePdfSha256": "6865ea3c39677ecad93bd836d4cc6b0e25256a8eb9dbc9b079f9ac87d1a2b995",
+  "originalCandidateSha256": "29455b6226bca8a5a934039dba9dd4fc751e1570548be439aab00d6d7962ff6e",
+  "checksPassed": true
+}

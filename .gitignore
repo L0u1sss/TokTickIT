@@ -9,6 +9,9 @@ dist/
 build/
 playwright-report/
 test-results/
+# Post-commit release verification and exports; reviewed inputs stay tracked.
+/artifacts/lab-04/issue-61/final-main*/
+/artifacts/lab-04/issue-61/final-exports/
 # prisma
 server/prisma/*.db
 .attachment-storage/

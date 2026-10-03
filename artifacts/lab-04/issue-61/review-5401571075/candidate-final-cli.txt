@@ -1,0 +1,1 @@
+Final PDF rejected: reviewed report content must have status final-main; prepare and review it before final verification

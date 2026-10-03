@@ -67,6 +67,9 @@ jobs:
         run: npm ci
         working-directory: server
 
+      - name: Test final PDF provenance guards
+        run: node --test scripts/tests/lab4-report-provenance.test.mjs
+
       - name: Lint server
         run: npm run lint
         working-directory: server

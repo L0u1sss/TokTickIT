@@ -6,7 +6,8 @@ readable PDF in Answer Part 1–9 order. The integrated implementation is on
 `lab4-staging`, while remote `main` still contains the Lab 3 release. Several
 documentation statuses and API response descriptions were historical, and the
 verification runner needed separate candidate/final-main evidence with preserved
-run logs.
+run logs. Final PDF export also needed to bind report content and embedded
+evidence to committed main inputs and reject external or unreviewed report data.
 
 ## Changes
 
@@ -27,7 +28,14 @@ run logs.
   key prompts with an AI-assisted reflection draft.
 - Add editable report data/template, PDF image/hash/link manifest and an export
   gate that independently verifies the complete final-main manifest and current
-  source. The candidate PDF visibly labels final-main evidence as pending.
+  source. Require tracked, clean repository report inputs matching committed Git
+  blobs, reject external/redirected data, record input and verification hashes,
+  and recheck before publishing. Derive final metadata from the verified checkout
+  and a separate postcommit manifest; keep generated exports under `final-exports`.
+  The candidate PDF visibly labels final-main evidence as pending.
+- Add disposable-repository regression tests for the final PDF provenance gate
+  and run them in CI; update the release/export instructions for reviewed content
+  followed by postcommit verification.
 
 ## Validation
 
@@ -68,6 +76,15 @@ An earlier exploratory run completed all 19 commands, but release-tool changes
 occurred during it. Its manifest remains in `artifacts/lab-04/issue-61/candidate/`
 with `sourceUnchangedDuringRun: false` and `allChecksPassed: false`; it is retained
 as diagnostic evidence rather than a passing release run.
+
+Final PDF provenance checks passed **31/31** focused Node regression cases with
+no skips in disposable Git repositories; the invented manifests are test fixtures,
+not release evidence. The actual builder rejected both external final data and
+candidate-as-final content. Candidate PDF smoke retained **21 pages**, nine parts,
+13 images and 64 clickable annotations / 31 unique URLs; the original PDF hash
+is unchanged. Logs, implementation hashes and PDF checks are in
+`artifacts/lab-04/issue-61/review-5401571075/`. CI now runs the provenance tests;
+updated-head hosted results and independent re-review remain pending.
 
 **Still required for Issue #61 acceptance:** release-preparation and
 staging-to-main PR review/CI, integration into main, exact-SHA final-main tests/CI,
