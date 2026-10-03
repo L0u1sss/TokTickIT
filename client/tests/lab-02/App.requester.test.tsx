@@ -20,13 +20,28 @@ it.each(["/staff/tickets", "/admin/users"])("shows Forbidden to a Requester at %
   render(<AuthApp />);
   await screen.findByRole("heading", { name: "Forbidden" });
   expect(screen.queryByRole("link", { name: "User Management" })).toBeNull();
-  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/tickets/new");
+  expect(screen.getByRole("link", { name: "Return to your home" })).toHaveAttribute("href", "/dashboard");
+});
+it.each(["IT_STAFF", "ADMINISTRATOR"])("redirects %s from the Requester dashboard to their current role home", async role => {
+  window.history.replaceState({}, "", "/dashboard?status=OPEN_GROUP");
+  const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
+    url.endsWith("/api/auth/me") ? { user: { id: 2, displayName: "Staff", email: "staff@example.test", role, mustChangePassword: false } }
+    : { metrics: { unassignedOpenCount: 0, ownedByMeOpenCount: 0, byStatus: { NEW: 0, OPEN: 0, IN_PROGRESS: 0, WAITING_FOR_REQUESTER: 0, RESOLVED: 0, CLOSED: 0, REOPENED: 0, CANCELLED: 0 }, byItPriority: { LOW: 0, MEDIUM: 0, HIGH: 0 } }, myActions: [], recentlyUpdated: [], urgentTickets: [], generatedAt: "2026-09-26T10:00:00.000Z" }
+  ))));
+  vi.stubGlobal("fetch", fetchMock);
+  render(<AuthApp />);
+  await screen.findByRole("heading", { name: "Dashboard" });
+  await waitFor(() => expect(window.location.pathname).toBe("/staff/dashboard"));
+  expect(window.location.search).toBe("");
+  expect(screen.queryByRole("heading", { name: "Forbidden" })).toBeNull();
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/dashboard/requester"))).toBe(false);
 });
 it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted navigation for %s", async role => {
   window.history.replaceState({}, "", "/");
   vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(new Response(JSON.stringify(
     url.endsWith("/api/auth/me") ? { user: { id: 1, displayName: "Session User", email: "user@example.test", role, mustChangePassword: false } }
-    : { categories: [], relatedSystems: [], items: [] }
+    : role === "REQUESTER" ? { metrics: { openCount: 0, waitingForRequesterCount: 0 }, recentlyUpdated: [], recentlyResolved: [], recentlyResolvedWindow: { from: "2026-09-19T10:00:00.000Z", before: "2026-09-26T10:00:00.000Z" }, generatedAt: "2026-09-26T10:00:00.000Z" }
+    : { metrics: { unassignedOpenCount: 0, ownedByMeOpenCount: 0, byStatus: { NEW: 0, OPEN: 0, IN_PROGRESS: 0, WAITING_FOR_REQUESTER: 0, RESOLVED: 0, CLOSED: 0, REOPENED: 0, CANCELLED: 0 }, byItPriority: { LOW: 0, MEDIUM: 0, HIGH: 0 } }, myActions: [], recentlyUpdated: [], urgentTickets: [], generatedAt: "2026-09-26T10:00:00.000Z" }
   )))));
   render(<AuthApp />);
   await screen.findByRole("button", { name: "Logout" });
@@ -34,5 +49,5 @@ it.each(["REQUESTER", "IT_STAFF", "ADMINISTRATOR"])("shows only permitted naviga
   expect(screen.queryByRole("link", { name: "My Tickets" }) !== null).toBe(role === "REQUESTER");
   expect(screen.queryByRole("link", { name: "Ticket Queue" }) !== null).toBe(role !== "REQUESTER");
   expect(screen.queryByRole("link", { name: "User Management" }) !== null).toBe(role === "ADMINISTRATOR");
-  await waitFor(() => expect(window.location.pathname).toBe(role === "REQUESTER" ? "/tickets/new" : role === "IT_STAFF" ? "/staff/tickets" : "/admin/users"));
+  await waitFor(() => expect(window.location.pathname).toBe(role === "REQUESTER" ? "/dashboard" : "/staff/dashboard"));
 });

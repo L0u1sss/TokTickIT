@@ -1,0 +1,81 @@
+{
+  "startedAt": "2026-10-03T14:52:30.659Z",
+  "sourceSha": "bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d",
+  "branch": "chore/lab4-release-preparation",
+  "cloneSource": "Local committed repository via git clone --no-hardlinks; no uncommitted files, node_modules or .env copied.",
+  "cloneDirectory": "C:\\Users\\phala\\AppData\\Local\\Temp\\toktickit-lab4-fresh-50d3a5e1-5922-4244-8c43-482f30b1970e",
+  "fixtureSchema": "fresh_clone_test_d49749a538aa4f4ba7d1acd2e562f3c1",
+  "node": "v24.14.0",
+  "results": [
+    {
+      "id": "clone",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "clone.txt"
+    },
+    {
+      "id": "install-client",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "install-client.txt"
+    },
+    {
+      "id": "install-server",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "install-server.txt"
+    },
+    {
+      "id": "prisma-generate",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "prisma-generate.txt"
+    },
+    {
+      "id": "migrate-deploy",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "migrate-deploy.txt"
+    },
+    {
+      "id": "seed-first",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "seed-first.txt"
+    },
+    {
+      "id": "seed-repeat",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "seed-repeat.txt"
+    },
+    {
+      "id": "build-server",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "build-server.txt"
+    },
+    {
+      "id": "build-client",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "build-client.txt"
+    }
+  ],
+  "allPassed": true,
+  "seed": {
+    "users": 10,
+    "tickets": 8,
+    "actions": 6,
+    "credentialsAndRecordsUnchanged": true
+  },
+  "health": {
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "service": "TokTickIT API"
+    }
+  },
+  "fixtureSchemaRemoved": true,
+  "finishedAt": "2026-10-03T14:53:17.712Z"
+}

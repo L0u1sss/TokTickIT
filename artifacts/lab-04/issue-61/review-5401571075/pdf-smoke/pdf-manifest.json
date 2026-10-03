@@ -1,0 +1,338 @@
+{
+  "generatedAt": "2026-10-03T16:34:16.044Z",
+  "status": "release-candidate",
+  "label": "Release candidate — final main pending",
+  "branch": "chore/lab4-release-preparation",
+  "sha": "bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d",
+  "mainSha": "2a4b172682c610202bb72eb6cb64f3e62730a48e",
+  "data": {
+    "path": "docs/lab-04/report-data.json",
+    "sha256": "7bc17deaa07b50d260d51af07f40dd02b5cd54a1eb062ab93c77027e6c66a3d2"
+  },
+  "template": {
+    "path": "docs/lab-04/report-template.html",
+    "sha256": "7d3ae7db0abca87aaf0a268ca0a65190f90d591cd0dff543765ffec6ee890a1f"
+  },
+  "font": "tahoma.ttf",
+  "fontSha256": [
+    "b890858df485549d20fcb0a2c519dffe9c5c155d16b55e0b9252d6e66db555e5",
+    "68f92341975acc275c7d4a2ec52a1569b70e992b521c42b30f29149806421674"
+  ],
+  "output": {
+    "path": "artifacts/lab-04/issue-61/review-5401571075/pdf-smoke/SE-Lab4-67070507212.pdf",
+    "bytes": 2150672,
+    "sha256": "6865ea3c39677ecad93bd836d4cc6b0e25256a8eb9dbc9b079f9ac87d1a2b995"
+  },
+  "images": [
+    {
+      "path": "artifacts/lab-04/issue-61/github/project-kanban.png",
+      "sha256": "5bc0d17e4ef794237f38a482f9de2c4ce77407894f109b75694d40a9040d822d",
+      "bytes": 94404,
+      "width": 1920,
+      "height": 1100
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/github/staging-ci-88.png",
+      "sha256": "7317938d995aaa1818d2cbaac0986a9f9be99d296e0bd1c0dab9b55d6d4d3edd",
+      "bytes": 101567,
+      "width": 1920,
+      "height": 1100
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/staff-dashboard/staff-nonzero-1440.png",
+      "sha256": "7a62f819386d98503f3c83a4d1ddcf05dc36553480c4d31a975aa915359157d6",
+      "bytes": 243175,
+      "width": 1440,
+      "height": 2323,
+      "crop": {
+        "x": 80,
+        "y": 70,
+        "width": 1280,
+        "height": 760
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/staff-dashboard/staff-nonzero-1440.png",
+      "sha256": "7a62f819386d98503f3c83a4d1ddcf05dc36553480c4d31a975aa915359157d6",
+      "bytes": 243175,
+      "width": 1440,
+      "height": 2323,
+      "crop": {
+        "x": 80,
+        "y": 1490,
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/edit-form/desktop.png",
+      "sha256": "beb022b86ddac931210e82d13a16d887c9bd1ad792b32e101767c9d8eed19c81",
+      "bytes": 244079,
+      "width": 1440,
+      "height": 2956,
+      "crop": {
+        "x": 100,
+        "y": 960,
+        "width": 1240,
+        "height": 1100
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/terminal-list/desktop.png",
+      "sha256": "c3399e17d5b554cd1ec64d0cc37dfd779ea78586f17fa81d5837eb70612c082d",
+      "bytes": 276136,
+      "width": 1440,
+      "height": 3001,
+      "crop": {
+        "x": 100,
+        "y": 960,
+        "width": 1240,
+        "height": 1100
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/inactive-assignee/desktop.png",
+      "sha256": "b058b486da7baad1334ffc1e90f79cb2caedbf6f529d7cc9aae6195c918d662d",
+      "bytes": 240961,
+      "width": 1440,
+      "height": 3057,
+      "crop": {
+        "x": 100,
+        "y": 970,
+        "width": 1240,
+        "height": 1130
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/ticket-workflow/resolution-gate/desktop.png",
+      "sha256": "19ab78ee16bbac399291ce7dc415038811bd5e7784f8eb6b2aff3d747c4b31e0",
+      "bytes": 263114,
+      "width": 1440,
+      "height": 2097,
+      "crop": {
+        "x": 80,
+        "y": 100,
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/ticket-workflow/reopened/desktop.png",
+      "sha256": "03e7a4dce6f824216b07975f9317fa1976a030588bea15b7b14eead80ed43c79",
+      "bytes": 222905,
+      "width": 1440,
+      "height": 2449,
+      "crop": {
+        "x": 80,
+        "y": 100,
+        "width": 1280,
+        "height": 390
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/requester-dashboard/nonzero-1440.png",
+      "sha256": "afe7b3247206872c9beea7bdcebd2712552a0b856e83d483ec2ab2d640edd6f6",
+      "bytes": 209532,
+      "width": 1440,
+      "height": 1134
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/requester-dashboard/nonzero-390.png",
+      "sha256": "4c82fe238ea73b2d466132003046448160b034728375fa28725a687faa9d5a38",
+      "bytes": 119874,
+      "width": 390,
+      "height": 1844,
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/issue-60/conflict-mobile.png",
+      "sha256": "282e2c8739aee04536cfd0886f77dc4512686e65be284adeb6cdd920db84ce58",
+      "bytes": 400758,
+      "width": 390,
+      "height": 8055,
+      "crop": {
+        "x": 0,
+        "y": 2800,
+        "width": 390,
+        "height": 900
+      }
+    },
+    {
+      "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/workflow-screens/issue-60/admin-dialog-mobile.png",
+      "sha256": "bb52b415a8a733fe091df74bba73f1ada7ff77f1ae65ccf23ecae35f2495eb7a",
+      "bytes": 29645,
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "links": [
+    {
+      "label": "Repository",
+      "url": "https://github.com/L0u1sss/TokTickIT"
+    },
+    {
+      "label": "Project / Kanban",
+      "url": "https://github.com/users/L0u1sss/projects/7"
+    },
+    {
+      "label": "Release Issue #61",
+      "url": "https://github.com/L0u1sss/TokTickIT/issues/61"
+    },
+    {
+      "label": "Staging CI #88 — Success",
+      "url": "https://github.com/L0u1sss/TokTickIT/actions/runs/37129764540"
+    },
+    {
+      "label": "PR #70 — actual approval",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/70#pullrequestreview-5401218381"
+    },
+    {
+      "label": "main / staging comparison",
+      "url": "https://github.com/L0u1sss/TokTickIT/compare/main...lab4-staging"
+    },
+    {
+      "label": "Historical reviewer record / staging",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/reviewer.md"
+    },
+    {
+      "label": "PR #62: actual contract response",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/62#issuecomment-5888242369"
+    },
+    {
+      "label": "PR #68: requested changes",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400210287"
+    },
+    {
+      "label": "PR #68: approval after fixes",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400376688"
+    },
+    {
+      "label": "Engineering specification",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/specification.md"
+    },
+    {
+      "label": "API contract",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/api-spec.md"
+    },
+    {
+      "label": "UI contract",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-spec.md"
+    },
+    {
+      "label": "Contract review / approval",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/62#pullrequestreview-5351094463"
+    },
+    {
+      "label": "Full test traceability",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/tests.md"
+    },
+    {
+      "label": "Lab 4 server tests",
+      "url": "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/server/tests/lab-04"
+    },
+    {
+      "label": "Authenticated browser specs",
+      "url": "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/client/e2e/lab-04"
+    },
+    {
+      "label": "Merged regression PR #69",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/69"
+    },
+    {
+      "label": "Actual prompt archive / reflection",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ai-use.md"
+    },
+    {
+      "label": "Peer feedback on evidence / replay",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/64#pullrequestreview-5386206703"
+    },
+    {
+      "label": "Live dashboard assertions",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/dashboards.spec.ts"
+    },
+    {
+      "label": "Independent DB query runner",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/scripts/run-auth-e2e.mjs"
+    },
+    {
+      "label": "Actions live flow / inactive assignee",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/actions-taken-flow.spec.ts"
+    },
+    {
+      "label": "Actions API tests",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/actions-taken.api.test.ts"
+    },
+    {
+      "label": "Workflow unit/API matrix",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/ticket-workflow.test.ts"
+    },
+    {
+      "label": "Real workflow browser flow",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/ticket-resolution.spec.ts"
+    },
+    {
+      "label": "Requester dashboard API proof",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/requester-dashboard.api.test.ts"
+    },
+    {
+      "label": "Earlier labs / Requester regression",
+      "url": "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/client/e2e/lab-02"
+    },
+    {
+      "label": "Completed automated checklist / manual limits",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-spec.md"
+    },
+    {
+      "label": "63 fixture evidence pairs",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-evidence-60.md"
+    },
+    {
+      "label": "UI / keyboard / recovery spec",
+      "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/ui-hardening.spec.ts"
+    },
+    {
+      "label": "Actual UI approval / CI",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/70"
+    }
+  ],
+  "pageCount": 21,
+  "pdfLinkCount": 64,
+  "pdfUrls": [
+    "https://github.com/L0u1sss/TokTickIT",
+    "https://github.com/L0u1sss/TokTickIT/actions/runs/37129764540",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/actions-taken-flow.spec.ts",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/dashboards.spec.ts",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/ticket-resolution.spec.ts",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/ui-hardening.spec.ts",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/scripts/run-auth-e2e.mjs",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ai-use.md",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/api-spec.md",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/reviewer.md",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/specification.md",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/tests.md",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-evidence-60.md",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-spec.md",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/actions-taken.api.test.ts",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/requester-dashboard.api.test.ts",
+    "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/ticket-workflow.test.ts",
+    "https://github.com/L0u1sss/TokTickIT/compare/main...lab4-staging",
+    "https://github.com/L0u1sss/TokTickIT/issues/61",
+    "https://github.com/L0u1sss/TokTickIT/pull/62#issuecomment-5888242369",
+    "https://github.com/L0u1sss/TokTickIT/pull/62#pullrequestreview-5351094463",
+    "https://github.com/L0u1sss/TokTickIT/pull/64#pullrequestreview-5386206703",
+    "https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400210287",
+    "https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400376688",
+    "https://github.com/L0u1sss/TokTickIT/pull/69",
+    "https://github.com/L0u1sss/TokTickIT/pull/70",
+    "https://github.com/L0u1sss/TokTickIT/pull/70#pullrequestreview-5401218381",
+    "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/client/e2e/lab-02",
+    "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/client/e2e/lab-04",
+    "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/server/tests/lab-04",
+    "https://github.com/users/L0u1sss/projects/7"
+  ]
+}

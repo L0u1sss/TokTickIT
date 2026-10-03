@@ -1,0 +1,64 @@
+
+> toktickit-client@1.0.0 test:actions:e2e
+> node scripts/run-auth-e2e.mjs --actions-taken
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "toktickit_test", schema "auth_e2e_test_c4a4a827d91be0dc" at "localhost:5432"
+
+11 migrations found in prisma/migrations
+
+Applying migration `20260806000000_add_category`
+Applying migration `20260820130000_init_lab02_schema`
+Applying migration `20260825000000_align_lab02_contract`
+Applying migration `20260916000000_authentication_foundation`
+Applying migration `20260916010000_migrate_requester_identity`
+Applying migration `20260918000000_staff_queue`
+Applying migration `20260918010000_require_explicit_it_priority`
+Applying migration `20260918010000_staff_ticket_operations`
+Applying migration `20260919000000_align_internal_note_length`
+Applying migration `20260919010000_resolution_indication`
+Applying migration `20260925000000_actions_taken_foundation`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260806000000_add_category/
+    └─ migration.sql
+  └─ 20260820130000_init_lab02_schema/
+    └─ migration.sql
+  └─ 20260825000000_align_lab02_contract/
+    └─ migration.sql
+  └─ 20260916000000_authentication_foundation/
+    └─ migration.sql
+  └─ 20260916010000_migrate_requester_identity/
+    └─ migration.sql
+  └─ 20260918000000_staff_queue/
+    └─ migration.sql
+  └─ 20260918010000_require_explicit_it_priority/
+    └─ migration.sql
+  └─ 20260918010000_staff_ticket_operations/
+    └─ migration.sql
+  └─ 20260919000000_align_internal_note_length/
+    └─ migration.sql
+  └─ 20260919010000_resolution_indication/
+    └─ migration.sql
+  └─ 20260925000000_actions_taken_foundation/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+
+Running 7 tests using 1 worker
+
+(node:11736) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/7] e2e\lab-04\actions-taken-flow.spec.ts:71:3 › Actions Taken real-API lifecycle, validation and read-only requester at desktop
+[2/7] e2e\lab-04\actions-taken-flow.spec.ts:71:3 › Actions Taken real-API lifecycle, validation and read-only requester at tablet
+[3/7] e2e\lab-04\actions-taken-flow.spec.ts:71:3 › Actions Taken real-API lifecycle, validation and read-only requester at mobile
+[4/7] e2e\lab-04\actions-taken-flow.spec.ts:155:1 › staff/admin completion identity, Ticket cascade history and requester ownership use the real API
+[5/7] e2e\lab-04\actions-taken-flow.spec.ts:220:1 › a real concurrent edit preserves a local draft and reload rebases both versions
+[6/7] e2e\lab-04\actions-taken-flow.spec.ts:248:1 › a lost create response keeps request identity and recovers through a real idempotent replay
+[7/7] e2e\lab-04\actions-taken-flow.spec.ts:281:1 › a cached assignee deactivated by a real administrator is rejected and recoverable without losing the draft
+  7 passed (1.4m)

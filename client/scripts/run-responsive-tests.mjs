@@ -43,7 +43,7 @@ try {
   await waitForServer(server);
   const runner = spawn(
     process.execPath,
-    [playwrightEntry, "test", "e2e/lab-02/responsive.spec.ts", ...process.argv.slice(2)],
+    [playwrightEntry, "test", process.argv.includes("--lab4") ? "e2e/lab-04/ui-hardening.spec.ts" : "e2e/lab-02/responsive.spec.ts", ...process.argv.slice(2).filter(arg => arg !== "--lab4")],
     {
       env: { ...process.env, PLAYWRIGHT_EXTERNAL_SERVER: "1" },
       stdio: "inherit",

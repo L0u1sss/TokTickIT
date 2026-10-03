@@ -1,0 +1,543 @@
+# TokTickIT Lab 4 — Test-Driven Development and Traceability Plan
+
+The latest complete candidate results are recorded in [Issue #61 release-candidate verification](#issue-61-release-candidate-verification). [Issue #60 verification](#issue-60-verification), [Issue #59 verification](#issue-59-verification) and older PR sections retain their historical scope and do not establish final `main`.
+
+> Status: Issue #61 complete local candidate verification passed; final-main release evidence remains pending. Local evidence applies only to the recorded commit or explicitly identified worktree; it does not establish final `main`, CI, peer approval, or unperformed manual checks.
+>
+> Contract baseline: Issue #52, `specification.md`, `api-spec.md`, and `ui-spec.md`.
+
+## 1. Strategy
+
+Tests are written before or alongside implementation. Unit tests cover deterministic rules; API/integration tests cover database invariants, authorization, migration, concurrency, and failures; component tests cover UI behavior; Playwright covers live workflows, responsive layouts, accessibility, and regression. Database tests must use an isolated `TEST_DATABASE_URL`, never development data.
+
+### Issue #60 hardening plan
+
+Extend STYLE-01/A11Y-01/RV-01–02 for FR-13/FR-15 and AC-10–12 with `client/e2e/lab-04/ui-hardening.spec.ts`: all three roles, baseline viewports plus 720×450 reflow, long unbroken names/descriptions/filenames, actual control bounds, clipping/overlap, Zen Green token, complete axe findings, keyboard drill-down/skip link, Action validation/Escape/focus return, attachment/admin modal trapping and safe draft recovery. UI fixtures are explicitly labeled; fresh real API workflows and database-count comparisons remain in existing Lab 4 suites. Component regressions cover query/hash navigation, failed/repeated reloads, field focus, protected communication visibility, pending removal and repeated resolution indications. Run `node scripts/verify-lab4.mjs --issue=60` to preserve Issue #59 evidence and record new provenance/logs separately. Executed results appear in the Issue #60 section below.
+
+## 2. Planned Test Matrix
+
+| ID | Type | Requirement / AC | Scenario and expected result | Planned automated file | Final |
+|---|---|---|---|---|---|
+| UT-01 | API validation (consolidated) | BR-05–BR-06, AC-02 | Unicode boundaries, trim, conditional follow-up note | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| UT-02 | API lifecycle (consolidated) | BR-10–BR-13, AC-03 | Every Action transition pair; terminal reversal/edit rejected; completion needs Result and cleared follow-up | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| UT-03 | Unit/API | BR-19–BR-25, AC-06 | Every Ticket transition; current-cycle resolution predicate; cycle/resolvedAt updates | `server/tests/lab-04/ticket-workflow.test.ts; server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| UT-04 | API calculations (consolidated) | BR-26–BR-32, AC-07–AC-08 | Seven-day window boundaries, status groups, limits, ordering, query mapping, attribution/deduplication | `server/tests/lab-04/requester-dashboard.api.test.ts; server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| DB-01 | Integration | FR-12, BR-37–BR-38, AC-09 | Fresh migration and populated Lab 3 migration preserve data; legacy Tickets get version/cycle 1 and null resolvedAt, with zero fabricated Actions | `server/tests/lab-04/migration.test.ts` | PASS locally - Issue #60; see latest verification |
+| DB-02 | Integration | BR-02–BR-04, BR-14–BR-16, BR-38, AC-03/AC-09 | Seed twice; stable identities/counts and 0/1/many Actions; distinct attribution; lifecycle-aligned events; staff/cascade cancellation; append-only and changedFields database guards; ordering and Action constraints | `server/tests/lab-04/migration.test.ts` | PASS locally - Issue #60; see latest verification |
+| DB-03 | Integration | BR-14–BR-16, BR-40–BR-41, AC-03–AC-04 | API transaction appends one event at the incremented Action revision; projection/event revisions remain contiguous and atomic; stale Action or Ticket version loses. Database itself enforces event revision positivity/uniqueness only. | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-01 | API | FR-01–FR-03, AC-01–AC-03 | Create/list/edit Action with correct Ticket, recorder, assignee, performedBy, time, and returned parent version | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-02 | API | BR-05–BR-08, AC-02 | Field boundaries, protected fields, follow-up rule, inactive/bad assignee | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-03 | API | BR-02, BR-10–BR-14, BR-42, AC-03 | Assign/transition/complete/cancel; only current assignee can complete; performedBy equals assignee; verify completion/cancellation provenance fields and immutable terminal history; reject terminal reversal/edit and non-actionable parent | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-04 | Security | BR-33–BR-36, AC-05 | Requester own/cross-owner read; all requester writes denied; notes absent | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-05 | API | BR-16, BR-40–BR-41, AC-04 | Concurrent edits with same parent/Action versions; one winner, stale loser, one event and one parent version increment; success returns the next parent token | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-06 | API | BR-17, AC-01/AC-10 | lost-response retry with same request ID creates one Action/event | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-07 | API | BR-08–BR-09, AC-02 | assign racing deactivate/demote preserves eligible-assignee invariant | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-03/users-admin.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-08 | API | FR-07–FR-08, AC-06 | all Ticket transitions; current-cycle gate rejects active/follow-up Actions; advisory never resolves | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-09 | API | BR-23, BR-40–BR-41, AC-04/AC-06 | stale integer Ticket version on status transition loses; conditional update has no partial workflow change | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-15 | API | BR-23, BR-40–BR-41, AC-04 | Claim, owner assignment/reassignment, and priority writes require expectedTicketVersion; stale concurrent requests return STALE_TICKET and accepted requests increment version exactly once and return the next token | `server/tests/lab-04/ticket-mutations.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-16 | API/Integration | BR-12, BR-14, BR-41, BR-43, AC-03/AC-06 | Ticket cancellation increments each current-cycle active Action revision once, sets updatedAt/cancelledAt/cancelledBy/source, appends TICKET_CASCADE_CANCELLED event with authenticated actor, preserves follow-up as historical, and makes old Action revisions stale | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-10 | API/Security | FR-09, AC-07 | Requester counts/lists isolated across users and ordered/bounded; exact seven-day resolved window | `server/tests/lab-04/requester-dashboard.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-11 | API | BR-27/BR-30–BR-32, BR-43, AC-07 | inclusive lower/exclusive upper UTC bounds, returned drill-down bounds, statusIn validation, recentlyUpdated reflects accepted aggregate mutations through Ticket.updatedAt | `server/tests/lab-04/requester-dashboard.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-12 | API/Security | FR-10–FR-11, AC-08 | staff/admin allowed; requester forbidden; recorder/assignee/performer union and attribution | `server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-13 | API | BR-28–BR-32, BR-43, AC-08 | status/priority/high-priority/recent counts match direct DB queries; current-user Actions deduplicated; accepted Action/aggregate writes update Ticket.updatedAt and Recently Updated ordering | `server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| API-14 | Failure | FR-13, BR-35–BR-36, AC-10 | safe 500/requestId; no private/internal detail; retry safe | `server/tests/lab-04/actions-taken.api.test.ts; server/tests/lab-04/ticket-workflow.api.test.ts; server/tests/lab-04/requester-dashboard.api.test.ts; server/tests/lab-04/staff-dashboard.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| RACE-01 | Concurrent API | BR-21, BR-40–BR-42, AC-04/AC-06 | Action create versus resolve; Action create/edit/complete versus cancel; shared parent lock yields serial outcome and gate recheck; terminal Ticket rejects later Action writes | `server/tests/lab-04/ticket-workflow.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| RACE-02 | Concurrent API | BR-40–BR-41, AC-04 | Competing claim/owner/priority writes with one expected version serialize; stale loser cannot overwrite winner | `server/tests/lab-04/ticket-mutations.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| RACE-03 | Concurrent API | BR-02, BR-04, BR-16, BR-40, AC-03–AC-04 | Reassign versus current-assignee completion: reassignment-first rejects old assignee completion; completion-first leaves terminal Action and rejects reassignment | `server/tests/lab-04/actions-taken.api.test.ts` | PASS locally - Issue #60; see latest verification |
+| UI-01 | Component | FR-10, AC-08 | cards/lists/loading/zero/error/drill-down/current-user Actions | `client/tests/lab-04/StaffDashboard.test.tsx` | PASS locally - Issue #60; see latest verification |
+| UI-02 | Component | FR-09, AC-07 | own metrics/recent lists/zero/error/drill-down | `client/tests/lab-04/RequesterDashboard.test.tsx` | PASS locally - Issue #60; see latest verification |
+| UI-03 | Component | FR-01–FR-06, BR-02/BR-04/BR-11–BR-18/BR-40–BR-42, AC-01–AC-05/AC-10 | stable ordering; null performer and recorder attribution; create/edit/assign/terminal lifecycle; assignee-only completion; required Result/cleared follow-up; conditional note, corrected-field errors and focus recovery; current Ticket/Action tokens; inactive-assignee feedback; stale/uncertain response recovery; retained drafts/request ID; protected failures | `client/tests/lab-04/ActionsTaken.test.tsx` | PASS locally - Issue #60; see latest verification |
+| UI-05 | Component integration | BR-23/BR-40–BR-42, AC-04/AC-10/AC-11 | Action success supplies the next Ticket-operation version; same-Ticket refresh preserves drafts; Ticket/Action writes cannot overlap; stale/uncertain operations block further writes until recovery; denied reload clears protected detail | `client/tests/lab-03/StaffTicketDetail.test.tsx` | PASS locally - Issue #60; see latest verification |
+| UI-04 | Component | FR-07–FR-08, AC-04/AC-06 | permitted status controls, confirmation, gate/stale feedback, refresh | `client/tests/lab-04/TicketWorkflow.test.tsx` | PASS locally - Issue #60; see latest verification |
+| STYLE-01 | UI style | FR-15, AC-12 | Zen Green warning colors, non-color status labels, long-text wrapping and layout/target-size invariants | `client/e2e/lab-02/responsive.spec.ts; client/e2e/lab-04/actions-taken-flow.spec.ts; client/e2e/lab-04/dashboards.spec.ts` | PASS locally - Issue #60; see latest verification |
+| PERF-01 | Smoke | FR-11, AC-07–AC-08 | dashboard endpoints p95 ≤500 ms for 1,000 Tickets/5,000 Actions locally after warm-up | `server/tests/lab-04/dashboard-performance.test.ts` | PASS locally - Issue #60; see latest verification |
+| RV-01 | Browser | FR-15, AC-12 | both dashboards at 1440×900, 834×1112, 390×844 | `client/e2e/lab-04/dashboards.spec.ts` | PASS locally - Issue #60; see latest verification |
+| RV-02 | Browser | FR-15, AC-12 | real-API Actions create/edit/list/terminal/read-only at 1440×900, 834×1112, 390×844; long descriptions/attachment references wrap; no page overflow; mobile controls have 44×44 targets | `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally - Issue #60; see latest verification |
+| A11Y-02 | Browser/component | FR-15, AC-12 | Actions accessible labels/live regions/error links; keyboard create/submit/Escape, first-invalid-field and terminal-transition focus; no serious/critical axe violations in captured Action states | `client/tests/lab-04/ActionsTaken.test.tsx; client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally - Issue #60; see latest verification |
+| A11Y-01 | Browser/manual | FR-15, AC-12 | axe + landmarks/names/live regions; keyboard/focus/dialog/200% reflow | `client/e2e/lab-04/; docs/lab-04/ui-spec.md` | Automated checks PASS; manual zoom/screen-reader checks not run |
+| E2E-01 | Live E2E | AC-01–AC-05/AC-10 | authenticated staff/admin list/create/assign/edit/start/complete/cancel; real assignee-only completion denial; real inactive-assignee rejection/recovery; Ticket-cascade history; requester read-only/owned data; stale draft reload/reapply; lost-response replay with one stored Action; actual server versions/revisions | `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally - Issue #60; see latest verification |
+| E2E-02 | Live E2E | AC-04/AC-06 | Action completion → resolve → close; advisory/reopen/cancel cases | `client/e2e/lab-04/ticket-resolution.spec.ts` | PASS locally - Issue #60; see latest verification |
+| E2E-03 | Live E2E | AC-07–AC-08 | role dashboards, database count evidence, drill-down, zero state | `client/e2e/lab-04/dashboards.spec.ts` | PASS locally - Issue #60; see latest verification |
+| REG-01 | Regression | AC-11 | login/change/logout and role/direct-route authorization | `server/tests/lab-03/auth.api.test.ts; server/tests/lab-03/authorization.api.test.ts; client/tests/lab-03/auth-routing.test.tsx; client/e2e/lab-03/authentication.spec.ts` | PASS locally - Issue #60; see latest verification |
+| REG-02 | Regression | AC-11 | Create/My Tickets/Detail/Attachments/ownership/idempotency | `server/tests/lab-02/; server/tests/lab-03/requester-regression.api.test.ts; client/tests/lab-02/; client/e2e/lab-02/; client/e2e/lab-03/requester-regression.spec.ts` | PASS locally - Issue #60; see latest verification |
+| REG-03 | Regression | AC-11 | staff queue/owner/priority/status/comments/notes/download | `server/tests/lab-03/staff-ticket-detail.api.test.ts; server/tests/lab-03/staff-queue.api.test.ts; server/tests/lab-03/comments-notes.api.test.ts; client/tests/lab-03/StaffTicketDetail.test.tsx; client/e2e/lab-03/staff-ticket-flow.spec.ts; client/e2e/lab-03/comments-notes.spec.ts; client/e2e/lab-03/staff-queue.spec.ts` | PASS locally - Issue #60; see latest verification |
+| REG-04 | Regression | AC-11 | user create/edit/deactivate/role/initial password/admin safety | `server/tests/lab-03/users-admin.api.test.ts; client/tests/lab-03/UserManagement.test.tsx; client/e2e/lab-03/user-administration.spec.ts` | PASS locally - Issue #60; see latest verification |
+
+## 3. Acceptance-Criteria Traceability
+
+| Criterion | Planned evidence |
+|---|---|
+| AC-01 | API-01, API-06, UI-03, E2E-01 |
+| AC-02 | UT-01, API-02, API-07, UI-03, E2E-01 |
+| AC-03 | UT-02, DB-03, API-01, API-03, RACE-03, UI-03, E2E-01 |
+| AC-04 | DB-03, API-05, API-09, API-15, RACE-02–RACE-03, UI-03–UI-05, E2E-01–E2E-02 |
+| AC-05 | API-04, UI-03, E2E-01 |
+| AC-06 | UT-03, API-08–API-09, API-16, UI-04, E2E-02 |
+| AC-07 | UT-04, API-10–API-11, UI-02, E2E-03 |
+| AC-08 | UT-04, API-12–API-13, UI-01, E2E-03 |
+| AC-09 | DB-01–DB-02 |
+| AC-10 | API-06, API-14, UI-03, UI-05, E2E-01 |
+| AC-11 | REG-01–REG-04 plus full server/client suites |
+| AC-12 | STYLE-01, RV-01–RV-02, A11Y-01–A11Y-02 |
+| AC-13 | final CI/review/screenshots/report audit in release issue |
+
+Every AC has planned automated or explicit manual evidence. Manual evidence never replaces an automatable authorization or business-rule check.
+
+## 4. Required Locations
+
+```text
+server/tests/lab-04/
++-- actions-taken.api.test.ts
++-- ticket-mutations.api.test.ts
++-- ticket-workflow.test.ts
++-- ticket-workflow.api.test.ts
++-- requester-dashboard.api.test.ts
++-- staff-dashboard.api.test.ts
++-- migration.test.ts
++-- dashboard-performance.test.ts
+
+client/tests/lab-04/
++-- StaffDashboard.test.tsx
++-- RequesterDashboard.test.tsx
++-- ActionsTaken.test.tsx
++-- TicketWorkflow.test.tsx
+
+client/e2e/lab-04/
++-- actions-taken-flow.spec.ts
++-- ticket-resolution.spec.ts
++-- dashboards.spec.ts
+```
+
+All paths above exist. Action validation/lifecycle/reassignment races are consolidated in `actions-taken.api.test.ts`; Ticket resolution/cancellation races are in `ticket-workflow.api.test.ts`. These integrated suites exercise private validators through authenticated HTTP and real PostgreSQL. They replace the earlier proposed standalone files; no coverage is claimed from nonexistent files. `ticket-workflow.test.ts` separately checks all 64 transition pairs and the next-status controls without a database. Staff Detail integration remains in `client/tests/lab-03/StaffTicketDetail.test.tsx`.
+
+## 5. Planned Verification Commands
+
+```powershell
+node scripts/verify-lab4.mjs
+npm --prefix server run test:performance
+npm --prefix server run test:unit
+npm --prefix server run test:isolated
+npm --prefix server run lint
+npm --prefix server run build
+npm --prefix client run test
+npm --prefix client run lint
+npm --prefix client run build
+npm --prefix client run test:actions:e2e
+```
+
+The listed server/client package scripts are defined in `server/package.json` and `client/package.json`: `test:unit`, `test:isolated`, `test:db`, `lint`, and `build` exist for the server; `test`, `test:e2e`, `test:workflow:e2e`, `test:actions:e2e`, `test:responsive`, `lint`, and `build` exist for the client. Run from the repository root using `npm --prefix <directory> run <script>`. `test:actions:e2e` uses `client/scripts/run-auth-e2e.mjs --actions-taken` to run the real Action flow against authenticated fixtures in a newly allocated disposable PostgreSQL schema. The older `test:e2e` script targets its documented requester regression files and does not establish Lab 4 coverage. Playwright Chromium and a distinct, test-marked `TEST_DATABASE_URL` are prerequisites. Final evidence records command, SHA, timestamp/timezone, counts, result, and CI link. “Planned” or “Pending verification” is not evidence of passing.
+
+## 6. Migration and Recovery Procedure
+
+Test clean deploy, populated Lab 3 forward migration, repeated seed, and application startup. Snapshot fixture counts/IDs/ownership before migration and compare afterward. Destructive rollback/drop is allowed only against an isolated disposable migration-test database after verifying no user data or real Actions exist. For any populated development/staging/production database, recovery is verified backup/restore or a forward corrective migration only. Never use `prisma migrate reset` against development or production data.
+
+## 7. Final Evidence Template
+
+| Date/time (Asia/Bangkok) | Commit SHA | Environment | Command/CI link | Result/counts | Notes |
+|---|---|---|---|---|---|
+| TBD | TBD | TBD | TBD | Not run | Populate only after execution |
+
+
+## 8. Issue #53 Local Evidence — 2026-09-25
+
+- `npm exec prisma validate` and `npm exec prisma generate`: Pass.
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm run test:unit`: Pass — 19 files, 165 tests.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `npm run test:isolated`: Pass — 33 files, 380 tests.
+
+The migration suite uses disposable PostgreSQL schemas and verifies populated Lab 3 preservation, zero-action legacy behavior, schema constraints, audit identities, all status/priority seed coverage, assigned/unassigned Tickets, zero/one/multiple Actions, repeated-seed preservation, guarded rollback refusal after data, pre-use rollback, and forward recovery. Record the final commit SHA and hosted CI link after push/PR; local evidence is not peer approval.
+
+## 9. PR #63 Review Follow-up — 2026-09-30
+
+The previous agent's handoff records a clean reviewed PR head `8705b3c1244200295e1f0b3253cda1f584e112aa` passing these checks on 2026-09-30, before the review follow-up edits:
+
+- `prisma validate`: Pass.
+- `npm run build`: Pass.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `git diff --check`: Pass.
+
+The current uncommitted review follow-up is based on `8705b3c1244200295e1f0b3253cda1f584e112aa`; checks independently rerun on this worktree on 2026-09-30 at 04:32–04:33 Asia/Bangkok passed:
+
+- `prisma validate` and `prisma generate`: Pass.
+- `npm run build`: Pass.
+- `npm run lint`: Pass.
+- `npm run test:isolated -- tests/lab-04/migration.test.ts`: Pass — 1 file, 3 tests.
+- `git diff --check`: Pass.
+
+The migration suite covers append-only triggers, changedFields shape, deterministic event timestamps, and Ticket-cascade cancellation. These uncommitted worktree results are not checks on commit `8705b3c`; rerun on the final commit and record hosted CI/peer-review evidence against the final pushed commit before merge.
+
+Prisma generation initially encountered a Windows query-engine DLL lock while the migration suite was running. After the suite exited, generation, build, and lint passed sequentially.
+
+### Pending PR description correction
+
+Updating PR #63 through the GitHub connector returned HTTP 403 (`Resource not accessible by integration`). The remote description remains unchanged. Replace its ordering bullet with:
+
+> Ticket Action ordering ตาม `createdAt ASC`, `id ASC`; `workflowCycle` ใช้กรอง current-cycle query ไม่ใช่ sort key ของรายการรวมทุก cycle
+
+## 10. Issue #55 Contract Alignment and Local Evidence — 2026-10-02
+
+The follow-up starts from merge commit `c00bb1a0c71d22c7cafc2bb932fc37bb014791b2`; the implementation and evidence below describe the current worktree until a final commit is recorded. Earlier UI tests used the older API shape and do not prove compatibility with the merged Action contract.
+
+### Handout traceability
+
+| Source in `SE+Lab+4.pdf` | Issue #55 evidence |
+|---|---|
+| §7, pp. 4–5 | Existing Zen Green controls/cards and text status cues; keyboard focus, wrapping, and responsive Action screenshots |
+| §8.3, p. 6 | Stable list; create/view/edit; shared requester read-only; created time, description, Result, automatic performer, follow-up flag/conditional note, Attachment Notes |
+| §§8.5–8.6, p. 7 | Loading/empty/validation/success/forbidden/not-found/conflict/safe-failure recovery; repeated-submit/idempotent retry; retained drafts; inherited responsive/accessibility rules |
+| §12, pp. 9–10 | Actual component/E2E files listed above and `artifacts/lab-04/screenshots/actions-taken/` |
+| Answer Part 6, p. 11 | Multiple Actions on one Ticket; create/assign/edit/start/complete/cancel; eligibility feedback, roles, failures, and responsive behavior |
+
+The handout leaves the detailed lifecycle and concurrency choices to the engineering contract. This increment follows the current contract: `performedBy=null` until the current assignee completes; terminal Actions remain immutable; parent terminal/resolved Tickets are read-only; completion and staff cancellation require cleared follow-up; cancellation provenance and historical follow-up are visible; writes use `expectedTicketVersion` and Action `revision`, then accept the returned `{ action, ticketVersion }` token. Requester Action rendering stays separate from staff-only Internal Notes.
+
+### Verification record
+
+| Command / evidence | Result | Scope |
+|---|---|---|
+| `npm --prefix client run test -- tests/lab-04/ActionsTaken.test.tsx` | Pass — 20 tests | Action component; included in the final full-suite output below |
+| `npm --prefix client run test -- tests/lab-03/StaffTicketDetail.test.tsx tests/lab-03/StaffTicketQueue.test.tsx` | Pass — 25 tests | Staff Detail/Queue integration and regression; included in the final full suite |
+| `npm --prefix client run test` | Pass — 19 files, 141 tests; 16.43 s | [Final local client output](../../artifacts/lab-04/test-output/client-tests.txt) |
+| `npm --prefix client run lint` | Pass | [Final lint/build output](../../artifacts/lab-04/test-output/client-build-lint.txt); latest source, including focus and corrected-field-error changes |
+| `npm --prefix client run build` | Pass | [Final lint/build output](../../artifacts/lab-04/test-output/client-build-lint.txt); latest TypeScript/Vite build |
+| `npm --prefix client run test:actions:e2e` | Pass — 7 tests; 57.8 s | [Final real-API browser output](../../artifacts/lab-04/test-output/actions-taken-e2e.txt); three viewports, 25 screenshots, axe, ownership, eligibility, concurrency and idempotent replay |
+
+The final browser flow demonstrates actual eligibility enforcement: an authenticated Administrator deactivates an unassigned staff user while another browser retains that user in its cached selector. Creation receives `409 INVALID_ACTION_ASSIGNEE`, keeps the draft, reloads eligible choices, and succeeds once with an active assignee. The stale-edit case performs a real concurrent server update, then retains/reloads/reapplies the local draft using both current tokens. The lost-response case lets the real server commit creation before aborting the browser response, then replays the same request ID and verifies one stored Action.
+
+The browser flow resolves a Ticket after completed work to check that the Action area becomes read-only. It does not test backend rejection of a failed Ticket resolution gate; that remains Issue #56 and the planned API-08/UI-04/E2E-02 scope. Action completion/cancellation Result, follow-up, and assignee rules are exercised here.
+
+The [25 screenshots](../../artifacts/lab-04/screenshots/actions-taken/) include validation, create, planned list, edit, terminal list, resolved parent, and requester read-only at all three viewports; desktop captures additionally show cancellation history, inactive-assignee feedback, a stale draft, and safe-save recovery. Representative visual inspection covered the [desktop planned list](../../artifacts/lab-04/screenshots/actions-taken/planned-list/desktop.png), [tablet terminal list](../../artifacts/lab-04/screenshots/actions-taken/terminal-list/tablet.png), and [mobile create form](../../artifacts/lab-04/screenshots/actions-taken/create-form/mobile.png), with no observed page overflow or clipped controls. This limited inspection does not complete the full product visual checklist.
+
+The [CI workflow](../../.github/workflows/ci.yml) includes `lab4-staging` triggers, the Action E2E command, and an evidence upload step. Hosted evidence recorded after the original local run is listed below. Full Lab 4 dashboards/standalone workflow suites, complete manual keyboard/200% reflow checks, peer approval, final release review, and final `main` evidence remain separate deliverables; the local results above apply to the explicitly identified Issue #55 worktree.
+
+## 11. PR #65 review alignment — 2026-10-03
+
+The required PR description correction follows the implemented lifecycle: `PLANNED → IN_PROGRESS | CANCELLED`, `IN_PROGRESS → COMPLETED | CANCELLED`; `COMPLETED` and `CANCELLED` are immutable. There is no Reopen/Restore Action control. Continued work requires a new Action. The evidence counts are 20 Action component tests, 19 client files / 141 tests, and 7 real-API Action browser tests; the original local artifacts retain their original worktree attribution. Updating the remote PR description through the connector returned HTTP 403 (`Resource not accessible by integration`); the prepared replacement remains pending publication.
+
+Hosted [CI run #69](https://github.com/L0u1sss/TokTickIT/actions/runs/36941288267), associated with reviewed head `8beb2de01e81bb0d9dd8af1e83f3beaeca220567`, completed successfully. Its [job](https://github.com/L0u1sss/TokTickIT/actions/runs/36941288267/job/110633116302) passed server/client tests, Actions E2E, authentication/admin/staff/comments/responsive/requester browser regressions, lint, builds, and evidence uploads. This verifies that head only; the documentation follow-up needs its own hosted run and is not claimed green in advance.
+
+CI workflow, README, fixture updates, reference-only seeding (`SEED_REFERENCE_DATA_ONLY`), and fresh tickets for staff retries are test/evidence plumbing required by Issue #55. They run and publish evidence, document isolated setup, preserve initially empty requester lists, and align staff regression with the reload/version contract. Default development seeding still includes Lab 4 demo Tickets and Actions.
+
+<a id="pr66-validation"></a>
+
+## 11. PR #66 Contract Alignment - 2026-10-03
+
+Scope: local `feat/lab4-ticket-workflow`, original PR head `ed1fe71`, integrating staging dependency `7102116`. `lab4-staging` is unchanged at `7102116`. Incoming conflict resolutions are preserved in backup refs/stash before implementation alignment. These are worktree results, not hosted CI, peer approval, final-main evidence, or completion of the separate dashboard issues.
+
+The handout sections 4.5, 5.2, 6.1, 8.4, 8.5, 9-10 and Answer Part 7 are implemented through the existing BR-19-BR-25/BR-40-BR-43 contract. The original PR's timestamp-only status write and minimum-only gate have been upgraded together with the client to required integer `expectedTicketVersion`, the shared parent lock, and current-cycle resolution checks. Reopening retains history and starts a new cycle; cancellation retains follow-up history and atomically records actor/time/source, Action revisions/events and one parent version increment. Requester indication remains advisory.
+
+Verified local results:
+
+- Server `npm run build` and `npm run lint`: Pass.
+- Server `npm run test:isolated`: Pass - 35 files, 473 tests; workflow suite includes 76 API cases.
+- Client `npm run build` and `npm run lint`: Pass.
+- Client `npm test`: Pass - 20 files, 147 tests; workflow component suite includes 6 tests.
+- Client `npm run test:workflow:e2e`: Pass - 3 tests at desktop 1440x900, tablet 834x1112 and mobile 390x844.
+- Client `npm run test:staff:e2e`: Pass - 1 existing Lab 3 live staff regression test.
+- Client `npm run test:actions:e2e`: Pass - 7 existing Lab 4 Actions Taken live regression tests.
+
+The API suite exhausts all 64 Ticket transition pairs; checks staff/admin role and protected-field validation; rejects zero-Action, historical-cycle and active/follow-up work; checks resolvedAt/cycle and terminal ownership/advisory cleanup; verifies stale/concurrent status, owner, priority and Action-create races; checks cancellation provenance and preserved audit history; and prevents private exception disclosure. Component tests verify permitted options, confirmations, version payload, gate/stale feedback, updated-state reload and explicit network retry. Live browser tests cover failed gate, Action create/start/complete, resolve/close/reopen, new-cycle gate rejection, cancellation of pending follow-up work, preserved history, and Requester advisory/read-only visibility.
+
+All 18 browser screenshots include overflow assertions and axe WCAG checks with zero serious/critical findings. Browser evidence preserves pre-axe focus so automated focus probes do not change the captured UI. This does not establish complete manual keyboard or 200% reflow review. Evidence: [workflow screenshots](../../artifacts/lab-04/screenshots/ticket-workflow/), [browser console output](../../artifacts/lab-04/test-output/pr66-workflow-e2e.txt), and [local check record](../../artifacts/lab-04/test-output/pr66-validation.txt). Earlier browser attempts failed on an incorrect test checkbox selector; the selector was corrected and the complete three-viewport flow then passed. Existing Lab 3 and Issue #55 screenshots are retained; screenshots regenerated by their regression runs are backed up outside the repository rather than replacing the earlier dated evidence.
+
+| State | Desktop | Tablet | Mobile |
+|---|---|---|---|
+| resolution-gate | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/resolution-gate/desktop.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/resolution-gate/tablet.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/resolution-gate/mobile.png) |
+| resolved | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/resolved/desktop.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/resolved/tablet.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/resolved/mobile.png) |
+| closed | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/closed/desktop.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/closed/tablet.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/closed/mobile.png) |
+| reopened | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/reopened/desktop.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/reopened/tablet.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/reopened/mobile.png) |
+| cancelled | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/cancelled/desktop.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/cancelled/tablet.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/cancelled/mobile.png) |
+| requester-advisory | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/requester-advisory/desktop.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/requester-advisory/tablet.png) | [Screenshot](../../artifacts/lab-04/screenshots/ticket-workflow/requester-advisory/mobile.png) |
+
+## 12. PR #67 Requester dashboard contract and CI alignment - 2026-10-03
+
+Scope: `feat/lab4-requester-dashboard`, integrating the merged PR #66 dependency `origin/lab4-staging` at `8d13e12`. No changes are published to staging/main. The original CI run #74 failed because the feature branch retained obsolete workflow fixtures and payloads; the dependency merge preserves the approved integer-version, resolution gate, and Action lifecycle instead of weakening those rules.
+
+Coverage follows the handout sections 6.2, 7, 8.2, 8.5, 8.6 and Answer Part 8: backend-owned metrics; repeatable-read snapshot; seven-day UTC half-open resolvedAt window; stable tie ordering; five-item previews; legacy/old/future/reopened exclusion; exact window drill-down; safe failures/retry; Requester home/navigation; role denial; direct database count evidence; responsive and automated accessibility checks. Existing authentication, staff/workflow and keyboard/create browser regressions explicitly navigate from the new Dashboard home.
+
+Original validation suites: `server/tests/lab-04/requester-dashboard.api.test.ts` (6 API tests), `server/tests/lab-02/ticket-query.test.ts` (strict date/status validation), `client/tests/lab-04/RequesterDashboard.test.tsx` (5 component tests), `client/e2e/lab-04/dashboards.spec.ts` (2 browser tests against the real API, with browser-level failure injection for client UX only). Backend redaction is verified separately by the API test `returns a safe failure without exposing database details`, which injects a Prisma transaction failure and checks the real HTTP 500 envelope. The browser-injected secret error is not evidence of backend redaction. Staff dashboard and whole-product performance/manual reflow/peer-release evidence remain separate work.
+
+Final local results on this feature worktree (2026-10-03):
+
+| Check | Result | Evidence |
+|---|---|---|
+| Full isolated server regression | 36 files / 480 tests passed | [Server output](../../artifacts/lab-04/test-output/pr67-server-tests.txt) |
+| Full client regression | 21 files / 153 tests passed | [Client output](../../artifacts/lab-04/test-output/pr67-client-tests.txt) |
+| Server and client lint/build | Passed | [Server](../../artifacts/lab-04/test-output/pr67-server-build-lint.txt), [client](../../artifacts/lab-04/test-output/pr67-client-build-lint.txt) |
+| Requester dashboard real API + UI | 2 browser tests passed; 3 viewports, keyboard waiting drill-down, loading/empty/failure/retry/role denial; no serious/critical axe violations or page overflow in captured states | [Output](../../artifacts/lab-04/test-output/pr67-requester-dashboard-e2e.txt), [screenshots](../../artifacts/lab-04/screenshots/requester-dashboard/), [direct DB counts](../../artifacts/lab-04/screenshots/requester-dashboard/database-counts.json) |
+| Authentication / Administrator / Queue | 1 + 1 + 1 browser tests passed | [Auth](../../artifacts/lab-04/test-output/pr67-test-auth-e2e.txt), [admin](../../artifacts/lab-04/test-output/pr67-test-admin-e2e.txt), [queue](../../artifacts/lab-04/test-output/pr67-staff-queue.txt) |
+| Actions / resolution / staff / communication | 7 + 3 + 1 + 1 browser tests passed | [Actions](../../artifacts/lab-04/test-output/pr67-test-actions-e2e.txt), [resolution](../../artifacts/lab-04/test-output/pr67-test-workflow-e2e.txt), [staff](../../artifacts/lab-04/test-output/pr67-test-staff-e2e.txt), [comments](../../artifacts/lab-04/test-output/pr67-communications.txt) |
+| Responsive / live requester regression | 6 + 7 browser tests passed | [Responsive](../../artifacts/lab-04/test-output/pr67-test-responsive.txt), [requester](../../artifacts/lab-04/test-output/pr67-test-e2e.txt) |
+| Whitespace / conflict markers | Passed | `git diff --check`, `git diff --cached --check`; all merge conflicts resolved |
+
+Total browser checks: 30 passing tests. Desktop and mobile dashboard screenshots were visually inspected for layout/wrapping. Hosted CI is verified separately against the pushed feature commit; these local checks do not claim final-main, peer approval, whole-product performance, or a completed manual reflow checklist.
+
+## 13. PR #67 browser-runner regression repair - 2026-10-03
+
+[CI run #77](https://github.com/L0u1sss/TokTickIT/actions/runs/37072283879) on `64eefa1` passed server/client tests but failed during authentication fixture setup with `requesterDashboard is not defined`. The follow-up runner edit removed the mode declaration/routing, administrator fixtures, resolvedAt timestamps, and direct database-count evidence while retaining references to the deleted variable. Client lint independently reproduced four `no-undef` errors.
+
+Restore the complete browser runner from previously verified commit `3746ced`, including Requester dashboard mode and the fixtures required by dashboard/Actions suites. Move server/client lint immediately after dependency installation so undefined runner variables fail before browser installation, migrations and E2E. No API, UI, authorization, data contract, or existing test is weakened. Revalidate both lint commands and the authentication, Requester dashboard and Actions real-API browser suites; verify the new hosted CI against the pushed feature head.
+
+Local follow-up results: client and server lint passed; authentication E2E 1/1, Requester dashboard E2E 2/2, and Actions E2E 7/7 passed against isolated migrated schemas. The product source is unchanged; full regression is rerun by hosted CI.
+
+Hosted verification: [CI run #78](https://github.com/L0u1sss/TokTickIT/actions/runs/37072823372), job [111055982625](https://github.com/L0u1sss/TokTickIT/actions/runs/37072823372/job/111055982625), passed for PR source head `ebfb0f726b71bb852995f716212c953b87b01a3c`. GitHub checked out the synthetic PR merge `50666c3a54efe939620ed635039d091ebdd48905` against base `8d13e12e163ab9c8e1c4fe4ddfbb7520611b1ad9`. The [verified job-log excerpts](../../artifacts/lab-04/test-output/pr67-ci78-verified-excerpts.txt) record 36 server files / 480 tests, 21 client files / 153 tests, and 30 browser tests: auth 1, admin 1, queue 1, Actions 7, resolution 3, Requester dashboard 2, staff 1, comments 1, responsive 6, live Requester regression 7 (seven separately invoked 1-test runs). These counts describe run #78, not the later review-fix worktree below.
+
+## 14. PR #67 review 5399755207 fixes - 2026-10-03
+
+Addressed [the requested-changes review](https://github.com/L0u1sss/TokTickIT/pull/67#pullrequestreview-5399755207) on `feat/lab4-requester-dashboard`:
+
+| Review item | Change and proof |
+|---|---|
+| 1: Role handling | Staff opening `/dashboard` goes to `/staff/tickets`; Admin goes to `/admin/users`, using history replacement and discarding Requester query parameters. Unit and real-browser tests check the destination and no Forbidden page; unit tests also check no Requester dashboard fetch. The API still returns 403. The UI spec explicitly documents these interim homes until the separate `/staff/dashboard` increment. |
+| 2: Shared My Tickets regression | Retain original `status=New` scalar wire semantics and `filters.status` string, defaults, every old filter, AND scoping, search trimming/case/number matching, all three priorities, all six sort combinations, sizes 10/20/50, stable ties and out-of-range pages. PostgreSQL regression uses 24 inserted mixed-status rows and expectations from those records, not the parser/service. Original invalid URLs remain rejected. The browser checks the complete legacy query, fresh reload, disjoint pages, real Back/Forward, restored controls/results and page reset after changing status. Existing Lab 2/3 suites remain unchanged and pass. |
+| 3: Presentation assertions | Match exact `Showing 1–1 of 1 tickets` and `Showing 1–2 of 2 tickets` text with the literal en dash; no wildcard regex. |
+| 4: Recently Updated decision | API/UI/spec explicitly say no time cutoff, all current statuses, latest five owned Tickets ordered by `updatedAt DESC, id DESC`. API regression makes all eight status fixtures 30 days old and verifies old/terminal Tickets and tie ordering remain eligible. |
+| 5: Fresh DB provenance | Immediately before Playwright, the runner queries counts directly from the same isolated migrated Prisma schema in a repeatable-read transaction. It writes a unique temporary file and a published copy. The browser reads only the runner-supplied temporary path, requires the current UUID/schema, checks timestamp freshness and source SHA format, then compares actual dashboard API metrics to those fresh direct counts. The duplicate hard-coded 21/1 metric assertion is removed. Each artifact records schema, generation time, source/checkout SHA, dirty-worktree flag, and CI run ID/number/attempt. CI explicitly passes the PR source head separately from GitHub's synthetic merge checkout. A committed sample is historical evidence and is never the browser oracle. |
+| 6: Failure evidence attribution | Browser interception verifies client error sanitization, empty privileged state and Retry. The separate API test injects a database failure to prove server-side 500 redaction. These are two different layers; browser interception does not count as backend failure evidence. |
+| 7: CI #78 counts | Section 13 links the run/job, full source/checkout/base SHAs and verified log excerpts, with suite counts from job logs. |
+
+Review-fix local results: isolated server regression **36 files / 482 tests passed**; client regression **21 files / 154 tests passed**; Requester dashboard/role redirect/legacy My Tickets browser suite **3/3 passed**; client build and both lint checks passed. All three supported viewports passed automated axe/overflow checks in the dashboard evidence helper. These results describe the changed local worktree; the [database sample](../../artifacts/lab-04/screenshots/requester-dashboard/database-counts.json) records its parent SHA and `workingTreeDirty=true`. Hosted results for the review-fix commit are recorded separately after push. Staff Dashboard, peer approval and final-main evidence remain separate deliverables.
+
+
+## PR #68 Integration and Verification Scope ? 2026-10-03
+
+Lab 4 handout sections 4.6, 6.2, 8.1 and Answer Part 5 define this increment. Merge `cd66073` from `lab4-staging` into `feat/lab4-staff-dashboard` uses incoming conflict hunks and retains the staff feature files; backup is `backup/pr68-staff-dashboard-before-staging-20261003` at `b617f87`. Integration restores Dashboard routing/API types/test registration and adopts current BR-28/BR-43, including deduplicated Recorded/Assigned/Performed attribution and authoritative aggregate recency. No prior feature files are deleted.
+
+Coverage: API exact global/ownership/status/priority counts; five-row limits and tied-timestamp ordering; all attribution combinations; Administrator and staff session identity; forbidden/unauthenticated access and spoofed headers/queries; Queue drill-down equivalence; Action-write recency; real empty migrated-schema metrics; safe backend failure envelope. Component tests cover loading, numeric zero, all summary/attribution/deep links, safe failure/retry, role home/navigation, Requester denial and API Forbidden. Browser tests compare both roles against fresh direct database evidence in the same isolated schema, click every ownership/status/priority metric, visit Ticket Detail/Actions, and capture desktop/tablet/mobile/reflow, loading, failure, zero and Forbidden with axe/overflow checks. Browser zero/failure responses are UI fixtures; real zero/backend redaction are tested in the API suite.
+
+Commands: server `test:isolated`, `build`, `lint`; client `test`, `build`, `lint`, `test:dashboards:e2e`, `test:auth:e2e`, `test:staff:e2e`, `test:admin:e2e`, `test:workflow:e2e`. Verified local results are recorded below. Whole-Lab release, final-main submission PDF, and independent peer approval remain outside this feature PR.
+
+
+<a id="pr-68-validation"></a>
+### PR #68 Validation ? 2026-10-03 (Asia/Bangkok)
+
+Implementation source: `378c8e09f6700848d3045696bc095bafdb5bc8ae`, following merge `baa49c8` of staging `cd66073`. Full regression ran in the evolving worktree before the implementation commit; final browser runs use that implementation SHA. Later changes are documentation and generated evidence only. [Verified terminal excerpts](../../artifacts/lab-04/test-output/pr68-validation-excerpts.txt) record this distinction. No hosted CI, peer approval or final-main result is implied.
+
+| Verification | Result | Evidence |
+|---|---|---|
+| Server build and lint | Pass | [Verified excerpts](../../artifacts/lab-04/test-output/pr68-validation-excerpts.txt) |
+| Full isolated server regression | 37 files, 489 tests passed; includes 7 Staff Dashboard tests | [Verified excerpts](../../artifacts/lab-04/test-output/pr68-validation-excerpts.txt) |
+| Client build and lint | Pass | [Verified excerpts](../../artifacts/lab-04/test-output/pr68-validation-excerpts.txt) |
+| Full client regression | 22 files, 161 tests passed; includes 7 Staff Dashboard tests | [Verified excerpts](../../artifacts/lab-04/test-output/pr68-validation-excerpts.txt) |
+| `test:dashboards:e2e` | 4 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-dashboards-e2e.txt) |
+| `test:auth:e2e` | 1 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-auth-e2e.txt) |
+| `test:staff:e2e` | 1 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-staff-e2e.txt) |
+| `test:admin:e2e` | 1 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-admin-e2e.txt) |
+| `test:workflow:e2e` | 3 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-workflow-e2e.txt) |
+| `test:actions:e2e` | 7 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-actions-e2e.txt) |
+| `node scripts/run-auth-e2e.mjs --staff-queue` | 1 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-staff-queue-e2e.txt) |
+| `node scripts/run-auth-e2e.mjs --communications` | 1 passed | [Raw log](../../artifacts/lab-04/test-output/pr68-communications-e2e.txt) |
+| `git diff --check`; unresolved merge entries; deleted feature files | Pass; none; none | Local Git verification |
+
+[Fresh database evidence](../../artifacts/lab-04/screenshots/staff-dashboard/database-counts.json) records independent Prisma counts/list IDs/attributions, implementation SHA, run ID, temporary migrated schema and UTC timestamp. Browser assertions use this same-run schema evidence. Staff Unassigned Open/Owned by Me are 11/11; Administrator Owned by Me is 0. Both users' bounded Action unions and every status/priority count match their independent database queries. These values describe synthetic isolated fixtures, not development data.
+
+Screenshots: [Staff desktop](../../artifacts/lab-04/screenshots/staff-dashboard/staff-nonzero-1440.png), [tablet](../../artifacts/lab-04/screenshots/staff-dashboard/staff-nonzero-834.png), [mobile](../../artifacts/lab-04/screenshots/staff-dashboard/staff-nonzero-390.png), [Administrator desktop](../../artifacts/lab-04/screenshots/staff-dashboard/administrator-nonzero-1440.png), [loading](../../artifacts/lab-04/screenshots/staff-dashboard/loading.png), [safe failure](../../artifacts/lab-04/screenshots/staff-dashboard/safe-failure.png), [zero UI fixture](../../artifacts/lab-04/screenshots/staff-dashboard/zero-ui-fixture.png), and [Requester Forbidden](../../artifacts/lab-04/screenshots/staff-dashboard/requester-forbidden.png). All captured Staff Dashboard states pass page overflow and no serious/critical axe violations. `720x450` is an automated reflow viewport simulation; actual browser zoom/manual keyboard review remains separate. Real empty migrated-schema metrics and safe backend failures pass the API/service suite independently of browser response injection.
+
+<a id="pr68-review-5400210287"></a>
+### PR #68 Review 5400210287 Validation - 2026-10-03 (Asia/Bangkok)
+
+Response to [Tanaboonnnnn's review](https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400210287): High Priority Tickets denotes `itPriority=HIGH` across all statuses, with the existing `urgentTickets` compatibility key, oldest-update order and five-row limit. Capture `generatedAt` once before the repeatable-read transaction; it is request capture time, not query completion or database snapshot time.
+
+| Verification | Result | Scope |
+|---|---|---|
+| Server `npm run test:isolated -- tests/lab-04/staff-dashboard.api.test.ts` | 1 file, 8 tests passed | Includes time advancement at transaction execution, unchanged captured timestamp, HIGH-only/terminal rows and tied ordering, existing metrics/attribution/authorization/failure checks |
+| Client `npm test -- --run tests/lab-04/StaffDashboard.test.tsx` | 1 file, 7 tests passed | High Priority heading, absence of the former Urgent heading, exact preview links and Last refreshed value, existing states/access tests |
+| Server and client build/lint | Passed | Changed worktree before source commit `ebf53d8`; browser-only test correction subsequently committed in `1a3d7bd` |
+| Dashboard browser suite | 4 tests passed (41.8s) | Fresh Requester/Staff/Administrator database comparisons, HIGH preview label/links and timestamp from the actual response rendered by the page; [raw log](../../artifacts/lab-04/test-output/pr68-review-5400210287-dashboards-e2e.txt) |
+
+The passing browser run uses source/checkout `1a3d7bd428d1a78f6f31c800c5832645819a628f`. [Direct database evidence](../../artifacts/lab-04/screenshots/staff-dashboard/database-counts.json) records run `764612f2-48ce-4226-8210-1516732fa38b`, isolated schema `auth_e2e_test_8056f5067b5aa213`, and generation time `2026-10-03T10:35:47.111Z`. Its dirty-worktree flag reflects generated artifacts from the prior attempt; implementation and browser test source were committed before this run. Refreshed [Staff desktop](../../artifacts/lab-04/screenshots/staff-dashboard/staff-nonzero-1440.png) and [Administrator desktop](../../artifacts/lab-04/screenshots/staff-dashboard/administrator-nonzero-1440.png) show the High Priority Tickets heading. All browser states retain automated overflow/axe checks at the supported viewports.
+
+The first browser attempt compared the rendered timestamp against a separate API request and failed because each request captures its own time. The corrected assertion observes the browser's own response instead. Prior full-regression totals above and [CI #82](https://github.com/L0u1sss/TokTickIT/actions/runs/37114919659) are historical results for the previous implementation/head, not results claimed for these review fixes. Screenshot/database artifact paths are refreshed by the latest browser run; their embedded provenance takes precedence over the historical source attribution above. Independent re-review remains pending.
+
+
+<a id="issue-59-verification"></a>
+
+## Issue #59 verification - 2026-10-03
+
+Full command: `node scripts/verify-lab4.mjs`, run **18:18-18:28 Asia/Bangkok** (11:18-11:28 UTC). All 18 commands completed with exit code 0. Environment: Windows, Node v24.14.0, AMD Ryzen 5 3600, 16 GiB RAM; real PostgreSQL with disposable migrated schemas and Playwright Chromium. The [manifest](../../artifacts/lab-04/issue-59/verification.json) records exact timestamps, commands, log paths and SHA-256 hashes for the tested server/client/scripts/CI source.
+
+Provenance: branch `test/lab4-e2e-and-regression`, baseline `54238fec9b6a1bab1ad3d50e72656214aa086ba9`, plus the uncommitted changes identified by those hashes. `sourceUnchangedDuringRun` is **true**. Results are worktree evidence, not passing checks on the baseline commit alone. Documentation and generated evidence are outside the source hash inventory. Hosted CI on the final PR head, peer approval and final-main/PDF release evidence are **not run/pending**; old PR CI links remain historical.
+
+### Actual required suites and file paths
+
+| Layer | Actual file | Executed tests |
+|---|---|---:|
+| API | `server/tests/lab-04/actions-taken.api.test.ts` | 34 PASS |
+| API | `server/tests/lab-04/ticket-workflow.api.test.ts` | 79 PASS |
+| API | `server/tests/lab-04/requester-dashboard.api.test.ts` | 9 PASS |
+| API | `server/tests/lab-04/staff-dashboard.api.test.ts` | 8 PASS |
+| Concurrent operations | `server/tests/lab-04/ticket-mutations.api.test.ts` | 10 PASS |
+| Unit | `server/tests/lab-04/ticket-workflow.test.ts` | 64 PASS |
+| Migration/recovery/seed | `server/tests/lab-04/migration.test.ts` | 3 PASS |
+| Component | `client/tests/lab-04/ActionsTaken.test.tsx` | 20 PASS |
+| Component | `client/tests/lab-04/TicketWorkflow.test.tsx` | 6 PASS |
+| Component | `client/tests/lab-04/RequesterDashboard.test.tsx` | 5 PASS |
+| Component | `client/tests/lab-04/StaffDashboard.test.tsx` | 7 PASS |
+| E2E | `client/e2e/lab-04/actions-taken-flow.spec.ts` | 7 PASS |
+| E2E | `client/e2e/lab-04/ticket-resolution.spec.ts` | 3 PASS |
+| E2E | `client/e2e/lab-04/dashboards.spec.ts` | 4 PASS |
+| Performance | `server/tests/lab-04/dashboard-performance.test.ts` | 1 PASS (three role measurements) |
+
+Full [server report](../../artifacts/lab-04/issue-59/server-results.json): **39 files / 586 tests passed**. Full [client report](../../artifacts/lab-04/issue-59/client-results.json): **22 files / 161 tests passed**. JSON reports contain individual test names, actual paths and statuses; command raw logs are in the [evidence directory](../../artifacts/lab-04/issue-59/).
+
+### Browser regression and product quality
+
+| Check / actual browser file | Passed | Raw log |
+|---|---:|---|
+| Required Actions Taken E2E | 7 | [actions-e2e.txt](../../artifacts/lab-04/issue-59/actions-e2e.txt) |
+| Required Ticket resolution E2E | 3 | [resolution-e2e.txt](../../artifacts/lab-04/issue-59/resolution-e2e.txt) |
+| Required role dashboard E2E | 4 | [dashboards-e2e.txt](../../artifacts/lab-04/issue-59/dashboards-e2e.txt) |
+| `client/e2e/lab-03/authentication.spec.ts` | 1 | [authentication-e2e.txt](../../artifacts/lab-04/issue-59/authentication-e2e.txt) |
+| `client/e2e/lab-03/user-administration.spec.ts` | 1 | [administrator-e2e.txt](../../artifacts/lab-04/issue-59/administrator-e2e.txt) |
+| `client/e2e/lab-03/staff-queue.spec.ts` | 1 | [staff-queue-e2e.txt](../../artifacts/lab-04/issue-59/staff-queue-e2e.txt) |
+| `client/e2e/lab-03/staff-ticket-flow.spec.ts` | 1 | [staff-workflow-e2e.txt](../../artifacts/lab-04/issue-59/staff-workflow-e2e.txt) |
+| `client/e2e/lab-03/comments-notes.spec.ts` | 1 | [communications-e2e.txt](../../artifacts/lab-04/issue-59/communications-e2e.txt) |
+| `client/e2e/lab-02/responsive.spec.ts` | 6 | [responsive-e2e.txt](../../artifacts/lab-04/issue-59/responsive-e2e.txt) |
+| `client/e2e/lab-03/requester-regression.spec.ts` and `client/e2e/lab-02/{requester-ticket-lifecycle,ownership-isolation,requester-context,ticket-idempotency,state-recovery,accessibility}.spec.ts` | 7 | [requester-regression-e2e.txt](../../artifacts/lab-04/issue-59/requester-regression-e2e.txt) |
+
+**32 browser tests passed**, including 14 required Lab 4 tests and 18 Labs 1-3 regression tests. Coverage includes initial password change/login/logout, role navigation, Create/My Tickets/Detail, Attachments and ownership, staff claim/reassign/priority/status, Public Comments/Internal Notes, and Administrator user management. The API/unit/component regression also retains Lab 1 health/reference checks and the complete Lab 2/3 suites.
+
+Lab 4 suites capture desktop 1440x900, tablet 834x1112 and mobile 390x844 layouts; captured states check page overflow and serious/critical axe findings. Actions cover keyboard validation/focus, terminal/read-only states, long text and 44px mobile controls. The responsive regression additionally checks Zen Green warning colors and dialog focus behavior. A 720px Staff Dashboard reflow simulation is automated evidence; actual browser zoom, a complete human visual checklist and screen-reader review have not been performed by this increment.
+
+Fresh [dashboard database evidence](../../artifacts/lab-04/screenshots/staff-dashboard/database-counts.json) uses run `bdb880b4-a19f-4c9f-b4c1-8c5f8b481018`, schema `auth_e2e_test_7eaf32f5b759c307` and capture `2026-10-03T11:24:14.982Z`. The browser uses its own response timestamp and compares counts, ordered IDs and attribution to independent Prisma queries. Real zero metrics are covered in API tests; injected browser zero/failure responses establish UI-state behavior separately. [Requester screenshots](../../artifacts/lab-04/screenshots/requester-dashboard/), [Staff/Admin screenshots](../../artifacts/lab-04/screenshots/staff-dashboard/), [Actions screenshots](../../artifacts/lab-04/screenshots/actions-taken/) and [workflow screenshots](../../artifacts/lab-04/screenshots/ticket-workflow/) were refreshed by this run. Historical references to these generated paths must use the latest embedded provenance rather than imply the original PR capture is unchanged.
+
+### Performance result and recovery limits
+
+See the [contract](specification.md#91-performance-smoke-contract-issue-59) and [all samples](../../artifacts/lab-04/issue-59/dashboard-performance.json). Exactly **1,000 Tickets / 5,000 Actions / 10,375 audit events**, five warm-ups, 40 measured requests per role, concurrency 1:
+
+| Role | p95 (ms) | Budget (ms) | Actual |
+|---|---:|---:|---|
+| Requester | 31.73 | 500 | PASS |
+| IT Staff | 75.12 | 500 | PASS |
+| Administrator | 42.71 | 500 | PASS |
+
+All measured responses were 200 with bounded lists. Timing is authenticated Supertest HTTP/database/serialization, not browser/WAN or production-load performance.
+
+Migration tests independently compare populated Lab 3 Users, Tickets, Attachments, Public Comments and Internal Notes before/after migration and repeated seed. Legacy Tickets remain without fabricated Actions. Recovery compares complete legacy rows after pre-use rollback and forward reapplication, and refuses rollback once an Action exists. This verifies the documented disposable pre-use approach; no populated development/production rollback or backup operation was executed.
+
+### Actual acceptance-criterion status
+
+| AC | Actual executed evidence / file paths | Status |
+|---|---|---|
+| AC-01 | `server/tests/lab-04/actions-taken.api.test.ts`; `client/tests/lab-04/ActionsTaken.test.tsx`; `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally |
+| AC-02 | Same Action API/UI/E2E paths above plus `server/tests/lab-03/users-admin.api.test.ts` | PASS locally |
+| AC-03 | `server/tests/lab-04/actions-taken.api.test.ts`; `server/tests/lab-04/migration.test.ts`; Action component/E2E paths above | PASS locally |
+| AC-04 | `server/tests/lab-04/ticket-mutations.api.test.ts`; `server/tests/lab-04/actions-taken.api.test.ts`; `server/tests/lab-04/ticket-workflow.api.test.ts`; `client/tests/lab-03/StaffTicketDetail.test.tsx`; Action/workflow component and E2E suites | PASS locally |
+| AC-05 | `server/tests/lab-04/actions-taken.api.test.ts`; `client/tests/lab-04/ActionsTaken.test.tsx`; `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally |
+| AC-06 | `server/tests/lab-04/ticket-workflow.test.ts`; `server/tests/lab-04/ticket-workflow.api.test.ts`; `client/tests/lab-04/TicketWorkflow.test.tsx`; `client/e2e/lab-04/ticket-resolution.spec.ts` | PASS locally |
+| AC-07 | `server/tests/lab-04/requester-dashboard.api.test.ts`; `client/tests/lab-04/RequesterDashboard.test.tsx`; `client/e2e/lab-04/dashboards.spec.ts`; performance test above | PASS locally |
+| AC-08 | `server/tests/lab-04/staff-dashboard.api.test.ts`; `client/tests/lab-04/StaffDashboard.test.tsx`; `client/e2e/lab-04/dashboards.spec.ts`; performance test above | PASS locally |
+| AC-09 | `server/tests/lab-04/migration.test.ts` | PASS locally |
+| AC-10 | `server/tests/lab-04/actions-taken.api.test.ts`; `client/tests/lab-04/ActionsTaken.test.tsx`; `client/tests/lab-03/StaffTicketDetail.test.tsx`; `client/e2e/lab-04/actions-taken-flow.spec.ts` | PASS locally |
+| AC-11 | Existing Lab 1/2/3 server/client suites in full JSON reports; all actual browser regression paths listed above | PASS locally |
+| AC-12 | All three `client/e2e/lab-04/` specs and `client/e2e/lab-02/responsive.spec.ts` | PASS automated responsive/axe checks; additional manual checklist pending |
+| AC-13 | `docs/lab-04/reviewer.md`, `.github/workflows/ci.yml`, `docs/lab-04/ui-spec.md`, final-main/PDF release audit | Not run / pending release issue; no PASS claimed |
+
+The two traceability tables together identify planned scenarios, consolidated actual files and observed outcomes. Required APIs, components and E2E suites all ran successfully. Server/client lint/build and Prisma validation passed; `git diff --check` and source/evidence-path consistency were checked after documentation finalization. Final PR head CI and independent review must be recorded after commit/push/PR; this work does not fabricate a CI URL or reviewer approval.
+
+
+## Issue #60 Verification
+
+Executed on 2026-10-03, 19:47-20:00 Asia/Bangkok, on the uncommitted `fix/lab4-ui-accessibility-hardening` worktree based on `68ce6ea`. Final runtime/test/configuration source hashes match between the full run and the targeted rerun and were unchanged during both runs.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Server regression | PASS: 39 files / 586 tests | [JSON](../../artifacts/lab-04/issue-60/server-results.json), [log](../../artifacts/lab-04/issue-60/server-regression.txt) |
+| Client regression | PASS: 22 files / 170 tests | [JSON](../../artifacts/lab-04/issue-60/client-results.json), [log](../../artifacts/lab-04/issue-60/client-regression.txt) |
+| Lab 4 real API/browser | PASS: Actions 7, workflow 3, dashboards 4 | [Actions](../../artifacts/lab-04/issue-60/actions-e2e.txt), [workflow](../../artifacts/lab-04/issue-60/resolution-e2e.txt), [dashboards](../../artifacts/lab-04/issue-60/dashboards-e2e.txt) |
+| New UI style/responsive/accessibility | PASS: 13 tests, 63 screenshot/JSON pairs; no WCAG-tagged axe violations | [log](../../artifacts/lab-04/issue-60/ui-hardening-e2e.txt), [catalog](./ui-evidence-60.md) |
+| Labs 1-3 browser regression | PASS: 18 tests, including seven Requester/attachment/ownership/idempotency/recovery/accessibility tests on rerun | [combined manifest](../../artifacts/lab-04/issue-60/verification-final.json), [Requester log](../../artifacts/lab-04/issue-60/requester-regression-e2e.txt) |
+| Dashboard performance | PASS: Requester p95 9.29 ms; IT Staff 21.32 ms; Administrator 16.13 ms; 500 ms budget | [samples](../../artifacts/lab-04/issue-60/dashboard-performance.json) |
+| Lint/build/Prisma | PASS: both applications lint/build and schema validation | [manifest](../../artifacts/lab-04/issue-60/verification-final.json) |
+| Diff, local evidence links and screenshot JSON | PASS | `git diff --check`; all 63 referenced screenshot/JSON pairs exist and contain empty violation/out-of-bounds/clipping/overlap findings |
+
+The full run passed 18/19 commands. Its last Requester suite failed after Chromium returned `net::ERR_NETWORK_CHANGED` for a Public Comment POST; the UI retained the entered draft. A targeted rerun passed all seven Requester tests without a source change. [Initial full manifest](../../artifacts/lab-04/issue-60/verification.json), [observed network failure](../../artifacts/lab-04/issue-60/requester-regression-initial-failure.json), [same-source rerun manifest](../../artifacts/lab-04/issue-60/verification-selected.json) and [combined final results](../../artifacts/lab-04/issue-60/verification-final.json) retain that distinction. The runner overwrote the failed command's raw log on rerun; its inspected trace diagnosis is preserved separately and is not presented as a reconstructed log. Earlier diagnostic work is retained in `artifacts/lab-04/issue-60-diagnostic/`, including failed tests and changes during that exploratory run; it is not final passing evidence.
+
+New and extended traceability:
+
+| ID / AC | Actual file | New check |
+|---|---|---|
+| STYLE-01, RV-01-02, A11Y-01-02 / AC-12 | `client/e2e/lab-04/ui-hardening.spec.ts` | Three roles; four viewports; long names/descriptions/filenames; Zen Green primary; control geometry/clipping/overlap; mobile targets; no axe violations or unexpected console/page errors; real keyboard skip/drill-down, Action validation/Escape/focus return, attachment/admin modal trap/return |
+| UI-03, API-14 / AC-10-12 | `client/e2e/lab-04/ui-hardening.spec.ts` | Injected Action 500/conflict retains draft/request ID and blocks writes until reload; communication failure retains draft. These are UI fixtures, not backend authorization/count proof |
+| REG-01 / AC-11-12 | `client/tests/lab-03/AppAuthorization.test.tsx` | Staff pathname/active navigation with queries and fragments; role shell skip link covered in the browser |
+| UI-04 / AC-10-12 | `client/tests/lab-04/TicketWorkflow.test.tsx` | Failed reload produces safe feedback; synchronous lock and disabled recovery controls prevent repeated pending reload |
+| REG-03 / AC-10-12 | `client/tests/lab-03/TicketCommunication.test.tsx` | Required/invalid/help semantics and first-error focus; retained drafts; denied communication entries/forms removed; repeated resolution indication guarded |
+| REG-02 / AC-10-12 | `client/tests/lab-02/TicketDetailPage.test.tsx` | Pending attachment-removal Escape cannot discard reason; failure retains it and restores cancellation/recovery |
+
+Component workers are bounded to two without increasing the existing test timeout; exploratory high-concurrency jsdom runs timed out in existing typing-heavy tests. The workflow screenshot helper restores focus by a marker in the current document and asserts the URL after axe, avoiding an exploratory stale execution-context handle failure. CI now runs the UI audit and uploads workflow/Issue #60 evidence.
+
+[Completed visual/accessibility checklist](./ui-spec.md#issue-60-visual-and-accessibility-evidence) records the exact automated scope. Manual browser zoom/screen-reader checks, hosted CI on the eventual PR head, peer approval and final-main/PDF release verification remain pending. The published [PR #70 title and description](https://github.com/L0u1sss/TokTickIT/pull/70) follow PRs #68-69; the earlier preparation files are not present in the current repository.
+
+## Issue #61 Release-Candidate Verification
+
+The complete run on **2026-10-03, 22:11–22:20 Asia/Bangkok** passed **19/19
+commands** with unchanged runtime source hashes. Branch:
+`chore/lab4-release-preparation`; baseline: `bab4fc1`. The manifest identifies the
+tested worktree and all source hashes in addition to that baseline commit.
+
+| Scope | Actual result |
+|---|---|
+| Server regression | **39 files / 586 tests PASS** |
+| Client regression | **22 files / 170 tests PASS** |
+| Required live Lab 4 browser checks | **14 PASS**: Actions 7, workflow 3, dashboards 4 |
+| Labs 1–3 browser regression | **18 PASS**: auth/admin/queue/staff/communications 5, responsive 6, Requester 7 |
+| Fixture UI/keyboard/accessibility | **13 PASS**, 63 PNG/JSON pairs, zero axe/layout findings |
+| Dashboard performance p95 | Requester **13.03 ms**, Staff **17.30 ms**, Admin **15.83 ms**, each ≤500 ms |
+| Lint/build/Prisma | **PASS** |
+| Fresh clone install/generate/migrate/seed/build/health | **PASS**; 10 Users/8 Tickets/6 Actions and repeated seed leaves records/credentials unchanged |
+
+[Full manifest](../../artifacts/lab-04/issue-61/release-candidate/verification.json),
+[summary](../../artifacts/lab-04/issue-61/results-summary.json),
+[fresh clone](../../artifacts/lab-04/issue-61/fresh-clone/verification.json),
+[detailed results](release-results.md),
+[release requirement audit](release-audit.md).
+
+AC-01–12 reuse the actual source-file mapping above and passed in this complete
+run. The archive contains 159 screenshots and run-specific direct dashboard
+database counts, compared with API/UI/drill-down by the live browser suite.
+Injected zero/error UI states remain distinct from database/API proof.
+
+AC-13 remains **pending final release**: preparation/staging-to-main approvals,
+exact-SHA final-main tests/CI, final Project state and PDF acceptance. Feature
+approvals and staging CI are now verified in the authoritative
+[review snapshot](reviewer.md#issue-61-github-review-and-integration-snapshot--2026-10-03),
+superseding earlier Pending observations without rewriting historical results.
+
+The initial `issue-61/candidate/verification.json` completed all commands while
+release tools were edited and correctly records changed source/overall failure.
+The later `release-candidate/` run above used frozen corrected sources. Named
+runs cannot overwrite an existing manifest. Final-main verification rejects the
+current branch, and final PDF export independently rejects candidate metadata,
+missing final-main verification or mismatching current source hashes. Hosted CI
+now saves reports for its own run ID and test-step outcomes, avoiding historical
+tracked PASS reports after a skipped test step.
+
+## PR #71 Review 5401571075: Final PDF Provenance
+
+Scope: local repair on `chore/lab4-release-preparation`, baseline
+`07065bd2ca53d59b4b3e36978fecc9988138881f`, plus the worktree changes identified
+by the [focused result and source hashes](../../artifacts/lab-04/issue-61/review-5401571075/summary.json).
+The earlier complete candidate/application results above remain historical;
+this repair changes the PDF gate, its regression tests, CI and release instructions.
+
+| Check | Actual result and evidence |
+|---|---|
+| Provenance regressions | **31/31 PASS**, no failures/skips; `node --test scripts/tests/lab4-report-provenance.test.mjs`; [raw TAP log](../../artifacts/lab-04/issue-61/review-5401571075/provenance-tests.txt) |
+| Actual builder CLI guards | **2/2 expected rejections**: [external final data](../../artifacts/lab-04/issue-61/review-5401571075/external-data-cli.txt), [candidate as final](../../artifacts/lab-04/issue-61/review-5401571075/candidate-final-cli.txt) |
+| Candidate PDF smoke | **PASS**: 21 pages, Parts 1–9, 13 images, 64 clickable annotations / 31 unique URLs, Thai text and candidate footer on all pages; [independent PDF checks](../../artifacts/lab-04/issue-61/review-5401571075/pdf-smoke-checks.json), [export manifest](../../artifacts/lab-04/issue-61/review-5401571075/pdf-smoke/pdf-manifest.json) |
+| Source/syntax/whitespace | Implementation hashes stayed unchanged during the final focused run; all three changed Node modules passed `node --check`; `git diff --check` passed |
+
+The positive fixtures commit content first, then generate invented passing
+verification manifests for the resulting main SHA. They prove that clean tracked
+content and an alternate committed `--data` work without storing a self-referential
+SHA. Negative cases cover staged/unstaged data and template edits, external,
+untracked and ignored data, hidden edits with `assume-unchanged`, modified
+screenshots/documents, symlink/junction escapes, partial/stale verification,
+changes after validation, protected output collisions, tracked sidecars and
+reserved output names. Generated fixture manifests are not actual release evidence.
+
+The PDF smoke uses the real committed candidate data and original evidence;
+the original submission PDF remains at its recorded SHA-256. No actual final-main
+PDF was generated. Updated-head hosted CI and independent peer re-review remain
+pending until these fixes are published.

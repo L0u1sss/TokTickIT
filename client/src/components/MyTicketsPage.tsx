@@ -17,6 +17,7 @@ import {
   type TicketMetadata,
   type TicketSortField,
   type TicketSortOrder,
+  type TicketStatusFilter,
   type TicketSummary,
 } from "../api.js";
 import { useRequester } from "../context/RequesterContext.js";
@@ -36,6 +37,9 @@ const emptyMetadata: TicketMetadata = { categories: [], relatedSystems: [] };
 const allowedQueryFields = new Set([
   "search",
   "status",
+  "statusIn",
+  "resolvedFrom",
+  "resolvedBefore",
   "requestedPriority",
   "categoryId",
   "relatedSystemId",
@@ -67,6 +71,14 @@ function queryFromLocation(locationSearch = window.location.search): LocationQue
 
   const priority = parameters.get("requestedPriority");
   const status = parameters.get("status");
+  const statusIn = parameters.get("statusIn");
+  const resolvedFrom = parameters.get("resolvedFrom"), resolvedBefore = parameters.get("resolvedBefore");
+  const validStatuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
+  if (statusIn !== null && (status !== null || statusIn.split(",").some(value => !validStatuses.includes(value)) || new Set(statusIn.split(",")).size !== statusIn.split(",").length)) invalid = true;
+  const validUtc = (value: string | null) => value !== null && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+  if (resolvedFrom !== null || resolvedBefore !== null) {
+    if (!validUtc(resolvedFrom) || !validUtc(resolvedBefore) || resolvedFrom! >= resolvedBefore! || !statusIn || statusIn.split(",").some(value => !["RESOLVED", "CLOSED"].includes(value))) invalid = true;
+  }
   const sortBy = parameters.get("sortBy");
   const sortOrder = parameters.get("sortOrder");
   const rawCategoryId = parameters.get("categoryId");
@@ -80,7 +92,7 @@ function queryFromLocation(locationSearch = window.location.search): LocationQue
   const pageSize = positiveInteger(rawPageSize);
 
   if (search && Array.from(search).length > 120) invalid = true;
-  if (status !== null && status !== "New") invalid = true;
+  if (status !== null && !["New", "OPEN_GROUP", "WAITING_FOR_REQUESTER"].includes(status)) invalid = true;
   if (priority !== null && !["LOW", "MEDIUM", "HIGH"].includes(priority)) invalid = true;
   if (rawCategoryId !== null && categoryId === undefined) invalid = true;
   if (rawRelatedSystemId !== null && relatedSystemId === undefined) invalid = true;
@@ -93,10 +105,12 @@ function queryFromLocation(locationSearch = window.location.search): LocationQue
     invalid,
     query: {
       ...(search && Array.from(search).length <= 120 ? { search } : {}),
-      ...(status === "New" ? { status: "New" as const } : {}),
+      ...(["New", "OPEN_GROUP", "WAITING_FOR_REQUESTER"].includes(status ?? "") ? { status: status as TicketStatusFilter } : {}),
       ...(["LOW", "MEDIUM", "HIGH"].includes(priority ?? "")
         ? { requestedPriority: priority as RequestedPriority }
         : {}),
+      ...(statusIn ? { statusIn } : {}),
+      ...(resolvedFrom && resolvedBefore ? { resolvedFrom, resolvedBefore } : {}),
       ...(categoryId ? { categoryId } : {}),
       ...(relatedSystemId ? { relatedSystemId } : {}),
       sortBy: (["createdAt", "ticketNumber", "summary"].includes(sortBy ?? "")
@@ -115,6 +129,9 @@ function isDefaultQuery(query: TicketListQuery) {
   return (
     !query.search &&
     !query.status &&
+    !query.statusIn &&
+    !query.resolvedFrom &&
+    !query.resolvedBefore &&
     !query.requestedPriority &&
     !query.categoryId &&
     !query.relatedSystemId &&
@@ -130,6 +147,9 @@ function queryLocation(query: TicketListQuery): string {
   const parameters = new URLSearchParams();
   if (query.search) parameters.set("search", query.search);
   if (query.status) parameters.set("status", query.status);
+  if (query.statusIn) parameters.set("statusIn", query.statusIn);
+  if (query.resolvedFrom) parameters.set("resolvedFrom", query.resolvedFrom);
+  if (query.resolvedBefore) parameters.set("resolvedBefore", query.resolvedBefore);
   if (query.requestedPriority) parameters.set("requestedPriority", query.requestedPriority);
   if (query.categoryId) parameters.set("categoryId", String(query.categoryId));
   if (query.relatedSystemId) parameters.set("relatedSystemId", String(query.relatedSystemId));
@@ -321,7 +341,9 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
     } else if (name === "requestedPriority") {
       nextQuery.requestedPriority = value ? (value as RequestedPriority) : undefined;
     } else if (name === "status") {
-      nextQuery.status = value === "New" ? "New" : undefined;
+      nextQuery.status = value && value !== "RESOLVED_GROUP" ? (value as TicketStatusFilter) : undefined;
+      nextQuery.statusIn = value === "RESOLVED_GROUP" ? "RESOLVED,CLOSED" : undefined;
+      nextQuery.resolvedFrom = undefined; nextQuery.resolvedBefore = undefined;
     }
     applyQuery(nextQuery);
   }
@@ -339,7 +361,7 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
 
   const hasCriteria = Boolean(
     query.search ||
-      query.status ||
+      query.status || query.statusIn ||
       query.requestedPriority ||
       query.categoryId ||
       query.relatedSystemId,
@@ -428,8 +450,8 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
             <option value="">All priorities</option>
             <option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option>
           </Filter>
-          <Filter label="Status" name="status" value={query.status ?? ""} onChange={updateFilter}>
-            <option value="">All statuses</option><option value="New">New</option>
+          <Filter label="Status" name="status" value={query.status ?? (query.statusIn === "RESOLVED,CLOSED" ? "RESOLVED_GROUP" : query.statusIn ? "CUSTOM_GROUP" : "")} onChange={updateFilter}>
+            <option value="">All statuses</option><option value="OPEN_GROUP">Open Tickets</option><option value="WAITING_FOR_REQUESTER">Waiting for Requester</option><option value="New">New</option><option value="RESOLVED_GROUP">Resolved / Closed</option>{query.statusIn && query.statusIn !== "RESOLVED,CLOSED" && <option value="CUSTOM_GROUP">Selected statuses</option>}
           </Filter>
           <Filter label="Sort" name="sort" value={`${query.sortBy}:${query.sortOrder}`} onChange={updateFilter}>
             <option value="createdAt:desc">Newest first</option><option value="createdAt:asc">Oldest first</option>
@@ -440,6 +462,7 @@ export default function MyTicketsPage({ initialSearch = "", onCreateTicket }: My
             <option value="10">10</option><option value="20">20</option><option value="50">50</option>
           </Filter>
         </div>
+        {query.resolvedFrom && query.resolvedBefore && <p>Resolved from <time dateTime={query.resolvedFrom}>{displayDate(query.resolvedFrom)}</time> to <time dateTime={query.resolvedBefore}>{displayDate(query.resolvedBefore)}</time> (end excluded).</p>}
         <button className="secondary-button reset-filters" type="button" onClick={resetFilters}>Reset filters</button>
       </section>
 
@@ -483,11 +506,11 @@ function EmptyState({ title, action, onAction }: { title: string; action: string
 
 function TicketTable({ requesterName, tickets, sortBy, sortOrder }: { requesterName: string; tickets: TicketSummary[]; sortBy: TicketSortField; sortOrder: TicketSortOrder }) {
   const sort = (field: TicketSortField) => sortBy === field ? (sortOrder === "asc" ? "ascending" : "descending") : "none";
-  return <div className="ticket-table-region" role="region" aria-label="Ticket results — scroll horizontally for more columns" tabIndex={0}><table><caption>Tickets owned by {requesterName}</caption><thead><tr><th aria-sort={sort("ticketNumber")}>Ticket Number</th><th aria-sort={sort("summary")}>Summary</th><th>Category</th><th>Related System</th><th>Requested Priority</th><th>Status</th><th aria-sort={sort("createdAt")}>Created</th><th>Action</th></tr></thead><tbody>{tickets.map((ticket) => <tr key={ticket.id}><td><a href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a></td><td>{ticket.summary}</td><td>{ticket.category.name}</td><td>{ticket.relatedSystem.name}</td><td><span className={`priority-badge priority-${ticket.requestedPriority.toLowerCase()}`}>{displayPriority(ticket.requestedPriority)}</span></td><td><span className="status-badge">New</span></td><td><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></td><td><a href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></td></tr>)}</tbody></table></div>;
+  return <div className="ticket-table-region" role="region" aria-label="Ticket results — scroll horizontally for more columns" tabIndex={0}><table><caption>Tickets owned by {requesterName}</caption><thead><tr><th aria-sort={sort("ticketNumber")}>Ticket Number</th><th aria-sort={sort("summary")}>Summary</th><th>Category</th><th>Related System</th><th>Requested Priority</th><th>Status</th><th aria-sort={sort("createdAt")}>Created</th><th>Action</th></tr></thead><tbody>{tickets.map((ticket) => <tr key={ticket.id}><td><a href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a></td><td>{ticket.summary}</td><td>{ticket.category.name}</td><td>{ticket.relatedSystem.name}</td><td><span className={`priority-badge priority-${ticket.requestedPriority.toLowerCase()}`}>{displayPriority(ticket.requestedPriority)}</span></td><td><span className="status-badge">{ticket.status}</span></td><td><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></td><td><a href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></td></tr>)}</tbody></table></div>;
 }
 
 function TicketCards({ tickets }: { tickets: TicketSummary[] }) {
-  return <div className="ticket-card-list">{tickets.map((ticket) => <article className="ticket-card" key={ticket.id}><a className="ticket-card-number" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a><h2>{ticket.summary}</h2><dl><div><dt>Category</dt><dd>{ticket.category.name}</dd></div><div><dt>Related System</dt><dd>{ticket.relatedSystem.name}</dd></div><div><dt>Requested Priority</dt><dd>{displayPriority(ticket.requestedPriority)}</dd></div><div><dt>Status</dt><dd>New</dd></div><div><dt>Created</dt><dd><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></dd></div></dl><a className="zen-button ticket-card-action" href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></article>)}</div>;
+  return <div className="ticket-card-list">{tickets.map((ticket) => <article className="ticket-card" key={ticket.id}><a className="ticket-card-number" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</a><h2>{ticket.summary}</h2><dl><div><dt>Category</dt><dd>{ticket.category.name}</dd></div><div><dt>Related System</dt><dd>{ticket.relatedSystem.name}</dd></div><div><dt>Requested Priority</dt><dd>{displayPriority(ticket.requestedPriority)}</dd></div><div><dt>Status</dt><dd>{ticket.status}</dd></div><div><dt>Created</dt><dd><time dateTime={ticket.createdAt}>{displayDate(ticket.createdAt)}</time></dd></div></dl><a className="zen-button ticket-card-action" href={`/tickets/${ticket.id}`} aria-label={`View details for ${ticket.ticketNumber}`}>View details</a></article>)}</div>;
 }
 
 function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (page: number) => void }) {

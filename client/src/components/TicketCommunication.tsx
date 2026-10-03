@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { fetchAuthenticated } from "../api.js";
 
 type Entry = { id: number; content: string; createdAt: string; author: { displayName: string; role: string } };
+const isEntry = (item: Entry) => item && Number.isInteger(item.id) && typeof item.content === "string" && typeof item.author?.displayName === "string" && typeof item.author?.role === "string" && typeof item.createdAt === "string";
+class CommunicationError extends Error { constructor(public status: number) { super("Communication request failed"); } }
+const deniedMessage = (status: number) => status === 401 ? "Your session has ended. Sign in again to continue." : status === 404 ? "This Ticket could not be found." : "You do not have permission to view or post these entries.";
 export function CommunicationSection({ ticketId, staff = false, internal = false }: { ticketId: number; staff?: boolean; internal?: boolean }) {
   const path = `/api/${staff ? "staff/" : ""}tickets/${ticketId}/${internal ? "internal-notes" : "comments"}`;
   const title = internal ? "Internal Note" : "Public Comment";
@@ -10,30 +13,40 @@ export function CommunicationSection({ ticketId, staff = false, internal = false
   const [error, setError] = useState(""), [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0);
   const lock = useRef(false);
+  const input = useRef<HTMLTextAreaElement>(null), fieldId = useId();
+  const [invalid, setInvalid] = useState(false);
+  const [denied, setDenied] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    queueMicrotask(() => { if (!controller.signal.aborted) { setLoading(true); setError(""); } });
+    queueMicrotask(() => { if (!controller.signal.aborted) { setLoading(true); setError(""); setItems([]); } });
     fetchAuthenticated(path, { signal: controller.signal }).then(async response => {
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new CommunicationError(response.status);
       const data = await response.json();
-      if (!Array.isArray(data.items) || !data.items.every((item: Entry) => item && typeof item.content === "string" && typeof item.author?.displayName === "string" && typeof item.createdAt === "string")) throw new Error();
-      if (!controller.signal.aborted) setItems(data.items);
-    }).catch(() => { if (!controller.signal.aborted) setError("Unable to load entries. Please retry."); })
+      if (!Array.isArray(data.items) || !data.items.every(isEntry)) throw new Error();
+      if (!controller.signal.aborted) { setItems(data.items); setDenied(false); }
+    }).catch(failure => { if (!controller.signal.aborted) {
+      const protectedFailure = failure instanceof CommunicationError && [401, 403, 404].includes(failure.status);
+      setDenied(protectedFailure); setError(protectedFailure ? deniedMessage(failure.status) : "Unable to load entries. Please retry.");
+    } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [path, revision]);
   const count = Array.from(content.trim()).length;
   async function post() {
-    if (lock.current) return;
-    if (!count || count > 2000) { setError("Enter 1–2,000 characters."); return; }
+    if (lock.current || denied || loading) return;
+    if (!count || count > 2000) { setInvalid(true); setError("Enter 1–2,000 characters."); input.current?.focus(); return; }
     lock.current = true; setBusy(true); setError(""); setNotice("");
     try {
       const token = document.cookie.split(";").map(c => c.trim()).find(c => c.startsWith("toktickit_csrf="))?.slice("toktickit_csrf=".length);
       const response = await fetchAuthenticated(path, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { "X-CSRF-Token": token } : {}) }, body: JSON.stringify({ content: content.trim() }) });
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new CommunicationError(response.status);
       const entry = await response.json() as Entry;
+      if (!isEntry(entry)) throw new Error();
       setItems(previous => [...previous, entry]); setContent(""); setNotice(`${title} posted.`);
-    } catch { setError("Unable to post. Your draft has been kept. Please retry."); }
+    } catch (failure) {
+      if (failure instanceof CommunicationError && [401, 403, 404].includes(failure.status)) { setItems([]); setDenied(true); setError(deniedMessage(failure.status)); }
+      else setError("Unable to post. Your draft has been kept. Please retry.");
+    }
     finally { lock.current = false; setBusy(false); }
   }
   return <section className={`communication-section ${internal ? "communication-internal" : "communication-public"}`} aria-label={`${title}s`}>
@@ -41,25 +54,27 @@ export function CommunicationSection({ ticketId, staff = false, internal = false
     {loading && <p role="status">Loading entries…</p>}
     {error && <p role="alert">{error} <button className="zen-button secondary-button" type="button" onClick={() => setRevision(v => v + 1)}>Reload entries</button></p>}
     {!loading && !error && items.length === 0 && <p>No entries yet.</p>}
-    {items.map(item => <article key={item.id}><strong>{item.author.displayName}</strong> <span>{item.author.role}</span> <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time><p className="communication-content">{item.content}</p></article>)}
-    <form onSubmit={event => { event.preventDefault(); void post(); }}>
-      <label>{title}<textarea aria-label={title} value={content} disabled={busy} onChange={event => setContent(event.target.value)} /></label>
-      <p>{count}/2,000 characters</p><button className="zen-button" type="submit" disabled={busy || loading}>{busy ? "Posting…" : internal ? "Add Internal Note" : "Post Public Comment"}</button>
-    </form>{notice && <p role="status">{notice}</p>}
+    {!denied && items.map(item => <article key={item.id}><strong>{item.author.displayName}</strong> <span>{item.author.role}</span> <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time><p className="communication-content">{item.content}</p></article>)}
+    {!denied && <form onSubmit={event => { event.preventDefault(); void post(); }}>
+      <label htmlFor={fieldId}>{title}</label><textarea id={fieldId} ref={input} aria-label={title} aria-required="true" aria-invalid={invalid} aria-describedby={`${fieldId}-help`} value={content} disabled={busy} onChange={event => { setContent(event.target.value); if (invalid) { setInvalid(false); setError(""); } }} />
+      <p id={`${fieldId}-help`}>{count}/2,000 characters. Enter 1–2,000 characters.</p><button className="zen-button" type="submit" disabled={busy || loading}>{busy ? "Posting…" : internal ? "Add Internal Note" : "Post Public Comment"}</button>
+    </form>}{notice && !denied && <p role="status">{notice}</p>}
   </section>;
 }
 
 export function ResolutionIndication({ ticketId, status, initialAt }: { ticketId: number; status: string; initialAt?: string | null }) {
   const [at, setAt] = useState(initialAt), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  const lock = useRef(false);
   async function indicate() {
+    if (lock.current || at) return;
     if (!window.confirm("Tell IT Staff the problem appears resolved? IT Staff remain responsible for resolving or closing this Ticket.")) return;
-    setBusy(true); setError("");
+    lock.current = true; setBusy(true); setError("");
     try {
       const response = await fetchAuthenticated(`/api/tickets/${ticketId}/problem-appears-resolved`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       if (!response.ok) throw new Error();
       setAt((await response.json()).problemAppearsResolvedAt);
     } catch { setError("Unable to record the indication. Refresh the Ticket and try again."); }
-    finally { setBusy(false); }
+    finally { lock.current = false; setBusy(false); }
   }
   return <section className="communication-section" aria-label="Resolution indication"><h3>Problem Appears Resolved</h3>
     <p>This informs IT Staff; the Ticket status stays unchanged.</p>

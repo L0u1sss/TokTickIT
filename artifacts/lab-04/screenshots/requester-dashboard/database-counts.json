@@ -1,0 +1,162 @@
+{
+  "source": "Direct Prisma queries before browser assertions; not dashboard API output",
+  "runId": "7d34ab42-d415-4e2c-95b2-3580c1fa1598",
+  "fixtureSchema": "auth_e2e_test_6b3433e0cf77eefd",
+  "generatedAt": "2026-10-03T12:51:00.900Z",
+  "sourceSha": "68ce6eaf51b43913d0a31b36602f69105aae3765",
+  "checkoutSha": "68ce6eaf51b43913d0a31b36602f69105aae3765",
+  "workingTreeDirty": true,
+  "ci": null,
+  "requesterId": 1,
+  "metrics": {
+    "openCount": 21,
+    "waitingForRequesterCount": 1
+  },
+  "openStatuses": [
+    "NEW",
+    "OPEN",
+    "IN_PROGRESS",
+    "WAITING_FOR_REQUESTER",
+    "REOPENED"
+  ],
+  "staff": {
+    "queue-browser@example.test": {
+      "actorId": 5,
+      "metrics": {
+        "unassignedOpenCount": 11,
+        "ownedByMeOpenCount": 11,
+        "byStatus": {
+          "NEW": 9,
+          "OPEN": 11,
+          "IN_PROGRESS": 0,
+          "WAITING_FOR_REQUESTER": 2,
+          "RESOLVED": 1,
+          "CLOSED": 1,
+          "REOPENED": 0,
+          "CANCELLED": 0
+        },
+        "byItPriority": {
+          "LOW": 0,
+          "MEDIUM": 11,
+          "HIGH": 13
+        }
+      },
+      "recentlyUpdated": [
+        24,
+        23,
+        22,
+        21,
+        20
+      ],
+      "urgentTickets": [
+        1,
+        3,
+        5,
+        7,
+        9
+      ],
+      "myActions": [
+        {
+          "id": 8,
+          "attribution": [
+            "RECORDED",
+            "ASSIGNED",
+            "PERFORMED"
+          ]
+        },
+        {
+          "id": 7,
+          "attribution": [
+            "RECORDED"
+          ]
+        },
+        {
+          "id": 6,
+          "attribution": [
+            "ASSIGNED"
+          ]
+        },
+        {
+          "id": 5,
+          "attribution": [
+            "ASSIGNED"
+          ]
+        },
+        {
+          "id": 4,
+          "attribution": [
+            "ASSIGNED"
+          ]
+        }
+      ]
+    },
+    "admin-browser@example.test": {
+      "actorId": 4,
+      "metrics": {
+        "unassignedOpenCount": 11,
+        "ownedByMeOpenCount": 0,
+        "byStatus": {
+          "NEW": 9,
+          "OPEN": 11,
+          "IN_PROGRESS": 0,
+          "WAITING_FOR_REQUESTER": 2,
+          "RESOLVED": 1,
+          "CLOSED": 1,
+          "REOPENED": 0,
+          "CANCELLED": 0
+        },
+        "byItPriority": {
+          "LOW": 0,
+          "MEDIUM": 11,
+          "HIGH": 13
+        }
+      },
+      "recentlyUpdated": [
+        24,
+        23,
+        22,
+        21,
+        20
+      ],
+      "urgentTickets": [
+        1,
+        3,
+        5,
+        7,
+        9
+      ],
+      "myActions": [
+        {
+          "id": 7,
+          "attribution": [
+            "ASSIGNED"
+          ]
+        },
+        {
+          "id": 6,
+          "attribution": [
+            "RECORDED"
+          ]
+        },
+        {
+          "id": 5,
+          "attribution": [
+            "RECORDED"
+          ]
+        },
+        {
+          "id": 4,
+          "attribution": [
+            "RECORDED"
+          ]
+        },
+        {
+          "id": 3,
+          "attribution": [
+            "RECORDED"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,80 @@
+
+> toktickit-client@1.0.0 test
+> vitest run --reporter=default --reporter=json --outputFile=D:\Software_Engineering\toktickit\artifacts\lab-04\issue-61\candidate\client-results.json
+
+
+ RUN  v4.1.10 D:/Software_Engineering/toktickit/client
+
+ ✓ tests/lab-04/ActionsTaken.test.tsx (20 tests) 7022ms
+   ✓ announces validation and focuses the first invalid required field before sending  675ms
+   ✓ keeps focus in the field being corrected while the other required error remains  965ms
+   ✓ closes a protected draft and removes previously shown records after 'FORBIDDEN'  374ms
+   ✓ closes a protected draft and removes previously shown records after 'NOT_FOUND'  358ms
+   ✓ uses each confirmed parent version and Action revision through create, edit, start and completion  967ms
+   ✓ retains a stale edit and explicitly reloads both concurrency tokens before reapplying  671ms
+   ✓ retains create intent and its request ID across an uncertain failure while preventing duplicate submits  626ms
+   ✓ does not announce success or discard a draft when a success response violates the API contract  529ms
+   ✓ does not announce success or discard a draft when a success response violates the API contract  547ms
+   ✓ does not announce success or discard a draft when a success response violates the API contract  547ms
+ ✓ tests/lab-02/CreateTicketPage.test.tsx (14 tests) 13038ms
+     ✓ retains entered text through metadata failure and Retry  311ms
+     ✓ validates a field on blur and clears its message only after correction  325ms
+     ✓ uses Unicode character boundaries without native UTF-16 truncation  316ms
+     ✓ submits one trimmed request, exposes busy state, and renders success  1837ms
+     ✓ uses the same clientRequestId after an outcome-unknown failure  1799ms
+     ✓ maps server field errors without clearing the form  1831ms
+     ✓ shows a blocking conflict and requires review before another submission  2012ms
+     ✓ resets to a clean form for another logical Ticket  1842ms
+     ✓ opens the protected Ticket Detail destination after success  1881ms
+     ✓ keeps or discards a dirty draft according to the Cancel confirmation  438ms
+ ✓ tests/lab-03/StaffTicketDetail.test.tsx (16 tests) 5790ms
+   ✓ shares the returned Action version with the next Ticket operation  578ms
+   ✓ keeps an Action draft mounted through Ticket refresh and sends the new Ticket version  750ms
+   ✓ preserves Action drafts on stale Ticket conflicts and requires reload before retrying  764ms
+   ✓ prevents overlapping Ticket and Action writes in both directions  594ms
+   ✓ retains drafts and the accepted Ticket version when its subsequent refresh fails  838ms
+   ✓ explains lost write permission and clears protected detail when reload also denies access  623ms
+   ✓ blocks Ticket writes after an uncertain Action response and preserves the create request for a safe retry  881ms
+ ✓ tests/lab-02/TicketDetailPage.test.tsx (17 tests) 3667ms
+     ✓ validates a selected file and uploads an allowed attachment  678ms
+     ✓ requires a valid reason and moves removed metadata out of active actions  739ms
+     ✓ keeps a valid removal reason after a safe retryable failure  657ms
+     ✓ keeps the removal dialog and reason while a write is pending, then allows safe recovery  651ms
+ ✓ tests/lab-03/UserManagement.test.tsx (5 tests) 3489ms
+     ✓ shows fields, searches by name/email and one role, clears filters  447ms
+     ✓ creates one role with an initial password and clears the sensitive form on success  1000ms
+     ✓ keeps safe conflict feedback, clears password, allows retry and cancel  1008ms
+     ✓ prevents self-deactivation and confirms a separate password reset  878ms
+ ✓ tests/lab-03/ChangePassword.test.tsx (2 tests) 1752ms
+     ✓ validates on blur and submit with Unicode code points and matching confirmation  873ms
+     ✓ saves password and shows authenticated name/role without the selector  876ms
+ ✓ tests/lab-02/MyTicketsPage.test.tsx (17 tests) 2902ms
+     ✓ maps search, filters, sort, and page size to URL/API state and resets page  665ms
+     ✓ maps every documented priority, sort, and page-size option  956ms
+ ✓ tests/lab-03/TicketCommunication.test.tsx (11 tests) 1600ms
+   ✓ clears previously visible private entries and closes posting after 401  362ms
+   ✓ clears previously visible private entries and closes posting after 404  420ms
+ ✓ tests/lab-03/Login.test.tsx (3 tests) 1728ms
+     ✓ shows generic safe failure, preserves email, clears password and sends cookies  765ms
+     ✓ disables duplicate submit while login is pending then routes to forced change  744ms
+ ✓ tests/lab-03/StaffTicketQueue.test.tsx (9 tests) 1060ms
+     ✓ resets page when applying criteria and preserves query in pagination  402ms
+ ✓ tests/lab-04/TicketWorkflow.test.tsx (7 tests) 916ms
+ ✓ tests/lab-04/StaffDashboard.test.tsx (7 tests) 525ms
+ ✓ tests/lab-04/RequesterDashboard.test.tsx (5 tests) 568ms
+ ✓ tests/lab-03/AppAuthorization.test.tsx (6 tests) 500ms
+ ✓ tests/lab-02/App.requester.test.tsx (8 tests) 352ms
+ ✓ tests/lab-02/RequesterSelection.test.tsx (1 test) 170ms
+ ✓ tests/lab-01/App.test.tsx (5 tests) 74ms
+ ✓ tests/lab-02/RequesterContext.test.tsx (3 tests) 22ms
+ ✓ tests/lab-02/api.ticket-detail.test.tsx (5 tests) 13ms
+ ✓ tests/lab-02/api.create-ticket.test.tsx (3 tests) 11ms
+ ✓ tests/lab-02/api.ticket-list.test.tsx (2 tests) 9ms
+ ✓ tests/lab-03/auth-routing.test.tsx (4 tests) 3ms
+
+ Test Files  22 passed (22)
+      Tests  170 passed (170)
+   Start at  22:00:43
+   Duration  32.93s (transform 704ms, setup 1.90s, import 3.63s, tests 45.21s, environment 11.04s)
+
+JSON report written to D:/Software_Engineering/toktickit/artifacts/lab-04/issue-61/candidate/client-results.json

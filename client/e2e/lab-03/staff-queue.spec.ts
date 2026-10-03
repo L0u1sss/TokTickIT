@@ -7,6 +7,8 @@ test("staff queue: live search, ownership, pagination, detail, browser history a
   await page.getByLabel("Email", { exact: false }).fill("queue-browser@example.test");
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Ticket Queue", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("23 tickets");
   await mkdir("../artifacts/lab-03/screenshots/staff-queue", { recursive: true });

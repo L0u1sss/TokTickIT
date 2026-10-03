@@ -1,0 +1,54 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "toktickit_test", schema "auth_e2e_test_0651a5d205e64ba1" at "localhost:5432"
+
+11 migrations found in prisma/migrations
+
+Applying migration `20260806000000_add_category`
+Applying migration `20260820130000_init_lab02_schema`
+Applying migration `20260825000000_align_lab02_contract`
+Applying migration `20260916000000_authentication_foundation`
+Applying migration `20260916010000_migrate_requester_identity`
+Applying migration `20260918000000_staff_queue`
+Applying migration `20260918010000_require_explicit_it_priority`
+Applying migration `20260918010000_staff_ticket_operations`
+Applying migration `20260919000000_align_internal_note_length`
+Applying migration `20260919010000_resolution_indication`
+Applying migration `20260925000000_actions_taken_foundation`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260806000000_add_category/
+    └─ migration.sql
+  └─ 20260820130000_init_lab02_schema/
+    └─ migration.sql
+  └─ 20260825000000_align_lab02_contract/
+    └─ migration.sql
+  └─ 20260916000000_authentication_foundation/
+    └─ migration.sql
+  └─ 20260916010000_migrate_requester_identity/
+    └─ migration.sql
+  └─ 20260918000000_staff_queue/
+    └─ migration.sql
+  └─ 20260918010000_require_explicit_it_priority/
+    └─ migration.sql
+  └─ 20260918010000_staff_ticket_operations/
+    └─ migration.sql
+  └─ 20260919000000_align_internal_note_length/
+    └─ migration.sql
+  └─ 20260919010000_resolution_indication/
+    └─ migration.sql
+  └─ 20260925000000_actions_taken_foundation/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+
+Running 1 test using 1 worker
+
+(node:7336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e\lab-03\staff-queue.spec.ts:4:1 › staff queue: live search, ownership, pagination, detail, browser history and responsive views
+  1 passed (9.2s)

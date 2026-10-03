@@ -7,8 +7,12 @@ import { parsePositivePathId } from "./path-contract.js";
 
 export const userSummarySelect = { id: true, displayName: true, email: true, role: true, isActive: true, mustChangePassword: true, createdAt: true, updatedAt: true } as const;
 export async function lockUserManagement(tx: Prisma.TransactionClient) {
-  // Shared by account changes and ticket assignment. Acquire before reading either.
+  // Serializes account changes with Ticket owner assignment; callers lock Ticket before this lock.
   await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(350035)`;
+}
+export async function lockActionAssignee(tx: Prisma.TransactionClient, userId: number) {
+  // Action writes use Ticket -> Action -> User row and never take the advisory lock.
+  await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
 }
 function object(body: unknown, fields: string[]) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw validationError([{ field: "form", issue: "Send a JSON object." }]);
@@ -60,6 +64,7 @@ export async function updateUser(prisma: PrismaClient, actorId: number, id: numb
     if (!next.isActive && id === actorId) throw new ApiError(409, "SELF_DEACTIVATION_NOT_ALLOWED", "You cannot deactivate your own account.");
     if (target.isActive && target.role === "ADMINISTRATOR" && (!next.isActive || next.role !== "ADMINISTRATOR") && await tx.user.count({ where: { isActive: true, role: "ADMINISTRATOR" } }) <= 1) throw new ApiError(409, "LAST_ACTIVE_ADMIN_REQUIRED", "Keep at least one active Administrator.");
     if ((!next.isActive || next.role === "REQUESTER") && await tx.ticket.count({ where: { ownerId: id } })) throw new ApiError(409, "USER_HAS_ASSIGNED_TICKETS", "Reassign or close/cancel assigned Tickets before changing this account.");
+    if ((!next.isActive || next.role === "REQUESTER") && await tx.actionTaken.count({ where: { assigneeId: id, status: { in: ["PLANNED", "IN_PROGRESS"] } } })) throw new ApiError(409, "USER_HAS_ASSIGNED_ACTIONS", "Reassign or complete/cancel assigned Actions before changing this account.");
     const user = await tx.user.update({ where: { id }, data, select: userSummarySelect });
     if (reset || !next.isActive || target.role !== next.role) await tx.session.deleteMany({ where: { userId: id } });
     return user;

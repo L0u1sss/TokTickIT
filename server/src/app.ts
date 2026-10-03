@@ -17,6 +17,9 @@ import { staffQueueRouter } from "./staff-queue.js";
 import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
 import { parsePositivePathId } from "./path-contract.js";
 import { getOwnedTicketDetail } from "./ticket-detail-service.js";
+import { requesterActionsRouter, staffActionsRouter } from "./actions-taken.js";
+import { requesterDashboardRouter } from "./requester-dashboard.js";
+import { staffDashboardRouter } from "./staff-dashboard.js";
 import {
   downloadOwnedAttachment,
   removeOwnedAttachment,
@@ -69,6 +72,7 @@ app.use("/api", (req, res, next) => {
 app.use("/api", requireApprovedOrigin);
 app.use("/api/tickets", requireRole("REQUESTER"));
 app.use("/api/metadata", requireRole("REQUESTER"));
+app.use("/api/dashboard", requireRole("REQUESTER"));
 app.use("/api/staff", requireRole("IT_STAFF", "ADMINISTRATOR"));
 app.use("/api/staff", requireStaffCsrf);
 app.use("/api/admin", requireRole("ADMINISTRATOR"));
@@ -76,6 +80,10 @@ app.use("/api/admin", requireStaffCsrf);
 app.use(express.json());
 app.use("/api/admin", userManagementRouter);
 app.use("/api/tickets", requesterCommunicationsRouter);
+app.use("/api/tickets", requesterActionsRouter);
+app.use("/api/dashboard", requesterDashboardRouter);
+app.use("/api/staff", staffActionsRouter);
+app.use("/api/staff", staffDashboardRouter);
 app.use("/api/staff", staffTicketOperationsRouter);
 app.use("/api/staff", staffQueueRouter);
 

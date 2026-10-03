@@ -56,6 +56,7 @@ export interface Attachment {
 }
 
 export interface TicketSummary {
+  resolvedAt?: string | null;
   id: number;
   ticketNumber: string;
   summary: string;
@@ -70,10 +71,14 @@ export interface TicketSummary {
 
 export type TicketSortField = "createdAt" | "ticketNumber" | "summary";
 export type TicketSortOrder = "asc" | "desc";
+export type TicketStatusFilter = "New" | "OPEN_GROUP" | "WAITING_FOR_REQUESTER";
 
 export interface TicketListQuery {
   search?: string;
-  status?: "New";
+  status?: TicketStatusFilter;
+  statusIn?: string;
+  resolvedFrom?: string;
+  resolvedBefore?: string;
   requestedPriority?: RequestedPriority;
   categoryId?: number;
   relatedSystemId?: number;
@@ -94,7 +99,7 @@ export interface TicketListResponse {
   sort: { by: TicketSortField; order: TicketSortOrder };
   filters: {
     search: string | null;
-    status: "New" | null;
+    status: string | null;
     requestedPriority: RequestedPriority | null;
     categoryId: number | null;
     relatedSystemId: number | null;
@@ -104,6 +109,52 @@ export interface TicketListResponse {
 export interface TicketCreateResult {
   ticket: TicketDetail;
   replayed: boolean;
+}
+
+export type StaffTicketStatus = "NEW" | "OPEN" | "IN_PROGRESS" | "WAITING_FOR_REQUESTER" | "RESOLVED" | "CLOSED" | "REOPENED" | "CANCELLED";
+export interface StaffDashboardTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  status: StaffTicketStatus;
+  itPriority: RequestedPriority;
+  owner: { id: number; displayName: string; role: string } | null;
+  version: number;
+  resolvedAt: string | null;
+  updatedAt: string;
+}
+export interface StaffDashboardAction {
+  id: number;
+  ticketId: number;
+  ticketNumber: string;
+  ticketSummary: string;
+  description: string;
+  status: "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  attribution: Array<"RECORDED" | "ASSIGNED" | "PERFORMED">;
+  assignee: { id: number; displayName: string; role: string };
+  revision: number;
+  updatedAt: string;
+}
+export interface StaffDashboardData {
+  metrics: {
+    unassignedOpenCount: number;
+    ownedByMeOpenCount: number;
+    byStatus: Record<StaffTicketStatus, number>;
+    byItPriority: Record<RequestedPriority, number>;
+  };
+  myActions: StaffDashboardAction[];
+  recentlyUpdated: StaffDashboardTicket[];
+  urgentTickets: StaffDashboardTicket[];
+  generatedAt: string;
+}
+
+
+export interface RequesterDashboardData {
+  metrics: { openCount: number; waitingForRequesterCount: number };
+  recentlyUpdated: TicketSummary[];
+  recentlyResolved: TicketSummary[];
+  recentlyResolvedWindow: { from: string; before: string };
+  generatedAt: string;
 }
 
 export interface SystemStatus {
@@ -259,6 +310,9 @@ export async function getTickets(
   const parameters = new URLSearchParams();
   if (query.search) parameters.set("search", query.search);
   if (query.status) parameters.set("status", query.status);
+  if (query.statusIn) parameters.set("statusIn", query.statusIn);
+  if (query.resolvedFrom) parameters.set("resolvedFrom", query.resolvedFrom);
+  if (query.resolvedBefore) parameters.set("resolvedBefore", query.resolvedBefore);
   if (query.requestedPriority) {
     parameters.set("requestedPriority", query.requestedPriority);
   }
@@ -288,6 +342,19 @@ export async function getTicketDetail(
   if (!response.ok) throw await apiResponseError(response);
   return (await response.json()) as TicketDetail;
 }
+
+export async function getRequesterDashboard(requestAsCurrentRequester: RequestAsCurrentRequester, signal?: AbortSignal): Promise<RequesterDashboardData> {
+  const response = await requestAsCurrentRequester("/api/dashboard/requester", { signal });
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as RequesterDashboardData;
+}
+
+export async function getStaffDashboard(signal?: AbortSignal): Promise<StaffDashboardData> {
+  const response = await fetchAuthenticated("/api/staff/dashboard", { signal });
+  if (!response.ok) throw await apiResponseError(response);
+  return (await response.json()) as StaffDashboardData;
+}
+
 
 export async function uploadAttachment(
   requestAsCurrentRequester: RequestAsCurrentRequester,

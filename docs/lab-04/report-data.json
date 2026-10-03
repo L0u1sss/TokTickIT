@@ -1,0 +1,686 @@
+{
+  "status": "release-candidate",
+  "author": "PHALAT AMACHAYAPHA",
+  "studentId": "67070507212",
+  "generatedAt": "2026-10-03T15:20:24.063Z",
+  "branch": "chore/lab4-release-preparation",
+  "sha": "bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d",
+  "mainSha": "2a4b172682c610202bb72eb6cb64f3e62730a48e",
+  "verification": {
+    "manifest": "artifacts/lab-04/issue-61/release-candidate/verification.json",
+    "branch": "chore/lab4-release-preparation",
+    "sha": "bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d",
+    "allPassed": true,
+    "sourceUnchangedDuringRun": true,
+    "commands": [
+      {
+        "id": "server-lint",
+        "status": "PASS"
+      },
+      {
+        "id": "client-lint",
+        "status": "PASS"
+      },
+      {
+        "id": "prisma-validate",
+        "status": "PASS"
+      },
+      {
+        "id": "server-build",
+        "status": "PASS"
+      },
+      {
+        "id": "client-build",
+        "status": "PASS"
+      },
+      {
+        "id": "server-regression",
+        "status": "PASS"
+      },
+      {
+        "id": "client-regression",
+        "status": "PASS"
+      },
+      {
+        "id": "dashboard-performance",
+        "status": "PASS"
+      },
+      {
+        "id": "actions-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "resolution-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "dashboards-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "authentication-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "administrator-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "staff-queue-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "staff-workflow-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "communications-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "responsive-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "ui-hardening-e2e",
+        "status": "PASS"
+      },
+      {
+        "id": "requester-regression-e2e",
+        "status": "PASS"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "title": "Git Use with Engineering Workflow",
+      "paragraphs": [
+        "TokTickIT เป็นระบบ IT Service Desk ที่พัฒนาต่อเนื่องจาก Labs 1–3 โดย Sprint 4 เพิ่ม Actions Taken, Ticket workflow และ Dashboard ตาม role งานแต่ละ issue อยู่บน feature branch ผ่าน peer review และ CI ก่อนรวมเข้า lab4-staging แล้วจึงเตรียม release เข้า main",
+        "PR #62–70 merge เข้า staging แล้ว และ Tanaboonnnnn อนุมัติแต่ละ PR ที่ head สุดท้ายตรงกับข้อมูล GitHub จริง CI #88 ของ staging bab4fc1 ผ่าน ส่วน main 2a4b172 ยังเป็น Lab 3 รายงานฉบับนี้จึงแสดงสถานะ release candidate จนกว่า release PR จะได้รับ review และตรวจจาก final main ครบ",
+        "Project #7 ณ วันที่เก็บหลักฐานมี #52–60 เป็น Done/closed และ #61 เป็น In progress/open ไม่เปลี่ยน release issue เป็น Done จากผลทดสอบ local เพียงอย่างเดียว รายละเอียด review findings, author responses และ approval links อยู่ใน reviewer.md",
+        "Repository links refer to the published, approved lab4-staging baseline. New release audit/report documentation is prepared locally; final submission must publish it and update links to the exact final main SHA. Candidate runtime changes are identified by the verification manifest source hashes, in addition to baseline commit bab4fc1.",
+        "Selected peer review findings: PR #62 requested clearer version/performer/resolution rules; author responses revised the contract and Tanaboonnnnn approved adc5c8f. PR #68 requested HIGH label/predicate consistency and timestamp capture before the transaction; fixes were independently approved at 1bb9670. PR #70 approved the UI/accessibility changes and explicit failed-attempt/rerun evidence at 0c44918. Full findings, responses and exact-head approvals are retained in the local release reviewer snapshot; the online reviewer document remains the historical staging record until publication."
+      ],
+      "links": [
+        {
+          "label": "Repository",
+          "url": "https://github.com/L0u1sss/TokTickIT"
+        },
+        {
+          "label": "Project / Kanban",
+          "url": "https://github.com/users/L0u1sss/projects/7"
+        },
+        {
+          "label": "Release Issue #61",
+          "url": "https://github.com/L0u1sss/TokTickIT/issues/61"
+        },
+        {
+          "label": "Staging CI #88 — Success",
+          "url": "https://github.com/L0u1sss/TokTickIT/actions/runs/37129764540"
+        },
+        {
+          "label": "PR #70 — actual approval",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/70#pullrequestreview-5401218381"
+        },
+        {
+          "label": "main / staging comparison",
+          "url": "https://github.com/L0u1sss/TokTickIT/compare/main...lab4-staging"
+        },
+        {
+          "label": "Historical reviewer record / staging",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/reviewer.md"
+        },
+        {
+          "label": "PR #62: actual contract response",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/62#issuecomment-5888242369"
+        },
+        {
+          "label": "PR #68: requested changes",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400210287"
+        },
+        {
+          "label": "PR #68: approval after fixes",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400376688"
+        }
+      ],
+      "images": [
+        {
+          "path": "artifacts/lab-04/issue-61/github/project-kanban.png",
+          "caption": "GitHub Project จริง: #61 In progress และ implementation issues Done; snapshot ก่อน final release"
+        },
+        {
+          "path": "artifacts/lab-04/issue-61/github/staging-ci-88.png",
+          "caption": "GitHub Actions จริง: staging CI #88 Success ที่ bab4fc1; เป็นหลักฐาน staging ไม่ใช่ final-main CI"
+        }
+      ],
+      "table": {
+        "headers": [
+          "PR / final approved head",
+          "Reviewer",
+          "Observed result"
+        ],
+        "rows": [
+          [
+            "#62 / adc5c8f",
+            "Tanaboonnnnn",
+            "APPROVED; contract finding/response links below"
+          ],
+          [
+            "#63 / 9caa6ef",
+            "Tanaboonnnnn",
+            "APPROVED; additive migration/audit review"
+          ],
+          [
+            "#64 / 3c00995",
+            "Tanaboonnnnn",
+            "APPROVED; local exact-head evidence; no hosted head run"
+          ],
+          [
+            "#65 / 754e9ab",
+            "Tanaboonnnnn",
+            "APPROVED; head CI #71"
+          ],
+          [
+            "#66 / fcf839a",
+            "Tanaboonnnnn",
+            "APPROVED; head CI #73"
+          ],
+          [
+            "#67 / d05ebe0",
+            "Tanaboonnnnn",
+            "APPROVED; head CI #79"
+          ],
+          [
+            "#68 / 1bb9670",
+            "Tanaboonnnnn",
+            "APPROVED; head CI #83"
+          ],
+          [
+            "#69 / 6c40806",
+            "Tanaboonnnnn",
+            "APPROVED; head CI #85"
+          ],
+          [
+            "#70 / 0c44918",
+            "Tanaboonnnnn",
+            "APPROVED; head CI #87"
+          ]
+        ]
+      }
+    },
+    {
+      "title": "Spec DD",
+      "paragraphs": [
+        "Specification แยก FR-01–15, BR-01–43 และ AC-01–13 เพื่อให้พฤติกรรมตรวจสอบได้ ตั้งแต่การบันทึกและแก้ Action, audit history, authorization, concurrency, workflow gate ไปถึง Dashboard, migration และ regression โดยยึด handout และ contract ที่ผ่าน review",
+        "ประเด็นที่ handout ไม่กำหนดรายละเอียดถูกบันทึกเป็น project decisions: ผู้บันทึกกับ assignee/performer เป็นคนละบทบาท; Action projection แก้ได้เฉพาะก่อน terminal แต่ ActionEvent เป็น append-only; requester advisory ไม่เปลี่ยน formal status; Ticket/Action writes ใช้ integer version และล็อก parent ก่อน child",
+        "ขอบเขตไม่เพิ่ม SLA, notification services, inventory, billing, approvals, BI หรือ cloud deployment การ audit ไม่พบ product-rule blocker ใหม่ แต่ AC-13 และ Product DoD ยังต้องผ่าน release approval, final-main tests/CI และ PDF/Kanban สุดท้าย"
+      ],
+      "table": {
+        "headers": [
+          "Rule / decision",
+          "พฤติกรรมที่ยืนยันได้"
+        ],
+        "rows": [
+          [
+            "BR-02 / BR-09–14",
+            "Recorder จาก session; performer ถูกบันทึกเมื่อ assignee ปัจจุบัน complete; COMPLETED/CANCELLED แก้หรือ reopen ไม่ได้"
+          ],
+          [
+            "BR-17 / BR-20–24",
+            "Resolve ต้องมี COMPLETED + Result ใน cycle ปัจจุบัน, ไม่มี active Action และไม่มี follow-up ที่ยังค้างบน Action ที่ไม่ cancelled"
+          ],
+          [
+            "BR-27",
+            "Requester queries มี requesterId ทุกครั้ง; Recently Resolved ใช้ UTC [generatedAt−168h, generatedAt); drill-down ใช้ bounds เดิม"
+          ],
+          [
+            "BR-28 / BR-30",
+            "Staff counts มาจากฐานข้อมูล; My Actions deduplicate Recorded/Assigned/Performed; High Priority = HIGH ทุก status; capture generatedAt ก่อน transaction"
+          ],
+          [
+            "BR-37–39",
+            "Migration additive; legacy resolvedAt เป็น NULL เพราะอนุมานเวลาไม่ได้; seed ซ้ำไม่ทำลายข้อมูลหรือ credentials"
+          ],
+          [
+            "AC-13",
+            "Final main, exact SHA, review, CI, traceability และ PDF เดียวครบเก้าส่วน — pending release integration"
+          ]
+        ]
+      },
+      "links": [
+        {
+          "label": "Engineering specification",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/specification.md"
+        },
+        {
+          "label": "API contract",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/api-spec.md"
+        },
+        {
+          "label": "UI contract",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-spec.md"
+        },
+        {
+          "label": "Contract review / approval",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/62#pullrequestreview-5351094463"
+        }
+      ]
+    },
+    {
+      "title": "Test DD and Traceability",
+      "paragraphs": [
+        "Verification แยก unit/component, API/integration/authorization, additive migration, performance และ authenticated browser flows ผลแต่ละ command เก็บ exit code, เวลา, raw log, JSON report และ SHA-256 ของ runtime source พร้อมตรวจว่า source ไม่เปลี่ยนระหว่างรัน",
+        "Fresh clone ของ committed bab4fc1 ผ่าน npm ci ทั้งสอง lockfiles, Prisma generate/migrate deploy, seed สองครั้ง, build และ health 200 โดยไม่คัดลอก node_modules/.env เดิม ได้ 10 Users, 8 Tickets, 6 Actions และ credentials/records ไม่เปลี่ยนหลัง seed ซ้ำ ใช้และลบเฉพาะ disposable test schema",
+        "The complete release-candidate run passed all 19 commands with unchanged source hashes (2026-10-03 22:11-22:20 Asia/Bangkok): server 39 files/586 tests, client 22 files/170 tests and browser 45 tests. Fresh-clone setup passed separately. Final-main acceptance still requires the full suite on reviewed main plus exact-SHA hosted CI; these are local candidate results.",
+        "An earlier exploratory candidate run also completed 19 commands but source changed during release-tool review; its sourceUnchangedDuringRun=false and allChecksPassed=false remain visible. The release-candidate run above started after those fixes and passed without a source change. Guard checks reject another branch as final main, reject overwriting an existing run, and reject candidate PDF export with --final."
+      ],
+      "table": {
+        "headers": [
+          "Check / AC",
+          "Actual result / file"
+        ],
+        "rows": [
+          [
+            "Lint/build/Prisma",
+            "PASS: server/client lint and build; Prisma validation"
+          ],
+          [
+            "Server regression",
+            "39 files / 586 tests PASS"
+          ],
+          [
+            "Client regression",
+            "22 files / 170 tests PASS"
+          ],
+          [
+            "Required Lab 4 real E2E",
+            "14 PASS: Actions 7, workflow 3, dashboards 4"
+          ],
+          [
+            "Labs 1-3 browser regression",
+            "18 PASS: auth/admin/queue/staff/communication 5, responsive 6, Requester 7"
+          ],
+          [
+            "Visual/keyboard/accessibility",
+            "13 PASS; 63 fixture screenshot/JSON pairs"
+          ],
+          [
+            "Performance p95 / budget 500ms",
+            "REQUESTER: 13.03 ms; IT_STAFF: 17.30 ms; ADMINISTRATOR: 15.83 ms"
+          ],
+          [
+            "AC-01–05 / AC-10",
+            "actions-taken.api.test.ts; ActionsTaken.test.tsx; actions-taken-flow.spec.ts"
+          ],
+          [
+            "AC-06",
+            "ticket-workflow.test.ts; TicketWorkflow.test.tsx; ticket-resolution.spec.ts"
+          ],
+          [
+            "AC-07–08",
+            "requester-dashboard.api.test.ts; staff-dashboard.api.test.ts; dashboards.spec.ts; independent database-counts.json"
+          ],
+          [
+            "AC-09",
+            "migration.test.ts + fresh-clone/verification.json"
+          ],
+          [
+            "AC-11",
+            "Full Labs 1–3 server/client suites and auth/admin/queue/staff/communication/Requester browser runners"
+          ],
+          [
+            "AC-12",
+            "Responsive spec + ui-hardening.spec.ts; desktop/tablet/mobile/reflow, axe, keyboard and geometry"
+          ],
+          [
+            "AC-13",
+            "Pending final-main SHA/tests/CI, release approvals and final PDF/Project evidence"
+          ]
+        ]
+      },
+      "links": [
+        {
+          "label": "Full test traceability",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/tests.md"
+        },
+        {
+          "label": "Lab 4 server tests",
+          "url": "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/server/tests/lab-04"
+        },
+        {
+          "label": "Authenticated browser specs",
+          "url": "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/client/e2e/lab-04"
+        },
+        {
+          "label": "Merged regression PR #69",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/69"
+        }
+      ]
+    },
+    {
+      "title": "AI Use with Reflection",
+      "paragraphs": [
+        "ใช้ GPT-6 ผ่าน OpenAI Codex ช่วยวิเคราะห์ specification, coding, tests และ report preparation โดยแยก specification-agent ที่ค้นหา requirement/decision จาก coding-agent ที่เชื่อม API/UI/tests และ audit roles ที่ตรวจ PDF, repository และ GitHub evidence ผู้พัฒนายังคงรับผิดชอบการตัดสินใจและยืนยันผล",
+        "เลือก 10 key requests ที่เกิดขึ้นจริงจาก ai-use.md ตามตาราง ส่วน entries อื่นเก็บเป็นประวัติ ไม่สร้าง prompts เพื่อเติมจำนวน และไม่ถือคำอธิบายของ AI เป็นผลทดสอบหรือ peer approval",
+        "My Reflection — AI-assisted draft for student review: specification-agent ช่วยแสดง hidden decisions ก่อน coding เช่น editable projection กับ append-only events แต่ต้องตรวจทุก interpretation กับ handout และ contract เดิมเพื่อไม่เพิ่ม scope โดยไม่มีคำขอ",
+        "coding-agent ช่วยเชื่อม API/UI/tests แต่ component tests อย่างเดียวไม่พบ pointer/blur layout movement หรือ response shape ที่ขาด ต้องใช้ PostgreSQL, authenticated browser, keyboard และ screenshot ร่วมกัน Release evidence ก็ต้อง review เพราะ PASS JSON เก่าอาจดูเหมือนผล CI ใหม่หากไม่มี provenance ผู้จัดทำควรปรับ reflection ให้ตรงประสบการณ์ตนเองก่อนส่ง"
+      ],
+      "table": {
+        "headers": [
+          "# / key request",
+          "ใช้และตรวจสอบอย่างไร"
+        ],
+        "rows": [
+          [
+            "1: แตก issue จาก Lab 4",
+            "Map handout/rubric/dependencies และ excluded scope"
+          ],
+          [
+            "2: เริ่ม Issue #52 contract",
+            "FR/BR/AC; แยก assignee/performer; เปิด decisions ให้ review"
+          ],
+          [
+            "3: Issue #54 Actions API",
+            "PostgreSQL authorization/version/locking/audit/idempotency"
+          ],
+          [
+            "4: Align Issue #55 UI",
+            "ตรวจ response envelope และ parent version ด้วย live API/browser"
+          ],
+          [
+            "5: Update PR #66 workflow",
+            "Current-cycle resolution gate และ cancellation/reopen history"
+          ],
+          [
+            "6: Fix PR #67 review",
+            "Role routing, legacy filters และ fresh direct DB proof"
+          ],
+          [
+            "7: Fix PR #68 review",
+            "High Priority predicate/label และ fixed request timestamp"
+          ],
+          [
+            "8: Issue #59 regression",
+            "Complete lifecycle, migration, performance และ source/log traceability"
+          ],
+          [
+            "9: Issue #60 UI hardening",
+            "Keyboard/focus/long-content/failure recovery; เก็บ failed attempt และ rerun จริง"
+          ],
+          [
+            "10: Issue #61 + report examples",
+            "Audit reviews/CI/Project, fresh clone, final-main gate และ PDF 9 Parts"
+          ]
+        ]
+      },
+      "links": [
+        {
+          "label": "Actual prompt archive / reflection",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ai-use.md"
+        },
+        {
+          "label": "Peer feedback on evidence / replay",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/64#pullrequestreview-5386206703"
+        }
+      ]
+    },
+    {
+      "title": "Working IT Staff Dashboard UI",
+      "paragraphs": [
+        "IT Staff และ Administrator login ไป /staff/dashboard โดย Admin ยังคงมี User Management Dashboard แสดง Unassigned Open, Owned by Me, counts ทุก status/IT Priority, recent open Tickets, High Priority Tickets และ My Actions พร้อม attribution ที่ไม่ซ้ำ",
+        "Selected metrics เทียบ direct Prisma queries ก่อน browser assertions: open statuses คือ NEW/OPEN/IN_PROGRESS/WAITING_FOR_REQUESTER/REOPENED, staff owner ตรง session, HIGH preview รวมทุก status และ My Actions เป็น union ของ recorder/assignee/performer Database evidence เก็บ runId, schema, generatedAt, sourceSha; UI/API/drill-down ใช้นิยามเดียวกัน",
+        "Fixture ของ live suite มี Requester open 21/waiting 1, Staff unassigned open 11/owned 11 และ Admin unassigned open 11/owned 0 ผลตัวเลขใหม่จะตรวจจาก JSON ของ candidate อีกครั้ง Loading/zero/failure บาง states เป็น browser injections ที่ระบุชัดเจน ส่วน backend empty-data/redaction อยู่ใน API tests"
+      ],
+      "table": {
+        "headers": [
+          "Metric",
+          "Direct database predicate / drill-down"
+        ],
+        "rows": [
+          [
+            "Unassigned Open",
+            "Open group AND ownerId IS NULL → Queue filters"
+          ],
+          [
+            "Owned by Me",
+            "Open group AND ownerId = session user → Queue filters"
+          ],
+          [
+            "High Priority Tickets",
+            "itPriority=HIGH ทุก status; updatedAt ASC,id ASC; limit 5"
+          ],
+          [
+            "My Actions",
+            "recordedById OR assigneeId OR performedById = current user; deduplicated; updatedAt DESC,id DESC; limit 5"
+          ]
+        ]
+      },
+      "links": [
+        {
+          "label": "Live dashboard assertions",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/dashboards.spec.ts"
+        },
+        {
+          "label": "Independent DB query runner",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/scripts/run-auth-e2e.mjs"
+        }
+      ],
+      "images": [
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/staff-dashboard/staff-nonzero-1440.png",
+          "crop": {
+            "x": 80,
+            "y": 70,
+            "width": 1280,
+            "height": 760
+          },
+          "caption": "Staff Dashboard ส่วน metrics จาก live API; counts เปรียบเทียบ direct Prisma queries"
+        },
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/staff-dashboard/staff-nonzero-1440.png",
+          "crop": {
+            "x": 80,
+            "y": 1490,
+            "width": 1280,
+            "height": 800
+          },
+          "caption": "My Actions ส่วนท้ายจาก live API: Recorded/Assigned/Performed attribution และ links ไป Ticket Detail"
+        }
+      ]
+    },
+    {
+      "title": "Working Actions Taken UI",
+      "paragraphs": [
+        "Staff/Admin สร้างและแก้ Action ใต้ Ticket Detail ได้ โดย server บันทึก recorder/time, assignee ต้อง eligible, follow-up note จำเป็นเมื่อเลือก follow-up และ completion ต้องมี Result พร้อม cleared follow-up เฉพาะ assignee ปัจจุบัน complete ได้",
+        "Live flow ตรวจ create/assign/edit/start/complete/cancel, หลาย Actions, terminal read-only, role/ownership และ audit history Requester อ่านได้เฉพาะ Ticket ของตนเองและไม่มี write controls ผู้ใช้ที่ inactive หลังเปิดฟอร์มถูก API ปฏิเสธจริงด้วย 409 พร้อมเก็บ draft และ reload assignees เพื่อกู้คืน",
+        "Ticket version/revision ใช้ป้องกัน stale writes; lost create response ใช้ request ID เดิมในการ retry เพื่อไม่สร้างซ้ำ ภาพเป็น excerpt จาก screenshot จริงโดยไม่แก้ pixels และเก็บ original path/hash สำหรับตรวจย้อนหลัง"
+      ],
+      "links": [
+        {
+          "label": "Actions live flow / inactive assignee",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/actions-taken-flow.spec.ts"
+        },
+        {
+          "label": "Actions API tests",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/actions-taken.api.test.ts"
+        }
+      ],
+      "images": [
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/edit-form/desktop.png",
+          "crop": {
+            "x": 100,
+            "y": 960,
+            "width": 1240,
+            "height": 1100
+          },
+          "caption": "Edit Action: description, assignee, Result, follow-up และ Attachment Notes; excerpt ของ form จริง"
+        },
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/terminal-list/desktop.png",
+          "crop": {
+            "x": 100,
+            "y": 960,
+            "width": 1240,
+            "height": 1100
+          },
+          "caption": "Completed/Cancelled Actions; performer, Result and audit timestamps; immutable terminal records"
+        },
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/inactive-assignee/desktop.png",
+          "crop": {
+            "x": 100,
+            "y": 970,
+            "width": 1240,
+            "height": 1130
+          },
+          "caption": "API ปฏิเสธ assignee ที่ inactive จริง; draft ยังอยู่และมี Reload assignees สำหรับ recovery"
+        }
+      ]
+    },
+    {
+      "title": "Working Ticket Workflow",
+      "paragraphs": [
+        "Ticket ใช้ eight-state matrix: NEW, OPEN, IN_PROGRESS, WAITING_FOR_REQUESTER, RESOLVED, CLOSED, REOPENED, CANCELLED โดย backend บังคับ transition และ resolution gate แม้ bypass UI",
+        "Resolve ตรวจ COMPLETED Action ที่มี Result ใน cycle ปัจจุบัน, ไม่มี active Action และไม่มี outstanding follow-up บน Action ที่ไม่ cancelled Reopen เริ่ม workflow cycle ใหม่โดยไม่ลบงานเก่า Cancellation เก็บ actor/time/source และ cascade Action cancellation อย่าง atomic",
+        "Requester ส่ง Problem Appears Resolved เป็น advisory เท่านั้น Live workflow suite ตรวจ desktop/tablet/mobile รวม blocked resolve, resolve/close/reopen, history preservation และ requester visibility"
+      ],
+      "links": [
+        {
+          "label": "Workflow unit/API matrix",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/ticket-workflow.test.ts"
+        },
+        {
+          "label": "Real workflow browser flow",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/ticket-resolution.spec.ts"
+        }
+      ],
+      "images": [
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/ticket-workflow/resolution-gate/desktop.png",
+          "crop": {
+            "x": 80,
+            "y": 100,
+            "width": 1280,
+            "height": 800
+          },
+          "caption": "Resolution gate: backend ปฏิเสธการ resolve ที่ยังไม่ครบเงื่อนไขและ UI แสดง feedback"
+        },
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/ticket-workflow/reopened/desktop.png",
+          "crop": {
+            "x": 80,
+            "y": 100,
+            "width": 1280,
+            "height": 390
+          },
+          "caption": "Reopened status and reset Ticket Owner; prior history preservation is verified by the linked live test"
+        }
+      ]
+    },
+    {
+      "title": "Working Requester Dashboard and Final Regression UI",
+      "paragraphs": [
+        "Requester login ไป /dashboard และเห็นเฉพาะ owned Tickets: Open Tickets, Waiting for You, Recently Updated และ Recently Resolved ทุก card/list มี drill-down ไป My Tickets หรือ Ticket Detail ด้วย filters/bounds เดิม",
+        "Recently Updated เลือกห้ารายการล่าสุดโดยไม่มี time cutoff; Recently Resolved ใช้ resolvedAt ใน rolling UTC 168-hour window และ current status RESOLVED/CLOSED Legacy NULL resolvedAt ถูกยกเว้นจากรายการ recently resolved แต่ยังอยู่ใน My Tickets และ recently updated",
+        "Final regression รักษา login/change password/logout, requester create/detail/attachments, public comments/internal-note privacy, staff queue/operations และ administrator management ผล local candidate ยังต้องรันจาก final main หลัง reviewed release integration"
+      ],
+      "links": [
+        {
+          "label": "Requester dashboard API proof",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/server/tests/lab-04/requester-dashboard.api.test.ts"
+        },
+        {
+          "label": "Earlier labs / Requester regression",
+          "url": "https://github.com/L0u1sss/TokTickIT/tree/lab4-staging/client/e2e/lab-02"
+        }
+      ],
+      "images": [
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/requester-dashboard/nonzero-1440.png",
+          "caption": "Requester Dashboard จาก live API: owned metrics, Recently Updated/Resolved และ drill-down links"
+        },
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/requester-dashboard/nonzero-390.png",
+          "crop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "caption": "Requester Dashboard บน mobile 390×844: metrics reflow และ navigation ใช้งานได้"
+        }
+      ]
+    },
+    {
+      "title": "Zen Green UI, Responsive, Accessibility, and Final Polish",
+      "paragraphs": [
+        "Zen Green ใช้สีเขียว primary, neutral surfaces, consistent forms/cards/buttons, status/priority labels ที่ไม่พึ่งสีอย่างเดียว Layout ตรวจ desktop 1440×900, tablet 834×1112, mobile 390×844 และ reflow 720×450 พร้อมข้อความชื่อ/description/filename ยาว",
+        "UI fixture suite ตรวจ 3 roles, axe WCAG-tagged violations, control bounds/clipping/overlap, mobile targets ≥44×44, skip link, keyboard drill-down, first invalid focus, Escape, modal focus trap/return และ safe failure/conflict ที่เก็บ draft/request ID ได้ มี 63 screenshot/JSON pairs",
+        "ภาพส่วนนี้ระบุ UI fixture ชัดเจน; backend authorization/metrics ใช้ real API/database suites แยกต่างหาก Automated reflow ไม่ใช่ manual browser zoom 200% หรือ screen-reader review งานตรวจโดยผู้ใช้เหล่านี้ยัง pending จึงไม่อ้างว่าได้ทำแล้ว Final main/CI/release approvals และ personal reflection ต้องครบก่อนส่งฉบับ final"
+      ],
+      "table": {
+        "headers": [
+          "Quality check",
+          "Evidence / limitation"
+        ],
+        "rows": [
+          [
+            "Responsive / long content",
+            "Three roles × four viewports; bounds/clipping/overlap assertions and screenshots"
+          ],
+          [
+            "Accessibility / keyboard",
+            "Axe + actual skip/drill-down/validation/Escape/focus trap and return"
+          ],
+          [
+            "Safe recovery",
+            "Injected 500/409 preserves drafts; live API proves stale writes/idempotency/authorization separately"
+          ],
+          [
+            "Manual zoom / screen reader",
+            "Pending independent human inspection; no performed check claimed"
+          ],
+          [
+            "Final release",
+            "Pending reviewed staging→main integration, exact-SHA tests/CI, final Project capture and PDF acceptance"
+          ]
+        ]
+      },
+      "links": [
+        {
+          "label": "Completed automated checklist / manual limits",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-spec.md"
+        },
+        {
+          "label": "63 fixture evidence pairs",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/docs/lab-04/ui-evidence-60.md"
+        },
+        {
+          "label": "UI / keyboard / recovery spec",
+          "url": "https://github.com/L0u1sss/TokTickIT/blob/lab4-staging/client/e2e/lab-04/ui-hardening.spec.ts"
+        },
+        {
+          "label": "Actual UI approval / CI",
+          "url": "https://github.com/L0u1sss/TokTickIT/pull/70"
+        }
+      ],
+      "images": [
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/actions-taken/issue-60/conflict-mobile.png",
+          "crop": {
+            "x": 0,
+            "y": 2800,
+            "width": 390,
+            "height": 900
+          },
+          "caption": "UI fixture บน mobile: stale conflict/reload feedback เก็บ draft และป้องกัน writes จน reload"
+        },
+        {
+          "path": "artifacts/lab-04/issue-61/release-candidate/screenshots/lab-04/workflow-screens/issue-60/admin-dialog-mobile.png",
+          "caption": "UI fixture Admin mobile dialog: labels/help and focused input; keyboard trap/return verified by browser assertions"
+        }
+      ]
+    }
+  ]
+}

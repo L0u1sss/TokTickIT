@@ -17,6 +17,7 @@ import {
   uploadAttachment,
 } from "../api.js";
 import { CommunicationSection, ResolutionIndication } from "./TicketCommunication.js";
+import { ActionsTaken } from "./ActionsTaken.js";
 import { useRequester } from "../context/RequesterContext.js";
 
 const maxAttachmentBytes = 5_242_880;
@@ -99,6 +100,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
   const mainContent = useRef<HTMLElement>(null);
   const removalDialog = useRef<HTMLElement>(null);
   const removalTrigger = useRef<HTMLElement | null>(null);
+  const removalPending = useRef(false);
   const hasFocusedRoute = useRef(false);
 
   const load = useCallback(async () => {
@@ -303,6 +305,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
   }
 
   function closeRemoval() {
+    if (removalPending.current) return;
     setRemoving(null);
     setReason("");
     setReasonError("");
@@ -311,14 +314,14 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
 
   async function confirmRemoval(event: FormEvent) {
     event.preventDefault();
-    if (!ticket || !removing) return;
+    if (!ticket || !removing || removalPending.current) return;
     const trimmedReason = reason.trim();
     const validation = validateRemovalReason(reason);
     if (validation) {
       setReasonError(validation);
       return;
     }
-    setRemovalBusy(true);
+    removalPending.current = true; setRemovalBusy(true);
     setReasonError("");
     try {
       const removed = await removeAttachment(
@@ -353,6 +356,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
         setReasonError("We couldn't remove this attachment. Try again.");
       }
     } finally {
+      removalPending.current = false;
       setRemovalBusy(false);
     }
   }
@@ -463,6 +467,7 @@ export default function TicketDetailPage({ ticketIdSegment, onBack }: TicketDeta
           </section>
         </div>
       )}
+      <ActionsTaken key={ticket.id + "actions"} ticketId={ticket.id} />
       <CommunicationSection key={ticket.id + "comments"} ticketId={ticket.id} />
       <ResolutionIndication key={ticket.id + ticket.status} ticketId={ticket.id} status={ticket.status} initialAt={ticket.problemAppearsResolvedAt} />
     </main>

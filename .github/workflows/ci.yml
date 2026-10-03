@@ -6,11 +6,13 @@ on:
       - main
       - lab2-staging
       - lab3-staging
+      - lab4-staging
   push:
     branches:
       - main
       - lab2-staging
       - lab3-staging
+      - lab4-staging
 
 permissions:
   contents: read
@@ -65,6 +67,17 @@ jobs:
         run: npm ci
         working-directory: server
 
+      - name: Test final PDF provenance guards
+        run: node --test scripts/tests/lab4-report-provenance.test.mjs
+
+      - name: Lint server
+        run: npm run lint
+        working-directory: server
+
+      - name: Lint client
+        run: npm run lint
+        working-directory: client
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
         working-directory: client
@@ -84,12 +97,18 @@ jobs:
         working-directory: server
 
       - name: Run server test suite
-        run: npm test
+        id: server_tests
+        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-61/hosted-ci/${{ github.run_id }}/server-results.json
         working-directory: server
 
       - name: Run client test suite
-        run: npm test
+        id: client_tests
+        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-61/hosted-ci/${{ github.run_id }}/client-results.json
         working-directory: client
+
+      - name: Run Lab 4 dashboard performance smoke
+        run: npm run test:performance
+        working-directory: server
 
       - name: Run authentication browser suite
         run: npm run test:auth:e2e
@@ -103,6 +122,20 @@ jobs:
         run: node scripts/run-auth-e2e.mjs --staff-queue
         working-directory: client
 
+      - name: Run Actions Taken browser suite
+        run: npm run test:actions:e2e
+        working-directory: client
+
+      - name: Run Ticket resolution browser suite
+        run: npm run test:workflow:e2e
+        working-directory: client
+
+      - name: Run role dashboard browser suite
+        run: npm run test:dashboards:e2e
+        working-directory: client
+        env:
+          E2E_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
       - name: Run staff workflow browser suite
         run: npm run test:staff:e2e
         working-directory: client
@@ -115,16 +148,12 @@ jobs:
         run: npm run test:responsive
         working-directory: client
 
-      - name: Run live end-to-end suite
-        run: npm run test:e2e
+      - name: Run Lab 4 visual and accessibility hardening suite
+        run: npm run test:ui:lab4
         working-directory: client
 
-      - name: Lint server
-        run: npm run lint
-        working-directory: server
-
-      - name: Lint client
-        run: npm run lint
+      - name: Run live end-to-end suite
+        run: npm run test:e2e
         working-directory: client
 
       - name: Build server
@@ -135,6 +164,14 @@ jobs:
         run: npm run build
         working-directory: client
 
+      - name: Record Lab 4 release CI provenance
+        if: always()
+        run: node scripts/record-lab4-ci.mjs
+        env:
+          VERIFICATION_STATUS: ${{ job.status }}
+          SERVER_TEST_OUTCOME: ${{ steps.server_tests.outcome }}
+          CLIENT_TEST_OUTCOME: ${{ steps.client_tests.outcome }}
+
       - name: Upload Lab 3 browser evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -143,4 +180,23 @@ jobs:
           path: |
             artifacts/lab-03/screenshots/
             client/test-results/
+          if-no-files-found: ignore
+
+      - name: Upload Lab 4 Actions Taken evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab-04-actions-taken-evidence
+          path: |
+            artifacts/lab-04/screenshots/actions-taken/
+            artifacts/lab-04/screenshots/ticket-workflow/
+            artifacts/lab-04/screenshots/requester-dashboard/
+            artifacts/lab-04/screenshots/staff-dashboard/
+            artifacts/lab-04/screenshots/workflow-screens/
+            artifacts/lab-04/issue-60/
+            artifacts/lab-04/issue-61/hosted-ci/
+            artifacts/lab-04/issue-59/dashboard-performance.json
+            artifacts/lab-04/issue-59/server-results.json
+            artifacts/lab-04/issue-59/client-results.json
+            client/test-results/live-e2e/
           if-no-files-found: ignore
