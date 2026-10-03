@@ -48,7 +48,7 @@ export default function StaffDashboard() {
       </div>
       <div className="dashboard-lists">
         <TicketList title="Recently Updated Open Tickets" empty="No open Tickets." tickets={data.recentlyUpdated} />
-        <TicketList title="Urgent Tickets" empty="No high-priority Tickets." tickets={data.urgentTickets} />
+        <TicketList title="High Priority Tickets" empty="No high-priority Tickets." tickets={data.urgentTickets} />
       </div>
       <ActionList actions={data.myActions} />
     </>}

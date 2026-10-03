@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
-import { PrismaClient, Priority, Status } from "@prisma/client";
+import { Prisma, PrismaClient, Priority, Status } from "@prisma/client";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cookieForUser } from "../session-fixture.js";
@@ -48,7 +48,7 @@ beforeAll(async () => {
   }
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 afterAll(async () => {
   // Fixture cleanup only, following the existing isolated database suites.
   await db.$executeRawUnsafe('ALTER TABLE "ActionEvent" DISABLE TRIGGER "ActionEvent_reject_update_delete"');
@@ -76,13 +76,37 @@ describe("GET /api/staff/dashboard", () => {
     for (const priority of Object.values(Priority)) expect(response.body.metrics.byItPriority[priority]).toBe(await db.ticket.count({ where: { itPriority: priority } }));
 
     const expectedRecent = await db.ticket.findMany({ where: { status: { in: openStatuses } }, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 5, select: { id: true } });
-    const expectedUrgent = await db.ticket.findMany({ where: { itPriority: "HIGH" }, orderBy: [{ updatedAt: "asc" }, { id: "asc" }], take: 5, select: { id: true } });
+    const expectedHighPriority = await db.ticket.findMany({ where: { itPriority: "HIGH" }, orderBy: [{ updatedAt: "asc" }, { id: "asc" }], take: 5, select: { id: true } });
     expect(response.body.recentlyUpdated.map((item: { id: number }) => item.id)).toEqual(expectedRecent.map(item => item.id));
-    expect(response.body.urgentTickets.map((item: { id: number }) => item.id)).toEqual(expectedUrgent.map(item => item.id));
+    expect(response.body.urgentTickets.map((item: { id: number }) => item.id)).toEqual(expectedHighPriority.map(item => item.id));
+    expect(response.body.urgentTickets.every((item: { itPriority: string }) => item.itPriority === "HIGH")).toBe(true);
+    expect(response.body.urgentTickets.slice(0, 2).map((item: { id: number }) => item.id)).toEqual([ticketIds[2], ticketIds[5]]);
+    expect(response.body.urgentTickets[1].status).toBe("CLOSED");
+    expect(response.body.urgentTickets).toHaveLength(Math.min(5, response.body.metrics.byItPriority.HIGH));
     expect(response.body.recentlyUpdated.length).toBeLessThanOrEqual(5);
     expect(response.body.urgentTickets.length).toBeLessThanOrEqual(5);
     expect(response.body.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T.*Z$/);
     expect(Object.keys(response.body.recentlyUpdated[0]).sort()).toEqual(["id", "itPriority", "owner", "resolvedAt", "status", "summary", "ticketNumber", "updatedAt", "version"]);
+  });
+
+  it("captures generatedAt once before the repeatable-read queries even when transaction execution advances time", async () => {
+    const capturedAt = new Date("2026-10-03T10:00:00.000Z");
+    const afterQueries = new Date("2026-10-03T10:00:30.000Z");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(capturedAt);
+    const runTransaction = db.$transaction.bind(db);
+    const delayedTransaction = async (callback: (transaction: Prisma.TransactionClient) => Promise<unknown>, options?: { isolationLevel?: Prisma.TransactionIsolationLevel }) => {
+      return runTransaction(async transaction => {
+        vi.setSystemTime(afterQueries);
+        return callback(transaction);
+      }, options);
+    };
+    const transaction = vi.spyOn(db, "$transaction").mockImplementationOnce(delayedTransaction as typeof db.$transaction);
+    const response = await getStaffDashboard(db, userIds[1]);
+    expect(new Date().toISOString()).toBe(afterQueries.toISOString());
+    expect(response.generatedAt).toBe(capturedAt.toISOString());
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });
 
   it("scopes deduplicated recorded, assigned, and performed Actions and owned counts to the current staff or administrator identity", async () => {

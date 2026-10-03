@@ -201,6 +201,12 @@ test("E2E-04 staff and administrator dashboards match database metrics, attribut
     const payload = await response.json(), expected = database.staff[email];
     expect(payload.metrics).toEqual(expected.metrics);
     for (const list of ["recentlyUpdated", "urgentTickets"]) expect(payload[list].map((row: { id: number }) => row.id)).toEqual(expected[list]);
+    const highPriority = page.getByRole("heading", { name: "High Priority Tickets", exact: true }).locator("..");
+    await expect(page.getByRole("heading", { name: "Urgent Tickets", exact: true })).toHaveCount(0);
+    expect(payload.urgentTickets.every((row: { itPriority: string }) => row.itPriority === "HIGH")).toBe(true);
+    await expect(highPriority.getByRole("link")).toHaveCount(payload.urgentTickets.length);
+    for (const [index, ticket] of payload.urgentTickets.entries()) await expect(highPriority.getByRole("link").nth(index)).toHaveAttribute("href", `/staff/tickets/${ticket.id}`);
+    await expect(page.getByText(/Last refreshed/).locator("time")).toHaveAttribute("datetime", payload.generatedAt);
     expect(payload.myActions.map((row: { id: number; attribution: string[] }) => ({ id: row.id, attribution: row.attribution }))).toEqual(expected.myActions);
     expect(payload.myActions).toHaveLength(5);
     expect(new Set(payload.myActions.map((row: { id: number }) => row.id)).size).toBe(5);

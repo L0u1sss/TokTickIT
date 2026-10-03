@@ -55,10 +55,24 @@ Approval is not yet received. Keep reviewer approval and test results Pending un
 Implementation PRs must append their real review links and resolved material findings here or link to a dedicated evidence section. The final release audit confirms that approvals correspond to the final implementation rather than an obsolete commit.
 
 
-## PR #68 Staff Dashboard Follow-up ? 2026-10-03
+## PR #68 Staff Dashboard Follow-up - 2026-10-03
 
 - Pull request: https://github.com/L0u1sss/TokTickIT/pull/68
 - Feature branch: `feat/lab4-staff-dashboard`; merged staging dependency: `cd66073`; merge commit: `baa49c8`; implementation: `378c8e0`.
 - Reviewer/approval: Pending. GitHub PR conversation, inline comments, review submissions and review threads returned no review entries when read for this task. No peer approval is claimed.
 - Scope verified against the handout: authoritative operational metrics, concise bounded summaries, current-user attribution union under BR-28, role navigation/access, exact Queue drill-down, Action deep links, loading/zero/safe failures/retry and responsive automated evidence.
 - Local test results and evidence: [PR #68 validation](./tests.md#pr-68-validation). Local passing results do not establish hosted CI or final-main release approval.
+
+## PR #68 Review 5400210287 - 2026-10-03
+
+- Reviewer: **Tanaboonnnnn**; [review 5400210287](https://github.com/L0u1sss/TokTickIT/pull/68#pullrequestreview-5400210287), submitted `2026-10-03T10:11:55Z` (17:11:55 Asia/Bangkok).
+- Reviewed head: `5aa91122eaaede3ab3de4232d36bc2148c467577`; result: **Changes requested**. This review has no inline comments.
+- Baseline [CI run #82](https://github.com/L0u1sss/TokTickIT/actions/runs/37114919659) passed on that reviewed head. This does not verify the subsequent review fixes.
+
+| Finding | Implemented response | Review status |
+|---|---|---|
+| HIGH-only preview was presented as Urgent Tickets | Use the reviewer's alternative **High Priority Tickets** in the UI and current contract. Keep the `urgentTickets` wire key for compatibility and document its exact all-status `itPriority=HIGH` predicate, oldest-update ordering and five-row limit. Tests check heading, HIGH rows, terminal inclusion, tie ordering and links. | Implemented; re-review pending |
+| `generatedAt` was created after database queries | Capture once before the repeatable-read transaction, matching the Requester pattern. A fixed-clock regression advances time at transaction execution and verifies the captured value remains unchanged. Document request capture time separately from query completion and database snapshot time. | Implemented; re-review pending |
+| PR metadata and current contract needed consistent terminology | Align specification, API, UI, README, test plan, browser evidence and PR body with High Priority Tickets and the timestamp contract. | Implemented; re-review pending |
+
+Verification is recorded in [review-fix validation](./tests.md#pr68-review-5400210287). Reviewer approval remains pending; implementation and local passing checks do not imply approval or final-main release validation.

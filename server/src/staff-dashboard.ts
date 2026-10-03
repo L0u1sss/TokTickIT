@@ -51,8 +51,9 @@ const serializeAction = (action: ActionRow, currentUserId: number) => ({
 });
 
 export async function getStaffDashboard(prisma: PrismaClient, currentUserId: number) {
+  const generatedAt = new Date().toISOString();
   return prisma.$transaction(async transaction => {
-    const [unassignedOpenCount, ownedByMeOpenCount, statusGroups, priorityGroups, recentlyUpdated, urgentTickets, myActions] = await Promise.all([
+    const [unassignedOpenCount, ownedByMeOpenCount, statusGroups, priorityGroups, recentlyUpdated, highPriorityTickets, myActions] = await Promise.all([
       transaction.ticket.count({ where: { ownerId: null, status: { in: staffOpenStatuses } } }),
       transaction.ticket.count({ where: { ownerId: currentUserId, status: { in: staffOpenStatuses } } }),
       transaction.ticket.groupBy({ by: ["status"], _count: { _all: true } }),
@@ -69,8 +70,8 @@ export async function getStaffDashboard(prisma: PrismaClient, currentUserId: num
       metrics: { unassignedOpenCount, ownedByMeOpenCount, byStatus, byItPriority },
       myActions: myActions.map(action => serializeAction(action, currentUserId)),
       recentlyUpdated: recentlyUpdated.map(serializeTicket),
-      urgentTickets: urgentTickets.map(serializeTicket),
-      generatedAt: new Date().toISOString(),
+      urgentTickets: highPriorityTickets.map(serializeTicket),
+      generatedAt,
     };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
 }

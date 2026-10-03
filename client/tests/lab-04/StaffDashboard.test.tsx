@@ -41,6 +41,10 @@ describe("Staff Dashboard", () => {
     const recent = screen.getByRole("heading", { name: "Recently Updated Open Tickets" }).closest("section")!;
     expect(within(recent).getAllByRole("listitem")).toHaveLength(5);
     expect(within(recent).getAllByRole("link")[0]).toHaveAttribute("href", "/staff/tickets/5");
+    const highPriority = screen.getByRole("heading", { name: "High Priority Tickets" }).closest("section")!;
+    expect(within(highPriority).getAllByRole("link").map(item => item.getAttribute("href"))).toEqual(["/staff/tickets/6", "/staff/tickets/7"]);
+    expect(screen.queryByRole("heading", { name: "Urgent Tickets" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Last refreshed/).querySelector("time")).toHaveAttribute("dateTime", dashboard.generatedAt);
     expect(screen.getByRole("link", { name: /TKT-2026-000005 · In Progress/ })).toHaveAttribute("href", "/staff/tickets/5#actions");
   });
 
