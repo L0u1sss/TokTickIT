@@ -31,8 +31,35 @@ it("rejects whitespace/oversized drafts without sending", async () => {
     fireEvent.change(screen.getByLabelText("Public Comment"), { target: { value } });
     await userEvent.click(screen.getByRole("button", { name: "Post Public Comment" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Enter 1–2,000");
+    expect(screen.getByLabelText("Public Comment")).toHaveFocus();
+    expect(screen.getByLabelText("Public Comment")).toHaveAttribute("aria-invalid", "true");
   }
   expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+it("prevents repeated resolution-indication submissions before React rerenders", async () => {
+  let finish!: (value: Response) => void;
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  const fetch = vi.fn(() => new Promise<Response>(resolve => { finish = resolve; }));
+  vi.stubGlobal("fetch", fetch);
+  render(<ResolutionIndication ticketId={1} status="OPEN" />);
+  const button = screen.getByRole("button");
+  fireEvent.click(button); fireEvent.click(button);
+  expect(fetch).toHaveBeenCalledOnce();
+  finish(response({ problemAppearsResolvedAt: entry.createdAt }));
+  await screen.findByRole("status");
+});
+
+it.each([401, 403, 404])("clears previously visible private entries and closes posting after %s", async status => {
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) => init?.method === "POST" ? response({ error: { message: "private detail" } }, status) : response({ items: [entry] })));
+  render(<CommunicationSection ticketId={1} staff internal />);
+  await screen.findByText(entry.content);
+  await userEvent.type(screen.getByLabelText("Internal Note"), "Keep private draft");
+  await userEvent.click(screen.getByRole("button", { name: "Add Internal Note" }));
+  await screen.findByRole("alert");
+  expect(screen.queryByText(entry.content)).toBeNull();
+  expect(screen.queryByLabelText("Internal Note")).toBeNull();
+  expect(screen.queryByText("private detail")).toBeNull();
 });
 it.each(["Resolved", "Closed", "Cancelled"])("hides resolution action for %s", status => {
   render(<ResolutionIndication ticketId={1} status={status} />); expect(screen.queryByRole("button")).toBeNull();

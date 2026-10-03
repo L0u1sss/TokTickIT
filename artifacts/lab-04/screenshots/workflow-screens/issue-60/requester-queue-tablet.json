@@ -1,0 +1,212 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "requester-queue",
+  "viewport": "tablet",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 834,
+    "viewportWidth": 834,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 471.625,
+          "y": 12,
+          "width": 110.234375,
+          "height": 49.375,
+          "top": 12,
+          "right": 581.859375,
+          "bottom": 61.375,
+          "left": 471.625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Create Ticket",
+        "rect": {
+          "x": 581.859375,
+          "y": 12,
+          "width": 126.78125,
+          "height": 49.375,
+          "top": 12,
+          "right": 708.640625,
+          "bottom": 61.375,
+          "left": 581.859375
+        },
+        "outline": "none"
+      },
+      {
+        "name": "My Tickets",
+        "rect": {
+          "x": 708.640625,
+          "y": 12,
+          "width": 109.359375,
+          "height": 49.375,
+          "top": 12,
+          "right": 818,
+          "bottom": 61.375,
+          "left": 708.640625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 16,
+          "y": 230.96875,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": 230.96875,
+          "right": 109.9375,
+          "bottom": 276.15625,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Create ticket",
+        "rect": {
+          "x": 682.78125,
+          "y": 329.15625,
+          "width": 135.21875,
+          "height": 45.1875,
+          "top": 329.15625,
+          "right": 818,
+          "bottom": 374.34375,
+          "left": 682.78125
+        },
+        "outline": "none"
+      },
+      {
+        "name": "ticket-search",
+        "rect": {
+          "x": 37,
+          "y": 556.84375,
+          "width": 660.171875,
+          "height": 46.78125,
+          "top": 556.84375,
+          "right": 697.171875,
+          "bottom": 603.625,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Search",
+        "rect": {
+          "x": 706.765625,
+          "y": 556.84375,
+          "width": 90.234375,
+          "height": 46.78125,
+          "top": 556.84375,
+          "right": 797,
+          "bottom": 603.625,
+          "left": 706.765625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All categoriesHardware",
+        "rect": {
+          "x": 37,
+          "y": 650.015625,
+          "width": 242.65625,
+          "height": 45.78125,
+          "top": 650.015625,
+          "right": 279.65625,
+          "bottom": 695.796875,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All systemsOffice network",
+        "rect": {
+          "x": 295.65625,
+          "y": 650.015625,
+          "width": 242.671875,
+          "height": 45.78125,
+          "top": 650.015625,
+          "right": 538.328125,
+          "bottom": 695.796875,
+          "left": 295.65625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All prioritiesLowMediumHigh",
+        "rect": {
+          "x": 554.328125,
+          "y": 650.015625,
+          "width": 242.671875,
+          "height": 45.78125,
+          "top": 650.015625,
+          "right": 797,
+          "bottom": 695.796875,
+          "left": 554.328125
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All statusesOpen TicketsWaiting for RequesterNewResolved / C",
+        "rect": {
+          "x": 37,
+          "y": 742.1875,
+          "width": 242.65625,
+          "height": 45.78125,
+          "top": 742.1875,
+          "right": 279.65625,
+          "bottom": 787.96875,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Newest firstOldest firstTicket number A–ZTicket number Z–ASu",
+        "rect": {
+          "x": 295.65625,
+          "y": 742.1875,
+          "width": 242.671875,
+          "height": 45.78125,
+          "top": 742.1875,
+          "right": 538.328125,
+          "bottom": 787.96875,
+          "left": 295.65625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "102050",
+        "rect": {
+          "x": 554.328125,
+          "y": 742.1875,
+          "width": 242.671875,
+          "height": 45.78125,
+          "top": 742.1875,
+          "right": 797,
+          "bottom": 787.96875,
+          "left": 554.328125
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Reset filters",
+        "rect": {
+          "x": 37,
+          "y": 803.96875,
+          "width": 122.59375,
+          "height": 44,
+          "top": 803.96875,
+          "right": 159.59375,
+          "bottom": 847.96875,
+          "left": 37
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

@@ -51,6 +51,13 @@ function WorkflowControls({ ticketId, status, expectedTicketVersion, disabled = 
     } finally { busyRef.current = false; setBusy(false); }
   };
   const reloadRequired = ["STALE_TICKET", "INVALID_STATUS_TRANSITION", "VALIDATION_ERROR", "FAILURE"].includes(errorCode);
+  const reload = async () => {
+    if (disabled || busyRef.current) return;
+    busyRef.current = true; setBusy(true);
+    try { await onReload(); }
+    catch { setErrorCode("FAILURE"); setError("Unable to reload the Ticket. Try Reload Ticket again."); }
+    finally { busyRef.current = false; setBusy(false); }
+  };
   return <div className="ticket-workflow">
     <label>Status<select aria-label="Status" disabled={disabled || busy || reloadRequired} value={status} onChange={event => void change(event.target.value)}>
       {[status, ...(transitions[status] ?? [])].map(value => <option key={value} value={value}>{label(value)}</option>)}
@@ -58,8 +65,8 @@ function WorkflowControls({ ticketId, status, expectedTicketVersion, disabled = 
     {busy && <span role="status">Changing status…</span>}
     {error && <div className="workflow-error" role="alert"><p>{error}</p>
       {errorCode === "RESOLUTION_GATE_NOT_MET" && <a href="#actions">Review Actions Taken</a>}
-      {reloadRequired && <button type="button" onClick={() => void onReload()}>Reload Ticket</button>}
-      {errorCode === "FAILURE" && pending && <button type="button" onClick={() => void change(pending)}>Retry status change</button>}
+      {reloadRequired && <button className="zen-button secondary-button" type="button" disabled={disabled || busy} onClick={() => void reload()}>Reload Ticket</button>}
+      {errorCode === "FAILURE" && pending && <button className="zen-button secondary-button" type="button" disabled={disabled || busy} onClick={() => void change(pending)}>Retry status change</button>}
     </div>}
   </div>;
 }

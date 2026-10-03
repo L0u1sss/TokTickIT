@@ -12,10 +12,16 @@ test(`E2E-02 ${viewport.name}: current-cycle work gates resolution, cancellation
   await page.setViewportSize(viewport);
   const evidence = async (state: string) => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    const focused = await page.evaluateHandle(() => document.activeElement);
+    const url = page.url();
+    await page.evaluate(() => document.activeElement?.setAttribute("data-workflow-evidence-focus", "true"));
     const findings = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
-    await focused.evaluate(element => { if (element instanceof HTMLElement && element.isConnected) element.focus({ preventScroll: true }); });
-    await focused.dispose();
+    // Restore in the current document: axe opens/closes a temporary page, so a
+    // retained JS handle can lose its execution context. Navigation stays checked.
+    await expect(page).toHaveURL(url);
+    await page.evaluate(() => {
+      const element = document.querySelector<HTMLElement>("[data-workflow-evidence-focus]");
+      element?.focus({ preventScroll: true }); element?.removeAttribute("data-workflow-evidence-focus");
+    });
     expect(findings.violations.filter(item => item.impact === "serious" || item.impact === "critical")).toEqual([]);
     const directory = `../artifacts/lab-04/screenshots/ticket-workflow/${state}`;
     await mkdir(directory, { recursive: true });

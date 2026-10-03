@@ -1,6 +1,6 @@
 # TokTickIT Lab 4 — UI Specification
 
-> Proposed contract for Issue #52. This document extends the Lab 3 Zen Green shell and component behavior.
+> Implemented contract through Issue #60. This document extends the Lab 3 Zen Green shell and component behavior. The Issue #60 checklist and evidence scope are recorded below.
 
 ## 1. Application Shell and Navigation
 
@@ -13,6 +13,10 @@ PR #68 provides `/staff/dashboard` as the home and Requester-dashboard redirect 
 - Reuse existing cards, tables, badges, form controls, buttons, alerts, skeleton/loading, empty, error, and responsive conventions.
 - Status and priority always have visible text; private Internal Notes and shared Actions/Public Comments are labeled distinctly.
 - Network writes disable the initiating control and display progress. Recoverable failure retains entered fields.
+- Query strings and fragments are preserved, but screen selection and active role navigation use the pathname. Ticket Queue remains active on filtered queues and Ticket Detail. Both role shells provide a working keyboard skip link to main content.
+- Action Submit validates the complete draft; blur feedback must not move a pointer target between pointer down and pointer up. The first invalid field receives focus, and error-summary links remain operable.
+- Public Comment/Internal Note fields expose required, invalid and help semantics. Recoverable failures retain drafts; 401/403/404 remove prior entries and posting forms until a successful reload. Malformed responses produce safe failure feedback.
+- Attachment removal keeps its dialog and reason while the write is pending. Escape is available before submission and after failure, and returns focus to the initiating control. Resolution indications and removal use synchronous submission guards.
 - Feedback uses an accessible live region. Validation appears beside fields and in an error summary that links/focuses the first invalid field.
 - A `409 STALE_ACTION`/`STALE_TICKET` explains that newer data exists, preserves the draft, and offers Reload; it never silently overwrites.
 
@@ -72,17 +76,35 @@ Baseline evidence uses desktop `1440×900`, tablet `834×1112`, and mobile `390�
 - Errors and success are announced; required/conditional fields are programmatically conveyed.
 - Color is never the sole status/priority/follow-up cue. Text contrast follows the established accessible Zen Green palette.
 - Dialogs trap focus while open, close with Escape where safe, and place focus on the heading/first invalid control as appropriate.
-- Automated axe checks allow no serious/critical violations; keyboard and 200% reflow remain manual evidence.
+- Automated axe checks allow no serious/critical violations. Issue #60's fixture audit asserts **no axe violations** and exercises actual Tab/Shift+Tab/Enter/Escape, focus and 720×450 viewport reflow. This supplements independent manual browser zoom and screen-reader review; it does not claim those unperformed checks.
 
 ## 11. Visual Evidence Checklist
 
-- [ ] Staff Dashboard, Requester Dashboard, and Actions area at all three baseline viewports.
-- [ ] Non-zero and zero dashboard states with counts verified against database queries.
-- [ ] Action list with different performers/assignees and multiple Actions on one Ticket.
-- [ ] Create/edit/complete/cancel, validation, inactive-assignee, stale conflict, and safe-failure states.
-- [ ] Permitted Ticket transitions and resolution-gate feedback.
-- [ ] Keyboard focus, labels, error placement, non-color cues, wrapping, clipping, overlap, and overflow checked.
-- [ ] Temporary/duplicate/obsolete Lab UI and unfinished controls removed.
+- [x] Staff/Administrator Dashboard, Requester Dashboard, and Actions area at all three baseline viewports; additional 720×450 reflow fixtures.
+- [x] Non-zero and zero dashboard states; fresh real dashboard metrics verified against direct database queries by the live dashboard suite. Staff zero rendering is an injected UI fixture, with real-empty API coverage in the server suite.
+- [x] Multiple Actions on one Ticket, different performers/assignees, terminal/cancelled history and explicit historical follow-up labels.
+- [x] Create/edit/start/complete/cancel, first-invalid-field validation, inactive assignee, stale conflict, safe failure, retained drafts and stable retry request ID covered by real Action workflows and UI fixtures.
+- [x] Permitted Ticket transitions, current-cycle resolution gate, advisory distinction and refreshed Ticket summary covered by the live workflow suite.
+- [x] Keyboard skip/drill-down, visible focus, labels, error placement, non-color cues, modal Tab/Shift+Tab/Escape/focus return, wrapping, control bounds, clipping, overlap and page overflow checked automatically.
+- [x] Source audit found no TODO/FIXME, coming-soon/unimplemented controls or empty `href="#"` links. Exercised routes and captured fixture states have no unexpected console/page errors. Existing loading/disabled controls have documented behavior.
+
+## Issue #60 Visual and Accessibility Evidence
+
+The deterministic audit (`npm --prefix client run test:ui:lab4`) covers Requester, IT Staff and Administrator at `1440×900`, `834×1112`, `390×844` and `720×450`, and produces **63 screenshot/JSON pairs**. Each JSON records axe findings, viewport/page widths, visible control bounds, clipping and overlap findings, the Zen Green primary token and computed outlines. Mobile audited controls have at least 44×44 targets; checkbox labels provide the larger clickable area. Dialog images capture the viewport so fixed overlays remain readable. Representative Administrator/tablet, Action/mobile-validation and attachment/reflow images were inspected visually in addition to the automated checks.
+
+| Check | Evidence and scope |
+|---|---|
+| Consistent shell/navigation/cards/badges/forms | All-role fixture audit; correct pathname selection and active navigation with query/hash context; Zen Green `#006b3c` |
+| Dashboard labels/counts/drill-down | Fixture keyboard Enter and role navigation; live dashboard suite separately checks direct database metrics and exact query links |
+| Editable/read-only Actions | Create validation/Escape/focus return, planned/completed/cancelled shared list and requester read-only fixtures; real create/edit/lifecycle/inactive-assignee/stale/idempotent API flows |
+| Accessible errors and recovery | Required/invalid/described fields, first-error focus and live alerts; draft retained through 500/conflict/reload; protected communication entries/forms removed after denial |
+| Focus and dialogs | Tab/Shift+Tab/Enter/Escape for all roles; skip-link main focus, drill-down outline, Action return focus, attachment/admin dialog trap and trigger return; pending-removal Escape blocked by component regression |
+| Responsive geometry | Zero page overflow, out-of-viewport audited controls, clipped sampled text or overlapping audited controls in every captured state; long unbroken names/descriptions/filename fixtures |
+| Accessibility and console | No WCAG-tagged axe violations in 63 fixture captures; live Action/dashboard/workflow suites reject serious/critical findings; no unexpected fixture console or page errors |
+
+[Screenshot and assertion catalog](./ui-evidence-60.md), [Issue #60 test results and provenance](./tests.md#issue-60-verification).
+
+These completed checks describe automated browser interaction and representative screenshot inspection. A `720×450` viewport is an automated reflow proxy for a `1440×900` desktop at 200%; independent manual browser zoom and screen-reader review remain unperformed. Hosted CI, peer approval and final-main/PDF release evidence remain separate release work, not claims made by this checklist.
 
 
 ## PR #68 Staff Dashboard Evidence ? 2026-10-03

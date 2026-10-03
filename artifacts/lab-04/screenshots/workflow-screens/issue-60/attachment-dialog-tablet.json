@@ -1,0 +1,58 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "attachment-dialog",
+  "viewport": "tablet",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 834,
+    "viewportWidth": 834,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "removal-reason",
+        "rect": {
+          "x": 169,
+          "y": 507.0625,
+          "width": 496,
+          "height": 128,
+          "top": 507.0625,
+          "right": 665,
+          "bottom": 635.0625,
+          "left": 169
+        },
+        "outline": "solid"
+      },
+      {
+        "name": "Cancel",
+        "rect": {
+          "x": 384.90625,
+          "y": 692.96875,
+          "width": 83.15625,
+          "height": 44,
+          "top": 692.96875,
+          "right": 468.0625,
+          "bottom": 736.96875,
+          "left": 384.90625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Remove attachment",
+        "rect": {
+          "x": 480.0625,
+          "y": 692.96875,
+          "width": 184.9375,
+          "height": 44,
+          "top": 692.96875,
+          "right": 665,
+          "bottom": 736.96875,
+          "left": 480.0625
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

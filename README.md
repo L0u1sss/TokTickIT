@@ -245,6 +245,8 @@ npm --prefix client run dev
 
 ผลจริงและ source SHA-256 hashes อยู่ใน `artifacts/lab-04/issue-59/verification.json`, raw logs และ Vitest JSON reports ในโฟลเดอร์เดียวกัน `PASS` ใช้เฉพาะ command ที่จบด้วย exit code 0; ถ้าแก้ source ระหว่างรัน manifest จะระบุ `sourceUnchangedDuringRun: false` และ runner จบด้วย failure สามารถรันเฉพาะ check โดยส่งชื่อ เช่น `node scripts/verify-lab4.mjs server-lint` ซึ่งจะสร้าง `verification-selected.json` แยกจาก full run
 
+สำหรับ Issue #60 ใช้ `node scripts/verify-lab4.mjs --issue=60` เพื่อเก็บผลใน `artifacts/lab-04/issue-60/` และรักษาหลักฐาน Issue #59 เดิม หรือรันเฉพาะ UI audit ด้วย `npm --prefix client run test:ui:lab4` (ไม่ต้องใช้ฐานข้อมูล) ชุดนี้ใช้ UI fixtures ที่ระบุชัดเจน ตรวจสาม roles ที่ 1440×900, 834×1112, 390×844 และ 720×450 พร้อม axe, keyboard/focus, modal, control bounds, clipping/overlap, long text และ draft recovery ภาพและ JSON อยู่ใน `artifacts/lab-04/screenshots/*/issue-60/` ผลจาก real API/database ใช้ suites เดิมแยกจาก fixtures; automated reflow ไม่ใช่ manual browser zoom หรือ screen-reader review
+
 ใช้ `npm --prefix server run test:performance` เพื่อวัด Requester/Staff/Admin dashboards แยกจาก regression: 1,000 Tickets, 5,000 Actions, warm-up 5 ครั้งและ sample 40 ครั้งต่อ role, p95 ≤500 ms ตาม [performance contract](docs/lab-04/specification.md#91-performance-smoke-contract-issue-59) ผลทุก sample อยู่ใน `dashboard-performance.json` ภายใต้โฟลเดอร์หลักฐานข้างต้น ทั้ง database และ live browser runners สร้างและลบเฉพาะ disposable schema ของตัวเอง
 
 สำหรับ Lab 3 แนะนำ `npm --prefix server run test:isolated` ซึ่งสร้าง schema ชั่วคราวจาก `TEST_DATABASE_URL`, migrate/seed, รัน suite และลบเฉพาะ schema ที่สร้างเอง โดยไม่ reset development หรือ shared test schema
