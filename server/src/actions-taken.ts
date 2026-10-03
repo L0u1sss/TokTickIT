@@ -1,10 +1,11 @@
-import { ActionStatus, Prisma, type PrismaClient } from "@prisma/client";
+import { ActionStatus, Prisma, type PrismaClient, type Status } from "@prisma/client";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { getPrisma } from "./prisma.js";
 import { ApiError, validationError } from "./errors.js";
 import { parsePositivePathId } from "./path-contract.js";
 import { requireOwnedTicket } from "./attachment-service.js";
-import { lockUserManagement } from "./user-management.js";
+import { lockActionAssignee } from "./user-management.js";
+import { createHash } from "node:crypto";
 
 const staffRoles = ["IT_STAFF", "ADMINISTRATOR"] as const;
 const userSelect = { id: true, displayName: true, role: true } as const;
@@ -15,6 +16,7 @@ const actionSelect = {
   description: true,
   result: true,
   status: true,
+  recordedBy: { select: userSelect },
   performedBy: { select: userSelect },
   assignee: { select: userSelect },
   followUpRequired: true,
@@ -24,6 +26,9 @@ const actionSelect = {
   createdAt: true,
   updatedAt: true,
   completedAt: true,
+  cancelledAt: true,
+  cancelledBy: { select: userSelect },
+  cancellationSource: true,
 } satisfies Prisma.ActionTakenSelect;
 
 type ActionDtoSource = Prisma.ActionTakenGetPayload<{ select: typeof actionSelect }>;
@@ -32,9 +37,10 @@ type Database = PrismaClient | Prisma.TransactionClient;
 const transitions: Record<ActionStatus, readonly ActionStatus[]> = {
   PLANNED: ["IN_PROGRESS", "CANCELLED"],
   IN_PROGRESS: ["COMPLETED", "CANCELLED"],
-  COMPLETED: ["IN_PROGRESS"],
-  CANCELLED: ["PLANNED"],
+  COMPLETED: [],
+  CANCELLED: [],
 };
+const actionableStatuses: Status[] = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"];
 
 function dto(action: ActionDtoSource) {
   return {
@@ -42,6 +48,7 @@ function dto(action: ActionDtoSource) {
     createdAt: action.createdAt.toISOString(),
     updatedAt: action.updatedAt.toISOString(),
     completedAt: action.completedAt?.toISOString() ?? null,
+    cancelledAt: action.cancelledAt?.toISOString() ?? null,
   };
 }
 
@@ -106,9 +113,24 @@ function validateFollowUp(required: boolean, note: string | null) {
 }
 
 async function requireTicket(db: Database, ticketId: number) {
-  const ticket = await db.ticket.findUnique({ where: { id: ticketId }, select: { id: true } });
+  const ticket = await db.ticket.findUnique({ where: { id: ticketId }, select: { id: true, status: true, version: true, workflowCycle: true } });
   if (!ticket) throw new ApiError(404, "NOT_FOUND", "Ticket not found.");
   return ticket;
+}
+
+async function lockTicket(tx: Prisma.TransactionClient, ticketId: number) {
+  await tx.$queryRaw`SELECT "id" FROM "Ticket" WHERE "id" = ${ticketId} FOR UPDATE`;
+  return requireTicket(tx, ticketId);
+}
+
+function requireActionable(status: Status) {
+  if (!actionableStatuses.includes(status)) throw new ApiError(409, "TICKET_NOT_ACTIONABLE", "Actions cannot be changed while the Ticket is resolved, closed, or cancelled.");
+}
+
+async function incrementTicketVersion(tx: Prisma.TransactionClient, ticketId: number, expected: number, now: Date) {
+  const changed = await tx.ticket.updateMany({ where: { id: ticketId, version: expected }, data: { version: { increment: 1 }, updatedAt: now } });
+  if (changed.count !== 1) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
+  return expected + 1;
 }
 
 async function requireEligibleAssignee(db: Database, assigneeId: number) {
@@ -144,14 +166,16 @@ type CreateInput = {
   followUpRequired: boolean;
   followUpNote: string | null;
   attachmentNotes: string | null;
+  expectedTicketVersion: number;
 };
 
 function parseCreate(body: unknown): CreateInput {
   const input = object(body,
-    ["clientRequestId", "description", "result", "assigneeId", "followUpRequired", "followUpNote", "attachmentNotes"],
-    ["clientRequestId", "description", "assigneeId", "followUpRequired"]);
+    ["clientRequestId", "expectedTicketVersion", "description", "result", "assigneeId", "followUpRequired", "followUpNote", "attachmentNotes"],
+    ["clientRequestId", "expectedTicketVersion", "description", "assigneeId", "followUpRequired"]);
   const parsed = {
     clientRequestId: uuid(input.clientRequestId),
+    expectedTicketVersion: positiveInteger(input.expectedTicketVersion, "expectedTicketVersion"),
     description: text(input.description, "description", 2000)!,
     result: optionalText(input, "result", 2000) ?? null,
     assigneeId: positiveInteger(input.assigneeId, "assigneeId"),
@@ -163,17 +187,21 @@ function parseCreate(body: unknown): CreateInput {
   return parsed;
 }
 
+function createFingerprint(input: CreateInput, actorId: number) {
+  const { expectedTicketVersion: _version, ...intent } = input;
+  void _version;
+  return createHash("sha256").update(JSON.stringify({ actorId, ...intent })).digest("hex");
+}
+
 function sameCreate(action: ActionDtoSource, input: CreateInput, actorId: number) {
-  return action.status === "PLANNED" && action.performedBy.id === actorId && action.assignee.id === input.assigneeId
-    && action.description === input.description && action.result === input.result
-    && action.followUpRequired === input.followUpRequired && action.followUpNote === input.followUpNote
-    && action.attachmentNotes === input.attachmentNotes;
+  return (action as ActionDtoSource & { createFingerprint?: string }).createFingerprint === createFingerprint(input, actorId)
+    && action.recordedBy.id === actorId;
 }
 
 async function existingCreate(prisma: PrismaClient, ticketId: number, input: CreateInput, actorId: number) {
   const existing = await prisma.actionTaken.findUnique({
     where: { ticketId_clientRequestId: { ticketId, clientRequestId: input.clientRequestId } },
-    select: actionSelect,
+    select: { ...actionSelect, createFingerprint: true },
   });
   if (!existing) return null;
   if (!sameCreate(existing, input, actorId)) {
@@ -185,29 +213,44 @@ async function existingCreate(prisma: PrismaClient, ticketId: number, input: Cre
 async function createAction(prisma: PrismaClient, ticketId: number, actorId: number, body: unknown) {
   const input = parseCreate(body);
   const replay = await existingCreate(prisma, ticketId, input, actorId);
-  if (replay) return replay;
+  if (replay) return { ...replay, ticketVersion: (await requireTicket(prisma, ticketId)).version };
   try {
     const created = await prisma.$transaction(async tx => {
-      await lockUserManagement(tx);
-      await requireTicket(tx, ticketId);
+      const now = new Date();
+      const ticket = await lockTicket(tx, ticketId);
+      requireActionable(ticket.status);
+      const existingLocked = await tx.actionTaken.findUnique({ where: { ticketId_clientRequestId: { ticketId, clientRequestId: input.clientRequestId } }, select: { id: true } });
+      if (existingLocked) {
+        const replayResult = await tx.actionTaken.findUniqueOrThrow({
+          where: { ticketId_clientRequestId: { ticketId, clientRequestId: input.clientRequestId } },
+          select: { ...actionSelect, createFingerprint: true },
+        });
+        if (sameCreate(replayResult, input, actorId)) return { action: dto(replayResult), ticketVersion: ticket.version, replayed: true as const };
+        throw new ApiError(409, "IDEMPOTENCY_CONFLICT", "clientRequestId was already used for different Action data.");
+      }
+      if (ticket.version !== input.expectedTicketVersion) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
+      await lockActionAssignee(tx, input.assigneeId);
       await requireEligibleAssignee(tx, input.assigneeId);
+      const { expectedTicketVersion: _version, ...createData } = input;
+      void _version;
       const action = await tx.actionTaken.create({
-        data: { ticketId, performedById: actorId, status: "PLANNED", ...input },
+        data: { ticketId, workflowCycle: ticket.workflowCycle, recordedById: actorId, createFingerprint: createFingerprint(input, actorId), status: "PLANNED", ...createData },
         select: actionSelect,
       });
+      const ticketVersion = await incrementTicketVersion(tx, ticketId, input.expectedTicketVersion, now);
       await tx.actionEvent.create({
         data: {
-          actionId: action.id, actorId, eventType: "CREATED", fromStatus: null, toStatus: "PLANNED", revision: 1,
+          actionId: action.id, actorId, eventType: "ACTION_CREATED", fromStatus: null, toStatus: "PLANNED", revision: 1,
           changedFields: { fields: ["description", "result", "assigneeId", "followUpRequired", "followUpNote", "attachmentNotes", "status"] },
         },
       });
-      return action;
+      return { action: dto(action), ticketVersion, replayed: false as const };
     });
-    return { action: dto(created), replayed: false as const };
+    return created;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const concurrentReplay = await existingCreate(prisma, ticketId, input, actorId);
-      if (concurrentReplay) return concurrentReplay;
+      if (concurrentReplay) return { ...concurrentReplay, ticketVersion: (await requireTicket(prisma, ticketId)).version };
     }
     throw error;
   }
@@ -217,13 +260,19 @@ const editableFields = ["description", "result", "assigneeId", "followUpRequired
 type EditableField = typeof editableFields[number];
 
 async function updateAction(prisma: PrismaClient, ticketId: number, actionId: number, actorId: number, body: unknown) {
-  const input = object(body, ["revision", ...editableFields], ["revision"]);
+  const input = object(body, ["expectedTicketVersion", "revision", ...editableFields], ["expectedTicketVersion", "revision"]);
+  const expectedTicketVersion = positiveInteger(input.expectedTicketVersion, "expectedTicketVersion");
   if (!editableFields.some(field => field in input)) throw validationError([{ field: "body", issue: "Send at least one editable field." }]);
   const expectedRevision = revision(input.revision);
   return prisma.$transaction(async tx => {
-    await lockUserManagement(tx);
+    const now = new Date();
+    const ticket = await lockTicket(tx, ticketId);
+    requireActionable(ticket.status);
+    if (ticket.version !== expectedTicketVersion) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
+    await tx.$queryRaw`SELECT "id" FROM "ActionTaken" WHERE "id" = ${actionId} AND "ticketId" = ${ticketId} FOR UPDATE`;
     const current = await findAction(tx, ticketId, actionId);
     if (current.revision !== expectedRevision) throw new ApiError(409, "STALE_ACTION", "This Action changed. Reload it before saving.");
+    if (current.status === "COMPLETED" || current.status === "CANCELLED") throw new ApiError(409, "INVALID_ACTION_TRANSITION", "Terminal Actions cannot be edited.");
     const next = {
       description: "description" in input ? text(input.description, "description", 2000)! : current.description,
       result: "result" in input ? text(input.result, "result", 2000, true) : current.result,
@@ -234,31 +283,33 @@ async function updateAction(prisma: PrismaClient, ticketId: number, actionId: nu
     };
     if (!next.followUpRequired && !("followUpNote" in input)) next.followUpNote = null;
     validateFollowUp(next.followUpRequired, next.followUpNote);
-    if (current.status === "COMPLETED" && !next.result) throw validationError([{ field: "result", issue: "Completed Actions require a Result." }]);
-    await requireEligibleAssignee(tx, next.assigneeId);
     const changedFields = editableFields.filter(field => {
       const oldValue = field === "assigneeId" ? current.assignee.id : current[field as Exclude<EditableField, "assigneeId">];
       return oldValue !== next[field];
     });
-    if (!changedFields.length) return dto(current);
+    if (!changedFields.length) return { action: dto(current), ticketVersion: ticket.version };
+    await lockActionAssignee(tx, next.assigneeId);
+    await requireEligibleAssignee(tx, next.assigneeId);
     const changed = await tx.actionTaken.updateMany({
       where: { id: actionId, ticketId, revision: expectedRevision },
       data: { ...next, revision: { increment: 1 } },
     });
     if (changed.count !== 1) throw new ApiError(409, "STALE_ACTION", "This Action changed. Reload it before saving.");
+    const ticketVersion = await incrementTicketVersion(tx, ticketId, expectedTicketVersion, now);
     const newRevision = expectedRevision + 1;
     await tx.actionEvent.create({
       data: {
-        actionId, actorId, eventType: changedFields.length === 1 && changedFields[0] === "assigneeId" ? "ASSIGNED" : "CONTENT_UPDATED",
+        actionId, actorId, eventType: "ACTION_UPDATED",
         fromStatus: current.status, toStatus: current.status, changedFields: { fields: changedFields }, revision: newRevision,
       },
     });
-    return dto(await tx.actionTaken.findUniqueOrThrow({ where: { id: actionId }, select: actionSelect }));
+    return { action: dto(await tx.actionTaken.findUniqueOrThrow({ where: { id: actionId }, select: actionSelect })), ticketVersion };
   });
 }
 
 async function transitionAction(prisma: PrismaClient, ticketId: number, actionId: number, actorId: number, body: unknown) {
-  const input = object(body, ["status", "revision", "result"], ["status", "revision"]);
+  const input = object(body, ["expectedTicketVersion", "status", "revision", "result"], ["expectedTicketVersion", "status", "revision"]);
+  const expectedTicketVersion = positiveInteger(input.expectedTicketVersion, "expectedTicketVersion");
   if (typeof input.status !== "string" || !Object.values(ActionStatus).includes(input.status as ActionStatus)) {
     throw validationError([{ field: "status", issue: `Must be one of ${Object.values(ActionStatus).join(", ")}.` }]);
   }
@@ -266,6 +317,11 @@ async function transitionAction(prisma: PrismaClient, ticketId: number, actionId
   if ("result" in input && nextStatus !== "COMPLETED") throw validationError([{ field: "result", issue: "Result can be supplied here only when completing an Action." }]);
   const expectedRevision = revision(input.revision);
   return prisma.$transaction(async tx => {
+    const now = new Date();
+    const ticket = await lockTicket(tx, ticketId);
+    requireActionable(ticket.status);
+    if (ticket.version !== expectedTicketVersion) throw new ApiError(409, "STALE_TICKET", "This Ticket changed. Reload it before saving.");
+    await tx.$queryRaw`SELECT "id" FROM "ActionTaken" WHERE "id" = ${actionId} AND "ticketId" = ${ticketId} FOR UPDATE`;
     const current = await findAction(tx, ticketId, actionId);
     if (current.revision !== expectedRevision) throw new ApiError(409, "STALE_ACTION", "This Action changed. Reload it before saving.");
     if (!transitions[current.status].includes(nextStatus)) {
@@ -275,20 +331,28 @@ async function transitionAction(prisma: PrismaClient, ticketId: number, actionId
       ? ("result" in input ? text(input.result, "result", 2000)! : current.result)
       : current.result;
     if (nextStatus === "COMPLETED" && !result) throw validationError([{ field: "result", issue: "Completed Actions require a Result." }]);
-    const completedAt = nextStatus === "COMPLETED" ? new Date() : null;
+    if ((nextStatus === "COMPLETED" || nextStatus === "CANCELLED") && current.followUpRequired) throw validationError([{ field: "followUpRequired", issue: "Clear follow-up before completing or cancelling an Action." }]);
+    if (nextStatus === "COMPLETED" && current.assignee.id !== actorId) throw new ApiError(403, "ACTION_ASSIGNEE_REQUIRED", "Only the current Action assignee may complete it.");
+    if (nextStatus === "COMPLETED") {
+      await lockActionAssignee(tx, current.assignee.id);
+      await requireEligibleAssignee(tx, current.assignee.id);
+    }
+    const completedAt = nextStatus === "COMPLETED" ? now : null;
+    const cancellation = nextStatus === "CANCELLED" ? { cancelledAt: now, cancelledById: actorId, cancellationSource: "STAFF_ACTION" as const } : { cancelledAt: null, cancelledById: null, cancellationSource: null };
     const changed = await tx.actionTaken.updateMany({
       where: { id: actionId, ticketId, revision: expectedRevision },
-      data: { status: nextStatus, result, completedAt, revision: { increment: 1 } },
+      data: { status: nextStatus, result, completedAt, performedById: nextStatus === "COMPLETED" ? current.assignee.id : null, ...cancellation, revision: { increment: 1 }, updatedAt: now },
     });
     if (changed.count !== 1) throw new ApiError(409, "STALE_ACTION", "This Action changed. Reload it before saving.");
+    const ticketVersion = await incrementTicketVersion(tx, ticketId, expectedTicketVersion, now);
     await tx.actionEvent.create({
       data: {
-        actionId, actorId, eventType: "STATUS_CHANGED", fromStatus: current.status, toStatus: nextStatus,
-        changedFields: { fields: nextStatus === "COMPLETED" && result !== current.result ? ["status", "result", "completedAt"] : ["status", "completedAt"] },
+        actionId, actorId, eventType: nextStatus === "COMPLETED" ? "ACTION_COMPLETED" : nextStatus === "CANCELLED" ? "ACTION_CANCELLED" : "ACTION_UPDATED", fromStatus: current.status, toStatus: nextStatus,
+        changedFields: { fields: nextStatus === "COMPLETED" ? ["status", ...(result !== current.result ? ["result"] : []), "completedAt", "performedById"] : nextStatus === "CANCELLED" ? ["status", "cancelledAt", "cancelledById", "cancellationSource"] : ["status"] },
         revision: expectedRevision + 1,
       },
     });
-    return dto(await tx.actionTaken.findUniqueOrThrow({ where: { id: actionId }, select: actionSelect }));
+    return { action: dto(await tx.actionTaken.findUniqueOrThrow({ where: { id: actionId }, select: actionSelect })), ticketVersion };
   });
 }
 
@@ -308,7 +372,7 @@ staffActionsRouter.get("/tickets/:ticketId/actions/:actionId", route(async (req,
 staffActionsRouter.post("/tickets/:ticketId/actions", route(async (req, res) => {
   const ticketId = parsePositivePathId(req.params.ticketId, "ticketId");
   const result = await createAction(getPrisma(), ticketId, res.locals.authenticatedUser.id, req.body);
-  if (!result.replayed) res.location(`/api/staff/tickets/${ticketId}/actions/${result.action.id}`);
+  if (!result.replayed && result.action) res.location(`/api/staff/tickets/${ticketId}/actions/${result.action.id}`);
   res.status(result.replayed ? 200 : 201).json(result);
 }));
 staffActionsRouter.patch("/tickets/:ticketId/actions/:actionId", route(async (req, res) => {

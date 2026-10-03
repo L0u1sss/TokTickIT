@@ -8,6 +8,8 @@ export interface TicketListQuery {
   search: string | null;
   status: Status[] | null;
   statusFilter: string | null;
+  resolvedFrom?: Date;
+  resolvedBefore?: Date;
   requestedPriority: Priority | null;
   categoryId: number | null;
   relatedSystemId: number | null;
@@ -20,6 +22,9 @@ export interface TicketListQuery {
 const allowedFields = new Set([
   "search",
   "status",
+  "statusIn",
+  "resolvedFrom",
+  "resolvedBefore",
   "requestedPriority",
   "categoryId",
   "relatedSystemId",
@@ -88,10 +93,28 @@ export function parseTicketListQuery(
   }
 
   const rawStatus = singleString(query, "status", details);
-  const statuses = rawStatus === "New" ? ["NEW" as const]
+  let statuses: Status[] | null = rawStatus === "New" ? ["NEW" as const]
     : rawStatus === "OPEN_GROUP" ? openTicketStatuses
     : rawStatus === "WAITING_FOR_REQUESTER" ? ["WAITING_FOR_REQUESTER" as const] : null;
   if (rawStatus !== undefined && !statuses) details.push({ field: "status", issue: "Must be New, OPEN_GROUP, or WAITING_FOR_REQUESTER." });
+
+  const rawStatusIn = singleString(query, "statusIn", details);
+  const validStatuses = new Set<Status>(["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"]);
+  if (rawStatusIn !== undefined) {
+    const values = rawStatusIn.split(",") as Status[];
+    if (rawStatus !== undefined || values.some(value => !validStatuses.has(value)) || new Set(values).size !== values.length) {
+      details.push({ field: "statusIn", issue: "Supply unique Ticket statuses separated by commas, without status." });
+    } else statuses = values;
+  }
+  const rawFrom = singleString(query, "resolvedFrom", details);
+  const rawBefore = singleString(query, "resolvedBefore", details);
+  const utcDate = (value: string | undefined) => value && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value ? new Date(value) : undefined;
+  const resolvedFrom = utcDate(rawFrom), resolvedBefore = utcDate(rawBefore);
+  if (rawFrom !== undefined || rawBefore !== undefined) {
+    if (!resolvedFrom || !resolvedBefore || resolvedFrom >= resolvedBefore || !statuses || statuses.some(status => status !== "RESOLVED" && status !== "CLOSED")) {
+      details.push({ field: "resolvedFrom", issue: "Supply an increasing UTC from/before pair with only RESOLVED/CLOSED statuses." });
+    }
+  }
 
   const rawPriority = singleString(query, "requestedPriority", details);
   if (
@@ -152,7 +175,8 @@ export function parseTicketListQuery(
   return {
     search: normalizedSearch || null,
     status: statuses,
-    statusFilter: rawStatus ?? null,
+    statusFilter: rawStatus ?? rawStatusIn ?? null,
+    ...(resolvedFrom && resolvedBefore ? { resolvedFrom, resolvedBefore } : {}),
     requestedPriority: (rawPriority as Priority | undefined) ?? null,
     categoryId,
     relatedSystemId,

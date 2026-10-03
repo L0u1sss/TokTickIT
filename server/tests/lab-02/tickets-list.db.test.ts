@@ -1,6 +1,7 @@
 import { cookieForUser } from "../session-fixture.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import { randomUUID } from "node:crypto";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
 
@@ -222,5 +223,64 @@ describe("My Tickets PostgreSQL integration", () => {
       totalItems: 3,
       totalPages: 1,
     });
+  });
+
+  it("preserves the legacy scalar status and every original query field against mixed-status, multi-page data", async () => {
+    const prisma = getPrisma();
+    const rows = [];
+    try {
+      for (let index = 0; index < 24; index++) {
+        rows.push(await prisma.ticket.create({ data: {
+          ticketNumber: `TKT-2099-${910000 + index}`, clientRequestId: randomUUID(),
+          summary: `Legacy list ${String(index).padStart(2, "0")}`, description: "Original My Tickets contract regression",
+          status: index < 18 ? "NEW" : "OPEN", requestedPriority: (["LOW", "MEDIUM", "HIGH"] as const)[index % 3],
+          itPriority: "MEDIUM", requesterId, categoryId, relatedSystemId,
+          createdAt: new Date("2026-08-30T10:00:00.000Z"),
+        } }));
+      }
+      const cookie = await cookieForUser(prisma, requesterId);
+      const list = (query: Record<string, string | number>) => request(app).get("/api/tickets").query(query).set("Cookie", cookie).expect(200);
+      const original = { search: "  LEGACY list  ", status: "New", categoryId, relatedSystemId };
+      // Expectations come from inserted records, not parseTicketListQuery or the list service.
+      const newRows = rows.slice(0, 18);
+      for (const requestedPriority of ["LOW", "MEDIUM", "HIGH"] as const) {
+        for (const sortBy of ["createdAt", "ticketNumber", "summary"]) {
+          for (const sortOrder of ["asc", "desc"]) {
+            const result = await list({ ...original, requestedPriority, sortBy, sortOrder, page: 1, pageSize: 20 });
+            const expected = newRows.filter(row => row.requestedPriority === requestedPriority);
+            if (sortOrder === "desc") expected.reverse();
+            expect(result.body.items.map((row: { id: number }) => row.id)).toEqual(expected.map(row => row.id));
+            expect(result.body.items.every((row: { status: string }) => row.status === "New")).toBe(true);
+            expect(result.body.pagination).toEqual({ page: 1, pageSize: 20, totalItems: 6, totalPages: 1 });
+            expect(result.body.sort).toEqual({ by: sortBy, order: sortOrder });
+            expect(result.body.filters).toEqual({ search: "LEGACY list", status: "New", requestedPriority, categoryId, relatedSystemId });
+          }
+        }
+      }
+      for (const pageSize of [10, 20, 50]) {
+        for (const page of [1, 2, 9]) {
+          const result = await list({ ...original, page, pageSize });
+          expect(result.body.items.map((row: { id: number }) => row.id)).toEqual([...newRows].reverse().slice((page - 1) * pageSize, page * pageSize).map(row => row.id));
+          expect(result.body.pagination).toEqual({ page, pageSize, totalItems: 18, totalPages: Math.ceil(18 / pageSize) });
+          expect(result.body.filters.status).toBe("New");
+        }
+      }
+      const unfiltered = await list({ search: "Legacy list", pageSize: 50 });
+      expect(unfiltered.body.pagination.totalItems).toBe(24);
+      expect(unfiltered.body.filters.status).toBeNull();
+      const numberSearch = await list({ search: rows[0].ticketNumber.toLowerCase(), status: "New" });
+      expect(numberSearch.body.items.map((row: { id: number }) => row.id)).toEqual([rows[0].id]);
+      const blankSearch = await list({ search: "   " });
+      expect(blankSearch.body.filters.search).toBeNull();
+      expect(blankSearch.body.pagination.totalItems).toBe(27);
+      const missingLookup = await list({ ...original, categoryId: 2147483647 });
+      expect(missingLookup.body.items).toEqual([]);
+      for (const query of ["status=New&status=New", "status=NEW", "status=Open", "pageSize=25", "sortBy=updatedAt", "unknown=value"]) {
+        const invalid = await request(app).get(`/api/tickets?${query}`).set("Cookie", cookie).expect(400);
+        expect(invalid.body.error.code).toBe("INVALID_QUERY");
+      }
+    } finally {
+      await prisma.ticket.deleteMany({ where: { id: { in: rows.map(row => row.id) } } });
+    }
   });
 });

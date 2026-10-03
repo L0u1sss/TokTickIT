@@ -144,6 +144,8 @@ async function resetTestDatabase() {
         ...process.env,
         DATABASE_URL: testDatabaseUrl,
         TEST_DATABASE_URL: testDatabaseUrl,
+        // Requester regressions create their own tickets from an empty list.
+        SEED_REFERENCE_DATA_ONLY: "true",
         PATH: `${serverBinaryDirectory}${path.delimiter}${process.env.PATH ?? ""}`,
       },
     },

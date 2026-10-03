@@ -9,10 +9,10 @@ import StaffDashboard from "./components/StaffDashboard.js";
 export function AuthScreens() {
   const {user,loading,error,logoutError,refresh,logout}=useAuth();
   const heading=useRef<HTMLHeadingElement>(null);
-  const home = user?.role === "REQUESTER" ? "/dashboard" : "/staff/dashboard";
+  const home = user?.role === "REQUESTER" ? "/dashboard" : user?.role === "ADMINISTRATOR" ? "/admin/users" : "/staff/tickets";
   const location = window.location.pathname;
   const permitted = user?.role === "REQUESTER" ? location === "/dashboard" || /^\/tickets(?:\/[^/]+)?$/.test(location)
-    : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || location === "/staff/dashboard" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : location === "/staff/dashboard" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
+    : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
   const forbidden = Boolean(user && !user.mustChangePassword && (
     (location.startsWith("/admin/") && user.role !== "ADMINISTRATOR") ||
     (location.startsWith("/staff/") && user.role === "REQUESTER") ||

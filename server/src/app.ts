@@ -19,7 +19,6 @@ import { parsePositivePathId } from "./path-contract.js";
 import { getOwnedTicketDetail } from "./ticket-detail-service.js";
 import { requesterActionsRouter, staffActionsRouter } from "./actions-taken.js";
 import { requesterDashboardRouter } from "./requester-dashboard.js";
-import { staffDashboardRouter } from "./staff-dashboard.js";
 import {
   downloadOwnedAttachment,
   removeOwnedAttachment,

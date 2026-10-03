@@ -1,0 +1,20 @@
+Commands: npm --prefix client run build; npm --prefix client run lint
+Date: 2026-10-02 (Asia/Bangkok)
+Worktree base: c00bb1a0c71d22c7cafc2bb932fc37bb014791b2
+Exit code: 0
+
+> toktickit-client@1.0.0 build
+> tsc && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 43 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.39 kB │ gzip:  0.27 kB
+dist/assets/index-BMxzANUx.css  257.14 kB │ gzip: 36.44 kB
+dist/assets/index-C6HEH45r.js   251.53 kB │ gzip: 75.84 kB
+✓ built in 972ms
+
+> toktickit-client@1.0.0 lint
+> eslint . --max-warnings=0

@@ -1,0 +1,22 @@
+{
+  "source": "Direct Prisma queries before browser assertions; not dashboard API output",
+  "runId": "80a5ce12-53f1-4455-95d3-65909d841a3f",
+  "fixtureSchema": "auth_e2e_test_0adc76ac99f637c7",
+  "generatedAt": "2026-10-03T09:08:40.812Z",
+  "sourceSha": "ebfb0f726b71bb852995f716212c953b87b01a3c",
+  "checkoutSha": "ebfb0f726b71bb852995f716212c953b87b01a3c",
+  "workingTreeDirty": true,
+  "ci": null,
+  "requesterId": 1,
+  "metrics": {
+    "openCount": 21,
+    "waitingForRequesterCount": 1
+  },
+  "openStatuses": [
+    "NEW",
+    "OPEN",
+    "IN_PROGRESS",
+    "WAITING_FOR_REQUESTER",
+    "REOPENED"
+  ]
+}

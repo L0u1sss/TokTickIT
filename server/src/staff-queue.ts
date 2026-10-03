@@ -30,7 +30,7 @@ export function parseStaffQuery(raw: Record<string, unknown>) {
     page: integer("page", 1, 21474836), pageSize: integer("pageSize", 20, 100) };
 }
 const userSelect = { id: true, displayName: true, email: true } as const;
-const select = { id: true, ticketNumber: true, summary: true, createdAt: true, updatedAt: true,
+const select = { id: true, version: true, ticketNumber: true, summary: true, createdAt: true, updatedAt: true,
   category: { select: { id: true, name: true } }, requester: { select: userSelect },
   owner: { select: userSelect }, requestedPriority: true, itPriority: true, status: true } as const;
 const eligible = { isActive: true, role: { in: ["IT_STAFF", "ADMINISTRATOR"] as ("IT_STAFF" | "ADMINISTRATOR")[] } };

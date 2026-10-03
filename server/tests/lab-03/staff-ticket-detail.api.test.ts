@@ -16,10 +16,10 @@ let storageKey: string;
 const url = (suffix = "", id = ticketId) => `/api/staff/tickets/${id}${suffix}`;
 const read = (suffix = "", actor = 1) => request(app).get(url(suffix)).set("Cookie", cookies[actor]);
 const write = async (suffix: string, body: object = {}, actor = 1, id = ticketId) => {
-  const expectedUpdatedAt = suffix === "/status" && !("expectedUpdatedAt" in body)
-    ? (await db.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { updatedAt: true } })).updatedAt.toISOString() : undefined;
+  const ticket = await db.ticket.findUnique({ where: { id }, select: { version: true } });
+  const payload = !("expectedTicketVersion" in body) ? { ...body, expectedTicketVersion: ticket?.version ?? 1 } : body;
   return request(app)[suffix === "/claim" ? "post" : "patch"](url(suffix, id))
-    .set("Cookie", `${cookies[actor]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send({ ...body, ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}) });
+    .set("Cookie", `${cookies[actor]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send(payload);
 };
 
 beforeAll(async () => {
@@ -75,7 +75,7 @@ it("allows exactly one concurrent claim and preserves that owner on conflict", a
   expect(results.map(result => result.status).sort()).toEqual([200, 409]);
   const winner = results.find(result => result.status === 200)!;
   expect((await db.ticket.findUniqueOrThrow({ where: { id: ticketId } })).ownerId).toBe(winner.body.owner.id);
-  expect(results.find(result => result.status === 409)!.body.error.code).toBe("TICKET_ALREADY_ASSIGNED");
+  expect(results.find(result => result.status === 409)!.body.error.code).toBe("STALE_TICKET");
 });
 it("reassigns to active staff/admin and rejects inactive/requester/missing owners", async () => {
   for (const ownerId of [ids[1], ids[2]]) {
@@ -108,7 +108,7 @@ const allowed: Record<Status, Status[]> = {
 };
 it.each(Object.values(Status).flatMap(from => Object.values(Status).map(to => [from, to] as const)))("enforces %s -> %s and persists ownership correctly", async (from, to) => {
   await db.ticket.update({ where: { id: ticketId }, data: { status: from, ownerId: ids[1] } });
-  const resolutionAction = to === "RESOLVED" ? await db.actionTaken.create({ data: { ticketId, clientRequestId: randomUUID(), description: "Lab 3 transition evidence", result: "Verified", status: "COMPLETED", performedById: ids[1], assigneeId: ids[1], completedAt: new Date() } }) : null;
+  const resolutionAction = to === "RESOLVED" ? await db.actionTaken.create({ data: { ticketId, workflowCycle: (await db.ticket.findUniqueOrThrow({ where: { id: ticketId } })).workflowCycle, clientRequestId: randomUUID(), createFingerprint: "f".repeat(64), recordedById: ids[1], description: "Lab 3 transition evidence", result: "Verified", status: "COMPLETED", performedById: ids[1], assigneeId: ids[1], completedAt: new Date() } }) : null;
   const valid = allowed[from].includes(to), terminal = to === "CLOSED" || to === "CANCELLED";
   const result = await write("/status", { status: to });
   expect(result.status).toBe(valid ? 200 : 409);

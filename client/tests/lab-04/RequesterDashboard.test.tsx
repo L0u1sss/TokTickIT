@@ -23,6 +23,7 @@ const dashboard: api.RequesterDashboardData = {
   metrics: { openCount: 7, waitingForRequesterCount: 2 },
   recentlyUpdated: [ticket(5), ticket(4), ticket(3), ticket(2), ticket(1)],
   recentlyResolved: [ticket(8, "Closed"), ticket(7, "Resolved")],
+  recentlyResolvedWindow: { from: "2026-09-19T10:00:00.000Z", before: "2026-09-26T10:00:00.000Z" },
   generatedAt: "2026-09-26T10:00:00.000Z",
 };
 
@@ -54,6 +55,20 @@ describe("Requester Dashboard", () => {
 
     await userEvent.click(screen.getByRole("link", { name: /Open Tickets 7/ }));
     expect(window.location.pathname + window.location.search).toBe("/tickets?status=OPEN_GROUP");
+  });
+
+  it("uses the exact backend resolution window in the My Tickets drill-down", async () => {
+    vi.spyOn(api, "getRequesterDashboard").mockResolvedValue(dashboard);
+    const list = vi.spyOn(api, "getTickets").mockResolvedValue({ items: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 }, sort: { by: "createdAt", order: "desc" }, filters: { search: null, status: "RESOLVED,CLOSED", requestedPriority: null, categoryId: null, relatedSystemId: null } });
+    vi.spyOn(api, "getTicketMetadata").mockResolvedValue({ categories: [], relatedSystems: [] });
+    renderDashboard();
+    await userEvent.click(await screen.findByRole("link", { name: "View recently resolved tickets" }));
+    const parameters = new URLSearchParams(window.location.search);
+    expect(parameters.get("statusIn")).toBe("RESOLVED,CLOSED");
+    expect(parameters.get("resolvedFrom")).toBe(dashboard.recentlyResolvedWindow.from);
+    expect(parameters.get("resolvedBefore")).toBe(dashboard.recentlyResolvedWindow.before);
+    await waitFor(() => expect(list).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ statusIn: "RESOLVED,CLOSED", resolvedFrom: dashboard.recentlyResolvedWindow.from, resolvedBefore: dashboard.recentlyResolvedWindow.before }), expect.any(AbortSignal)));
+    expect(screen.getByRole("combobox", { name: "Status" })).toHaveValue("RESOLVED_GROUP");
   });
 
   it("renders the zero state and navigates to ticket creation", async () => {

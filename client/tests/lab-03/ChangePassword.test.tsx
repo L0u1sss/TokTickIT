@@ -22,7 +22,7 @@ describe("UI-02 mandatory password change",()=>{
   it("saves password and shows authenticated name/role without the selector",async()=>{
     vi.stubGlobal("fetch",vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({user:identity})))
       .mockResolvedValueOnce(new Response(JSON.stringify({user:{...identity,mustChangePassword:false}})))
-      .mockResolvedValue(new Response(JSON.stringify({metrics:{openCount:0,waitingForRequesterCount:0},recentlyUpdated:[],recentlyResolved:[],generatedAt:"2026-09-26T10:00:00.000Z"}))));
+      .mockResolvedValue(new Response(JSON.stringify({metrics:{openCount:0,waitingForRequesterCount:0},recentlyUpdated:[],recentlyResolved:[],recentlyResolvedWindow:{from:"2026-09-19T10:00:00.000Z",before:"2026-09-26T10:00:00.000Z"},generatedAt:"2026-09-26T10:00:00.000Z"}))));
     const user=userEvent.setup();render(<AuthApp/>);await screen.findByRole("heading",{name:"Change your initial password"});
     await user.type(screen.getByLabelText(/^Current Password/),"Initial-password1!");
     await user.type(screen.getByLabelText(/^New Password/),"New-password2!");

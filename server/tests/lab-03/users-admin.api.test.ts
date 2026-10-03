@@ -13,6 +13,7 @@ const marker = randomUUID();
 const ids: number[] = [], cookies: string[] = [];
 const csrf = "a".repeat(43), password = "Initial-Password123!";
 let categoryId: number, systemId: number, ticketId: number;
+let ticketVersion = 1;
 const write = (method: "post" | "patch", path: string, body: object, cookie = cookies[2]) => request(app)[method](path).set("Origin", "http://localhost:5173").set("Cookie", `${cookie}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).send(body);
 beforeAll(async () => {
   for (const role of ["REQUESTER", "IT_STAFF", "ADMINISTRATOR"] as UserRole[]) {
@@ -101,13 +102,15 @@ describe("Issue #35 administrator account APIs", () => {
     expect((await request(app).get("/api/staff/tickets").set("Cookie", login.headers["set-cookie"])).body.error.code).toBe("PASSWORD_CHANGE_REQUIRED");
   });
   it("keeps assignment eligibility under concurrent claim/reassign and account mutation", async () => {
-    for (const assign of [() => claimTicket(db, ticketId, ids[1]), () => assignTicket(db, ticketId, ids[1])]) {
+    for (const assign of [() => claimTicket(db, ticketId, ids[1], ticketVersion), () => assignTicket(db, ticketId, ids[1], ticketVersion)]) {
       await db.ticket.update({ where: { id: ticketId }, data: { ownerId: null } });
+      const before = await db.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { version: true } }); ticketVersion = before.version;
       await db.user.update({ where: { id: ids[1] }, data: { isActive: true } });
       const results = await Promise.allSettled([assign(), updateUser(db, ids[2], ids[1], { isActive: false })]);
       expect(results.filter(result => result.status === "fulfilled")).toHaveLength(1);
       const owner = await db.user.findUniqueOrThrow({ where: { id: ids[1] } });
       const ticket = await db.ticket.findUniqueOrThrow({ where: { id: ticketId } });
+      ticketVersion = ticket.version;
       expect(ticket.ownerId === null || owner.isActive).toBe(true);
     }
     await db.user.update({ where: { id: ids[1] }, data: { isActive: true } });
