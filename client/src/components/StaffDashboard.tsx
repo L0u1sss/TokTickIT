@@ -10,17 +10,19 @@ const displayDate = (value: string) => new Intl.DateTimeFormat(undefined, { date
 export default function StaffDashboard() {
   const { user, refresh } = useAuth();
   const [data, setData] = useState<StaffDashboardData | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "error" | "forbidden">("loading");
   const load = useCallback(async (signal?: AbortSignal) => {
     setState("loading"); setData(null);
     try {
       const next = await getStaffDashboard(signal);
+      if (signal?.aborted) return;
       if (!next?.metrics || !Array.isArray(next.myActions) || !Array.isArray(next.recentlyUpdated) || !Array.isArray(next.urgentTickets)) throw new Error("Invalid dashboard response");
       setData(next); setState("ready");
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
+      if (signal?.aborted) return;
       if (error instanceof ApiResponseError && ["AUTHENTICATION_REQUIRED", "PASSWORD_CHANGE_REQUIRED"].includes(error.code)) void refresh();
-      setState("error");
+      setState(error instanceof ApiResponseError && error.code === "FORBIDDEN" ? "forbidden" : "error");
     }
   }, [refresh]);
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function StaffDashboard() {
       {data && <p>Last refreshed <time dateTime={data.generatedAt}>{displayDate(data.generatedAt)}</time></p>}</header>
     {state === "loading" && <section className="dashboard-loading" aria-label="Loading staff dashboard" role="status"><div /><div /><p>Loading dashboard...</p></section>}
     {state === "error" && <div className="dashboard-error" role="alert"><p>We couldn&apos;t load the operational dashboard. Try again.</p><button className="zen-button" type="button" onClick={() => void load()}>Retry</button></div>}
+    {state === "forbidden" && <div className="dashboard-error" role="alert"><h2>Forbidden</h2><p>You do not have access to the operational dashboard.</p></div>}
     {state === "ready" && data && <>
       <section className="dashboard-metrics" aria-label="Operational metrics">
         <Metric href="/staff/tickets?ownerId=unassigned&status=OPEN_GROUP" title="Unassigned Open" count={data.metrics.unassignedOpenCount} />
@@ -62,5 +65,5 @@ function TicketList({ title, empty, tickets }: { title: string; empty: string; t
   return <section className="dashboard-list"><h2>{title}</h2>{tickets.length === 0 ? <p>{empty}</p> : <ul>{tickets.map(ticket => <li key={ticket.id}><a href={`/staff/tickets/${ticket.id}`}><strong>{ticket.ticketNumber}</strong><span>{ticket.summary}</span><span>{label(ticket.status)} · {label(ticket.itPriority)} · <time dateTime={ticket.updatedAt}>{displayDate(ticket.updatedAt)}</time></span></a></li>)}</ul>}</section>;
 }
 function ActionList({ actions }: { actions: StaffDashboardAction[] }) {
-  return <section className="dashboard-list staff-dashboard-actions"><h2>My Active Actions</h2>{actions.length === 0 ? <p>No planned or in-progress Actions assigned to you.</p> : <ul>{actions.map(action => <li key={action.id}><a href={`/staff/tickets/${action.ticketId}#actions`}><strong>{action.ticketNumber} · {label(action.status)}</strong><span>{action.description}</span><span>{action.ticketSummary} · Updated <time dateTime={action.updatedAt}>{displayDate(action.updatedAt)}</time></span></a></li>)}</ul>}</section>;
+  return <section className="dashboard-list staff-dashboard-actions"><h2>My Actions</h2>{actions.length === 0 ? <p>No Actions recorded by, assigned to, or performed by you.</p> : <ul>{actions.map(action => <li key={action.id}><a href={`/staff/tickets/${action.ticketId}#actions`}><strong>{action.ticketNumber} · {label(action.status)}</strong><span>{action.description}</span><span>{action.attribution.map(label).join(" · ")}</span><span>{action.ticketSummary} · Updated <time dateTime={action.updatedAt}>{displayDate(action.updatedAt)}</time></span></a></li>)}</ul>}</section>;
 }

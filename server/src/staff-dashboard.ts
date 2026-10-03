@@ -12,6 +12,8 @@ const ticketSummary = {
   status: true,
   itPriority: true,
   owner: { select: userSummary },
+  version: true,
+  resolvedAt: true,
   updatedAt: true,
 } satisfies Prisma.TicketSelect;
 const actionSummary = {
@@ -21,14 +23,17 @@ const actionSummary = {
   status: true,
   assignee: { select: userSummary },
   revision: true,
+  recordedById: true,
+  assigneeId: true,
+  performedById: true,
   updatedAt: true,
   ticket: { select: { ticketNumber: true, summary: true } },
 } satisfies Prisma.ActionTakenSelect;
 
 type TicketRow = Prisma.TicketGetPayload<{ select: typeof ticketSummary }>;
 type ActionRow = Prisma.ActionTakenGetPayload<{ select: typeof actionSummary }>;
-const serializeTicket = (ticket: TicketRow) => ({ ...ticket, updatedAt: ticket.updatedAt.toISOString() });
-const serializeAction = (action: ActionRow) => ({
+const serializeTicket = (ticket: TicketRow) => ({ ...ticket, resolvedAt: ticket.resolvedAt?.toISOString() ?? null, updatedAt: ticket.updatedAt.toISOString() });
+const serializeAction = (action: ActionRow, currentUserId: number) => ({
   id: action.id,
   ticketId: action.ticketId,
   ticketNumber: action.ticket.ticketNumber,
@@ -37,6 +42,11 @@ const serializeAction = (action: ActionRow) => ({
   status: action.status,
   assignee: action.assignee,
   revision: action.revision,
+  attribution: [
+    ...(action.recordedById === currentUserId ? ["RECORDED"] : []),
+    ...(action.assigneeId === currentUserId ? ["ASSIGNED"] : []),
+    ...(action.performedById === currentUserId ? ["PERFORMED"] : []),
+  ],
   updatedAt: action.updatedAt.toISOString(),
 });
 
@@ -49,7 +59,7 @@ export async function getStaffDashboard(prisma: PrismaClient, currentUserId: num
       transaction.ticket.groupBy({ by: ["itPriority"], _count: { _all: true } }),
       transaction.ticket.findMany({ where: { status: { in: staffOpenStatuses } }, select: ticketSummary, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 5 }),
       transaction.ticket.findMany({ where: { itPriority: "HIGH" }, select: ticketSummary, orderBy: [{ updatedAt: "asc" }, { id: "asc" }], take: 5 }),
-      transaction.actionTaken.findMany({ where: { assigneeId: currentUserId, status: { in: ["PLANNED", "IN_PROGRESS"] } }, select: actionSummary, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 5 }),
+      transaction.actionTaken.findMany({ where: { OR: [{ recordedById: currentUserId }, { assigneeId: currentUserId }, { performedById: currentUserId }] }, select: actionSummary, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 5 }),
     ]);
     const byStatus = Object.fromEntries(Object.values(Status).map(status => [status, 0])) as Record<Status, number>;
     const byItPriority = Object.fromEntries(Object.values(Priority).map(priority => [priority, 0])) as Record<Priority, number>;
@@ -57,7 +67,7 @@ export async function getStaffDashboard(prisma: PrismaClient, currentUserId: num
     for (const group of priorityGroups) byItPriority[group.itPriority] = group._count._all;
     return {
       metrics: { unassignedOpenCount, ownedByMeOpenCount, byStatus, byItPriority },
-      myActions: myActions.map(serializeAction),
+      myActions: myActions.map(action => serializeAction(action, currentUserId)),
       recentlyUpdated: recentlyUpdated.map(serializeTicket),
       urgentTickets: urgentTickets.map(serializeTicket),
       generatedAt: new Date().toISOString(),

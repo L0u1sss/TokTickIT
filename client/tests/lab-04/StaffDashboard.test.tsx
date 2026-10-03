@@ -3,18 +3,19 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../../src/api.js";
 import StaffDashboard from "../../src/components/StaffDashboard.js";
+import { AuthScreens } from "../../src/AuthApp.js";
 import * as auth from "../../src/context/AuthContext.js";
 
 const ticket = (id: number, status: api.StaffTicketStatus = "OPEN"): api.StaffDashboardTicket => ({
   id, ticketNumber: `TKT-2026-${String(id).padStart(6, "0")}`, summary: `Operational ticket ${id}`,
-  status, itPriority: "HIGH", owner: null, updatedAt: `2026-09-0${Math.min(id, 9)}T10:00:00.000Z`,
+  status, itPriority: "HIGH", owner: null, version: 1, resolvedAt: null, updatedAt: `2026-09-0${Math.min(id, 9)}T10:00:00.000Z`,
 });
 const zeroStatuses = { NEW: 0, OPEN: 0, IN_PROGRESS: 0, WAITING_FOR_REQUESTER: 0, RESOLVED: 0, CLOSED: 0, REOPENED: 0, CANCELLED: 0 };
 const dashboard: api.StaffDashboardData = {
   metrics: { unassignedOpenCount: 8, ownedByMeOpenCount: 3, byStatus: { ...zeroStatuses, NEW: 4, OPEN: 5 }, byItPriority: { LOW: 1, MEDIUM: 3, HIGH: 5 } },
   recentlyUpdated: [ticket(5), ticket(4), ticket(3), ticket(2), ticket(1)],
   urgentTickets: [ticket(6), ticket(7)],
-  myActions: [{ id: 20, ticketId: 5, ticketNumber: "TKT-2026-000005", ticketSummary: "Operational ticket 5", description: "Verify network path", status: "IN_PROGRESS", assignee: { id: 2, displayName: "Mali Staff", role: "IT_STAFF" }, revision: 2, updatedAt: "2026-09-09T10:00:00.000Z" }],
+  myActions: [{ id: 20, ticketId: 5, ticketNumber: "TKT-2026-000005", ticketSummary: "Operational ticket 5", description: "Verify network path", status: "IN_PROGRESS", attribution: ["RECORDED", "ASSIGNED"], assignee: { id: 2, displayName: "Mali Staff", role: "IT_STAFF" }, revision: 2, updatedAt: "2026-09-09T10:00:00.000Z" }],
   generatedAt: "2026-09-26T10:00:00.000Z",
 };
 
@@ -48,7 +49,7 @@ describe("Staff Dashboard", () => {
     render(<StaffDashboard />);
     expect(await screen.findByText("No open Tickets.")).toBeInTheDocument();
     expect(screen.getByText("No high-priority Tickets.")).toBeInTheDocument();
-    expect(screen.getByText("No planned or in-progress Actions assigned to you.")).toBeInTheDocument();
+    expect(screen.getByText("No Actions recorded by, assigned to, or performed by you.")).toBeInTheDocument();
     expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(13);
   });
 
@@ -61,5 +62,34 @@ describe("Staff Dashboard", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(getter).toHaveBeenCalledTimes(2));
     expect(await screen.findByText("Verify network path")).toBeInTheDocument();
+  });
+
+  it.each(["IT_STAFF", "ADMINISTRATOR"] as const)("uses Dashboard as the %s home and redirects the requester dashboard", async role => {
+    vi.mocked(auth.useAuth).mockReturnValue({ ...auth.useAuth(), user: { ...auth.useAuth().user!, role } });
+    vi.spyOn(api, "getStaffDashboard").mockResolvedValue(dashboard);
+    window.history.replaceState({}, "", "/dashboard?status=OPEN_GROUP");
+    render(<AuthScreens />);
+    await screen.findByText("Verify network path");
+    expect(window.location.pathname).toBe("/staff/dashboard");
+    expect(window.location.search).toBe("");
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Ticket Queue" })).toBeInTheDocument();
+    expect(Boolean(screen.queryByRole("link", { name: "User Management" }))).toBe(role === "ADMINISTRATOR");
+  });
+
+  it("denies a requester before requesting staff data", () => {
+    vi.mocked(auth.useAuth).mockReturnValue({ ...auth.useAuth(), user: { ...auth.useAuth().user!, role: "REQUESTER" } });
+    const getter = vi.spyOn(api, "getStaffDashboard");
+    render(<AuthScreens />);
+    expect(screen.getByRole("heading", { name: "Forbidden" })).toBeInTheDocument();
+    expect(getter).not.toHaveBeenCalled();
+  });
+
+  it("clears privileged data on a forbidden response", async () => {
+    vi.spyOn(api, "getStaffDashboard").mockRejectedValue(new api.ApiResponseError(403, "FORBIDDEN", "private detail"));
+    render(<StaffDashboard />);
+    expect(await screen.findByRole("heading", { name: "Forbidden" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Operational metrics" })).not.toBeInTheDocument();
+    expect(screen.queryByText("private detail")).not.toBeInTheDocument();
   });
 });

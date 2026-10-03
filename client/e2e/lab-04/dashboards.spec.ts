@@ -16,6 +16,7 @@ async function signIn(page: import("@playwright/test").Page, email: string) {
   await page.getByLabel("Email", { exact: false }).fill(email);
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Logout", exact: true })).toBeVisible();
 }
 
 test("E2E-03 requester dashboard stays owned, drills down, handles zero data, and fits target viewports", async ({ page }) => {
@@ -108,8 +109,8 @@ test("Requester dashboard redirects staff and administrators to their role home;
     await signIn(page, email);
     await expect(page.getByRole("button", { name: "Logout", exact: true })).toBeVisible();
     await page.goto("/dashboard");
-    await expect(page).toHaveURL(email.startsWith("admin") ? /\/admin\/users$/ : /\/staff\/tickets$/);
-    await expect(page.getByRole("heading", { name: email.startsWith("admin") ? "User Management" : "Ticket Queue" })).toBeVisible();
+    await expect(page).toHaveURL(/\/staff\/dashboard$/);
+    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Forbidden" })).toHaveCount(0);
     expect((await page.request.get(`${process.env.E2E_API_URL}/api/dashboard/requester`)).status()).toBe(403);
     await evidence(page, email.startsWith("admin") ? "role-redirect-admin" : "role-redirect-staff");
@@ -172,4 +173,104 @@ test("Legacy My Tickets queries preserve filters, paging, refresh, and browser B
   await expect(page.getByRole("combobox", { name: "Status" })).toHaveValue("New");
   await expect(page.getByText("Showing 1–9 of 9 tickets", { exact: true })).toBeVisible();
   expect(page.url()).toBe(newFilterUrl);
+});
+
+async function staffEvidence(page: import("@playwright/test").Page, state: string) {
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const findings = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+  expect(findings.violations.filter(item => item.impact === "serious" || item.impact === "critical")).toEqual([]);
+  const directory = "../artifacts/lab-04/screenshots/staff-dashboard";
+  await mkdir(directory, { recursive: true });
+  await page.screenshot({ path: `${directory}/${state}.png`, fullPage: true });
+}
+
+test("E2E-04 staff and administrator dashboards match database metrics, attribution, drill-down, states and viewports", async ({ page }) => {
+  if (!process.env.E2E_DATABASE_EVIDENCE) throw new Error("Run npm run test:dashboards:e2e for fresh database fixtures.");
+  const database = JSON.parse(await readFile(process.env.E2E_DATABASE_EVIDENCE, "utf8"));
+  expect(database.runId).toBe(process.env.E2E_EVIDENCE_RUN_ID);
+  expect(database.fixtureSchema).toBe(process.env.E2E_FIXTURE_SCHEMA);
+  const labels = (value: string) => value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, character => character.toUpperCase());
+  for (const email of ["queue-browser@example.test", "admin-browser@example.test"]) {
+    await signIn(page, email);
+    await expect(page).toHaveURL(/\/staff\/dashboard$/);
+    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("link", { name: "User Management", exact: true })).toHaveCount(email.startsWith("admin") ? 1 : 0);
+    const response = await page.request.get(`${process.env.E2E_API_URL}/api/staff/dashboard`);
+    expect(response.status()).toBe(200);
+    const payload = await response.json(), expected = database.staff[email];
+    expect(payload.metrics).toEqual(expected.metrics);
+    for (const list of ["recentlyUpdated", "urgentTickets"]) expect(payload[list].map((row: { id: number }) => row.id)).toEqual(expected[list]);
+    expect(payload.myActions.map((row: { id: number; attribution: string[] }) => ({ id: row.id, attribution: row.attribution }))).toEqual(expected.myActions);
+    expect(payload.myActions).toHaveLength(5);
+    expect(new Set(payload.myActions.map((row: { id: number }) => row.id)).size).toBe(5);
+    await expect(page.getByRole("region", { name: "Operational metrics" })).toContainText(String(expected.metrics.ownedByMeOpenCount));
+    const actions = page.locator(".staff-dashboard-actions");
+    for (const action of payload.myActions) {
+      const row = actions.getByRole("link").filter({ hasText: action.description });
+      await expect(row).toHaveAttribute("href", `/staff/tickets/${action.ticketId}#actions`);
+      for (const attribution of action.attribution) await expect(row).toContainText(labels(attribution));
+    }
+    for (const [name, query, count] of [
+      [`Unassigned Open ${expected.metrics.unassignedOpenCount}`, "ownerId=unassigned&status=OPEN_GROUP", expected.metrics.unassignedOpenCount],
+      [`Owned by Me ${expected.metrics.ownedByMeOpenCount}`, "ownerId=me&status=OPEN_GROUP", expected.metrics.ownedByMeOpenCount],
+      ...Object.entries(expected.metrics.byStatus).map(([status, count]) => [`${labels(status)} ${count}`, `status=${status}`, count]),
+      ...Object.entries(expected.metrics.byItPriority).map(([priority, count]) => [`${labels(priority)} ${count}`, `itPriority=${priority}`, count]),
+    ] as Array<[string, string, number]>) {
+      await page.getByRole("link", { name: name.startsWith("Unassigned") || name.startsWith("Owned") ? new RegExp(name) : name, exact: true }).click();
+      expect(new URL(page.url()).search).toBe(`?${query}`);
+      await expect(page.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
+      await expect(page.getByRole("status")).toContainText(`${count} tickets`);
+      for (const [key, value] of new URLSearchParams(query)) await expect(page.getByRole("combobox", { name: key === "ownerId" ? "Owner" : key === "itPriority" ? "IT Priority" : "Status", exact: true })).toHaveValue(value);
+      await page.getByRole("link", { name: "Dashboard", exact: true }).click();
+      await expect(page.locator(".staff-dashboard-actions")).toContainText(payload.myActions[0].description);
+    }
+    const recent = page.getByRole("heading", { name: "Recently Updated Open Tickets" }).locator("..");
+    await recent.getByRole("link").first().click();
+    await expect(page.getByRole("heading", { name: "Ticket Detail", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Dashboard", exact: true }).click();
+    await page.locator(".staff-dashboard-actions").getByRole("link").first().click();
+    await expect(page).toHaveURL(/#actions$/);
+    await expect(page.getByRole("heading", { name: "Actions Taken", exact: true })).toBeVisible();
+    await expect.poll(async () => page.locator("#actions").evaluate(element => Math.abs(element.getBoundingClientRect().top))).toBeLessThan(150);
+    await page.getByRole("link", { name: "Dashboard", exact: true }).click();
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 834, height: 1112 }, { width: 390, height: 844 }, { width: 720, height: 450 }]) {
+      await page.setViewportSize(viewport);
+      await staffEvidence(page, `${email.startsWith("admin") ? "administrator" : "staff"}-nonzero-${viewport.width}`);
+    }
+    await page.getByRole("button", { name: "Logout", exact: true }).click();
+  }
+  await signIn(page, "queue-browser@example.test");
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/staff/dashboard", async route => { await gate; await route.continue(); });
+  await page.reload();
+  try {
+    await expect(page.getByRole("status", { name: "Loading staff dashboard" })).toBeVisible();
+    await staffEvidence(page, "loading");
+  } finally { release(); }
+  await expect(page.getByRole("region", { name: "Operational metrics" })).toBeVisible();
+  await page.unroute("**/api/staff/dashboard");
+  await page.route("**/api/staff/dashboard", route => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "postgres://admin:secret@private" } }) }));
+  await page.reload();
+  await expect(page.getByRole("alert")).toContainText("We couldn't load the operational dashboard. Try again.");
+  await expect(page.locator("body")).not.toContainText("postgres://admin:secret@private");
+  await staffEvidence(page, "safe-failure");
+  await page.unroute("**/api/staff/dashboard");
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Operational metrics" })).toBeVisible();
+  // UI-only zero fixture; the API suite separately verifies a real empty migrated schema.
+  await page.route("**/api/staff/dashboard", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ metrics: { unassignedOpenCount: 0, ownedByMeOpenCount: 0, byStatus: Object.fromEntries(Object.keys(database.staff["queue-browser@example.test"].metrics.byStatus).map(key => [key, 0])), byItPriority: { LOW: 0, MEDIUM: 0, HIGH: 0 } }, myActions: [], recentlyUpdated: [], urgentTickets: [], generatedAt: new Date().toISOString() }) }));
+  await page.reload();
+  await expect(page.getByText("No open Tickets.")).toBeVisible();
+  await expect(page.getByText("No high-priority Tickets.")).toBeVisible();
+  await expect(page.getByText("No Actions recorded by, assigned to, or performed by you.")).toBeVisible();
+  await staffEvidence(page, "zero-ui-fixture");
+  await page.unroute("**/api/staff/dashboard");
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await signIn(page, "auth-browser@example.test");
+  await page.goto("/staff/dashboard");
+  await expect(page.getByRole("heading", { name: "Forbidden", exact: true })).toBeVisible();
+  expect((await page.request.get(`${process.env.E2E_API_URL}/api/staff/dashboard`)).status()).toBe(403);
+  await staffEvidence(page, "requester-forbidden");
 });

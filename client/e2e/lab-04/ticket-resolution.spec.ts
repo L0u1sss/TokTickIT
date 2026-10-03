@@ -25,6 +25,8 @@ test(`E2E-02 ${viewport.name}: current-cycle work gates resolution, cancellation
   await page.getByLabel("Email", { exact: false }).fill("queue-browser@example.test");
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Ticket Queue", exact: true }).click();
   await page.getByLabel("Search", { exact: true }).fill(`TKT-2026-${String(1 + index * 2 + testInfo.retry * 6).padStart(6, "0")}`);
   await page.getByRole("button", { name: "Apply filters" }).click();
   await page.getByRole("link", { name: /View ticket/ }).click();

@@ -6,7 +6,7 @@
 
 After authentication, the first role-appropriate route is Dashboard. Requesters see Dashboard, Create Ticket, and My Tickets. IT Staff see Dashboard and Ticket Queue. Administrators see Dashboard, Ticket Queue, and User Management. The active item uses text/shape/weight in addition to color; name, role, and Logout remain visible. Forced password-change flow cannot open dashboards.
 
-PR #67 implements the Requester increment. Until the separate Staff Dashboard increment provides `/staff/dashboard`, the current role homes remain `/staff/tickets` for IT Staff and `/admin/users` for Administrators. Opening the Requester `/dashboard` as either role replaces the URL with that role home, discards Requester query parameters, and never requests Requester dashboard data. Once the Staff Dashboard lands, both roles use `/staff/dashboard` as their home and redirect target. Protected staff/admin screens still show Forbidden to unauthorized roles; direct Requester dashboard API access by Staff/Admin remains `403`.
+PR #68 provides `/staff/dashboard` as the home and Requester-dashboard redirect target for IT Staff and Administrators. Opening `/dashboard` as either role replaces the URL with `/staff/dashboard`, discards Requester query parameters, and never requests Requester dashboard data. Administrators retain `/admin/users` navigation. Protected staff/admin screens show Forbidden to unauthorized roles; direct Requester dashboard API access by Staff/Admin remains `403`.
 
 ## 2. Shared UI Rules
 

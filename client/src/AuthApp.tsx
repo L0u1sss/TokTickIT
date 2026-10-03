@@ -9,16 +9,15 @@ import StaffDashboard from "./components/StaffDashboard.js";
 export function AuthScreens() {
   const {user,loading,error,logoutError,refresh,logout}=useAuth();
   const heading=useRef<HTMLHeadingElement>(null);
-  const home = user?.role === "REQUESTER" ? "/dashboard" : user?.role === "ADMINISTRATOR" ? "/admin/users" : "/staff/tickets";
+  const home = user?.role === "REQUESTER" ? "/dashboard" : "/staff/dashboard";
   const location = window.location.pathname;
   const permitted = user?.role === "REQUESTER" ? location === "/dashboard" || /^\/tickets(?:\/[^/]+)?$/.test(location)
-    : user?.role === "ADMINISTRATOR" ? location === "/admin/users" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) : /^\/staff\/tickets(?:\/[^/]+)?$/.test(location);
+    : location === "/staff/dashboard" || /^\/staff\/tickets(?:\/[^/]+)?$/.test(location) || (user?.role === "ADMINISTRATOR" && location === "/admin/users");
   const forbidden = Boolean(user && !user.mustChangePassword && (
     (location.startsWith("/admin/") && user.role !== "ADMINISTRATOR") ||
-    (location.startsWith("/staff/") && user.role === "REQUESTER") ||
-    (location === "/dashboard" && user.role !== "REQUESTER")
+    (location.startsWith("/staff/") && user.role === "REQUESTER")
   ));
-  const path=user?(user.mustChangePassword?"/change-password":permitted || forbidden?location + window.location.search:home):"/login";
+  const path=user?(user.mustChangePassword?"/change-password":permitted || forbidden?location + window.location.search + window.location.hash:home):"/login";
   useEffect(()=>{
     if(!loading && !error)window.history.replaceState({},"",path);
     heading.current?.focus();

@@ -64,7 +64,8 @@ try{
   await db.user.create({data:{displayName:"Auth Browser User",email:"auth-browser@example.test",role:"REQUESTER",passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:true}});
   await db.user.create({data:{displayName:"Inactive Browser User",email:"inactive-browser@example.test",role:"REQUESTER",isActive:false,passwordHash:await argon2.hash(password,{type:argon2.argon2id}),mustChangePassword:false}});
   if (requesterDashboard) await db.user.create({ data: { displayName: "Empty Dashboard User", email: "empty-dashboard@example.test", role: "REQUESTER", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
-  if (userManagement || actionsTaken || requesterDashboard) await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
+  let dashboardAdmin;
+  if (userManagement || actionsTaken || requesterDashboard) dashboardAdmin = await db.user.create({ data: { displayName: "Mali Administrator", email: "admin-browser@example.test", role: "ADMINISTRATOR", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
   if (staffQueue) {
     const staff = await db.user.create({ data: { displayName: "Mali IT Staff", email: "queue-browser@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
     if (staffFlow) await db.user.create({ data: { displayName: "Niran IT Staff", email: "second-staff@example.test", role: "IT_STAFF", passwordHash: await argon2.hash(password, { type: argon2.argon2id }), mustChangePassword: false } });
@@ -109,9 +110,9 @@ try{
       }
     }
     if (requesterDashboard) {
-      for (let i = 0; i < 6; i++) await db.actionTaken.create({ data: { ticketId: createdTickets[i].id, clientRequestId: randomUUID(), description: `Dashboard active Action ${i + 1}`, status: i % 2 ? "IN_PROGRESS" : "PLANNED", performedById: dashboardAdmin.id, assigneeId: staff.id } });
-      await db.actionTaken.create({ data: { ticketId: createdTickets[6].id, clientRequestId: randomUUID(), description: "Administrator dashboard Action", status: "PLANNED", performedById: staff.id, assigneeId: dashboardAdmin.id } });
-      await db.actionTaken.create({ data: { ticketId: createdTickets[7].id, clientRequestId: randomUUID(), description: "Completed dashboard Action", result: "Completed", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
+      for (let i = 0; i < 6; i++) await db.actionTaken.create({ data: { ticketId: createdTickets[i].id, clientRequestId: randomUUID(), createFingerprint: "f".repeat(64), recordedById: dashboardAdmin.id, description: `Dashboard active Action ${i + 1}`, status: i % 2 ? "IN_PROGRESS" : "PLANNED", assigneeId: staff.id } });
+      await db.actionTaken.create({ data: { ticketId: createdTickets[6].id, clientRequestId: randomUUID(), createFingerprint: "f".repeat(64), recordedById: staff.id, description: "Administrator dashboard Action", status: "PLANNED", assigneeId: dashboardAdmin.id } });
+      await db.actionTaken.create({ data: { ticketId: createdTickets[7].id, clientRequestId: randomUUID(), createFingerprint: "f".repeat(64), recordedById: staff.id, description: "Completed dashboard Action", result: "Completed", status: "COMPLETED", performedById: staff.id, assigneeId: staff.id, completedAt: new Date() } });
     }
   }
   const api=start(path.join(server,"node_modules/tsx/dist/cli.mjs"),[path.join(server,"src/index.ts")],server,
@@ -136,6 +137,27 @@ try{
       ci: process.env.GITHUB_RUN_ID ? { runId: process.env.GITHUB_RUN_ID, runNumber: process.env.GITHUB_RUN_NUMBER, attempt: process.env.GITHUB_RUN_ATTEMPT } : null,
       requesterId: requester.id, metrics: { openCount, waitingForRequesterCount }, openStatuses,
     };
+    const staffEvidence = {};
+    for (const email of ["queue-browser@example.test", "admin-browser@example.test"]) {
+      const actor = await db.user.findUniqueOrThrow({ where: { email } });
+      staffEvidence[email] = await db.$transaction(async tx => {
+        const byStatus = {}, byItPriority = {};
+        for (const status of ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"]) byStatus[status] = await tx.ticket.count({ where: { status } });
+        for (const itPriority of ["LOW", "MEDIUM", "HIGH"]) byItPriority[itPriority] = await tx.ticket.count({ where: { itPriority } });
+        const rows = await tx.actionTaken.findMany({ where: { OR: [{ recordedById: actor.id }, { assigneeId: actor.id }, { performedById: actor.id }] }, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 5 });
+        return {
+          actorId: actor.id,
+          metrics: {
+            unassignedOpenCount: await tx.ticket.count({ where: { ownerId: null, status: { in: openStatuses } } }),
+            ownedByMeOpenCount: await tx.ticket.count({ where: { ownerId: actor.id, status: { in: openStatuses } } }), byStatus, byItPriority,
+          },
+          recentlyUpdated: (await tx.ticket.findMany({ where: { status: { in: openStatuses } }, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 5 })).map(row => row.id),
+          urgentTickets: (await tx.ticket.findMany({ where: { itPriority: "HIGH" }, orderBy: [{ updatedAt: "asc" }, { id: "asc" }], take: 5 })).map(row => row.id),
+          myActions: rows.map(row => ({ id: row.id, attribution: [ ...(row.recordedById === actor.id ? ["RECORDED"] : []), ...(row.assigneeId === actor.id ? ["ASSIGNED"] : []), ...(row.performedById === actor.id ? ["PERFORMED"] : []) ] })),
+        };
+      }, { isolationLevel: "RepeatableRead" });
+    }
+    databaseEvidence.staff = staffEvidence;
     evidenceDirectory = await mkdtemp(path.join(tmpdir(), "toktickit-dashboard-evidence-"));
     evidencePath = path.join(evidenceDirectory, "database-counts.json");
     const directory = path.resolve(client, "../artifacts/lab-04/screenshots/requester-dashboard");
@@ -143,6 +165,9 @@ try{
     const content = JSON.stringify(databaseEvidence, null, 2) + "\n";
     await writeFile(evidencePath, content);
     await writeFile(path.join(directory, "database-counts.json"), content);
+    const staffDirectory = path.resolve(client, "../artifacts/lab-04/screenshots/staff-dashboard");
+    await mkdir(staffDirectory, { recursive: true });
+    await writeFile(path.join(staffDirectory, "database-counts.json"), content);
   }
   const browserSpec = requesterDashboard ? "e2e/lab-04/dashboards.spec.ts" : actionsTaken ? "e2e/lab-04/actions-taken-flow.spec.ts" : ticketWorkflow ? "e2e/lab-04/ticket-resolution.spec.ts" : userManagement ? "e2e/lab-03/user-administration.spec.ts" : staffFlow ? "e2e/lab-03/staff-ticket-flow.spec.ts" : communications ? "e2e/lab-03/comments-notes.spec.ts" : staffQueue ? "e2e/lab-03/staff-queue.spec.ts" : "e2e/lab-03/authentication.spec.ts";
   await run(path.join(client,"node_modules/@playwright/test/cli.js"),["test",browserSpec,"--config","playwright.live.config.ts"],client,

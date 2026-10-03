@@ -121,8 +121,8 @@ jobs:
         run: npm run test:workflow:e2e
         working-directory: client
 
-      - name: Run Requester dashboard browser suite
-        run: npm run test:requester-dashboard:e2e
+      - name: Run role dashboard browser suite
+        run: npm run test:dashboards:e2e
         working-directory: client
         env:
           E2E_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -170,5 +170,6 @@ jobs:
             artifacts/lab-04/screenshots/actions-taken/
             artifacts/lab-04/screenshots/ticket-workflow/
             artifacts/lab-04/screenshots/requester-dashboard/
+            artifacts/lab-04/screenshots/staff-dashboard/
             client/test-results/live-e2e/
           if-no-files-found: ignore

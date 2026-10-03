@@ -92,3 +92,11 @@ The coding-agent review found that the earlier UI tests could pass while the imp
 ## Known Limitations of This Log
 
 Ten actual prompts have been recorded. Final submission still requires final validation against the submitted commit and a student-written revised reflection grounded in later implementation and review outcomes. Do not invent prompts to fill the quota or present worktree evidence as final `main`/peer approval.
+
+
+## PR #68 Staff Dashboard Integration ? 2026-10-03
+
+- Model/agent: GPT-6 (Codex coding agent).
+- User prompt: merge `lab4-staging` into `feat/lab4-staff-dashboard`, retain feature code, prefer incoming conflict hunks, then complete PR #68 against `D:\Software_Engineering\SE+Lab+4.pdf`.
+- Work: created a backup branch, merged current remote staging, restored staff integration points, aligned My Actions with current BR-28 attribution union, preserved role redirects and integer-version/Action lifecycle behavior, and added direct database, role, state, drill-down, recency and browser evidence checks.
+- Reflection: incoming conflict resolution requires checking feature integration afterward; preserving files alone does not guarantee that routes, types, runner modes and test registration still work. Current approved contracts must govern attribution even when the original PR body describes an older active-assignment filter. Local tests and browser fixtures must be distinguished from real database evidence, peer approval and final-main release results.
