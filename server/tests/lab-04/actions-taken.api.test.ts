@@ -187,6 +187,48 @@ it("rejects inactive, Requester and missing assignees without changing data", as
   expect(await db.actionTaken.count({ where: { ticketId: ownedTicketId } })).toBe(0);
 });
 
+it("counts Unicode code points, trims text, and preserves data on boundary failures", async () => {
+  const accepted = await createAction({ description: `  ${"😀".repeat(2000)}  `, result: "😀".repeat(2000), followUpRequired: true, followUpNote: "😀".repeat(1000), attachmentNotes: "😀".repeat(1000) });
+  expect(accepted.status).toBe(201);
+  expect(accepted.body.action.description).toBe("😀".repeat(2000));
+  for (const overrides of [
+    { description: "😀".repeat(2001) }, { result: "😀".repeat(2001) },
+    { followUpRequired: true, followUpNote: "😀".repeat(1001) },
+    { attachmentNotes: "😀".repeat(1001) }, { description: "embedded\u0000null" },
+  ]) expect((await createAction({ ...overrides, expectedTicketVersion: accepted.body.ticketVersion })).status).toBe(400);
+  expect(await db.actionTaken.count({ where: { ticketId: ownedTicketId } })).toBe(1);
+  expect(await db.actionEvent.count({ where: { actionId: accepted.body.action.id } })).toBe(1);
+  expect((await db.ticket.findUniqueOrThrow({ where: { id: ownedTicketId } })).version).toBe(accepted.body.ticketVersion);
+});
+
+const actionStatuses = ["PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
+it.each(actionStatuses.flatMap(from => actionStatuses.map(to => [from, to] as const)))("enforces the complete Action lifecycle matrix %s -> %s without partial rejected writes", async (from, to) => {
+    const created = await createAction({ result: "Verified work" });
+    expect(created.status).toBe(201);
+    let action = created.body.action, ticketVersion = created.body.ticketVersion;
+    const path = from === "PLANNED" ? [] : from === "CANCELLED" ? ["CANCELLED"] : from === "COMPLETED" ? ["IN_PROGRESS", "COMPLETED"] : ["IN_PROGRESS"];
+    for (const status of path) {
+      const response = await staffWrite("patch", `/${action.id}/status`, { status, revision: action.revision, expectedTicketVersion: ticketVersion }, 3);
+      expect(response.status).toBe(200);
+      action = response.body.action; ticketVersion = response.body.ticketVersion;
+    }
+    const before = await db.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+    const events = await db.actionEvent.findMany({ where: { actionId: action.id }, orderBy: { revision: "asc" } });
+    const allowed = (from === "PLANNED" && ["IN_PROGRESS", "CANCELLED"].includes(to)) || (from === "IN_PROGRESS" && ["COMPLETED", "CANCELLED"].includes(to));
+    const response = await staffWrite("patch", `/${action.id}/status`, { status: to, revision: action.revision, expectedTicketVersion: ticketVersion }, 3);
+    expect(response.status).toBe(allowed ? 200 : 409);
+    if (allowed) {
+      expect(response.body.ticketVersion).toBe(ticketVersion + 1);
+      expect(response.body.action).toMatchObject({ status: to, revision: action.revision + 1 });
+      expect(await db.actionEvent.count({ where: { actionId: action.id } })).toBe(events.length + 1);
+    } else {
+      expect(response.body.error.code).toBe("INVALID_ACTION_TRANSITION");
+      expect(await db.actionTaken.findUniqueOrThrow({ where: { id: action.id } })).toEqual(before);
+      expect(await db.actionEvent.findMany({ where: { actionId: action.id }, orderBy: { revision: "asc" } })).toEqual(events);
+      expect((await db.ticket.findUniqueOrThrow({ where: { id: ownedTicketId } })).version).toBe(ticketVersion);
+    }
+  });
+
 it("replays an identical create and rejects reuse with different data", async () => {
   const body = createBody();
   const first = await staffWrite("post", "", body);

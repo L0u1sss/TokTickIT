@@ -208,3 +208,39 @@ it("serializes resolution against new child work without losing the active Actio
   if (ticket.status === "RESOLVED") expect(await db.actionTaken.count({ where: { ticketId, status: "PLANNED" } })).toBe(0);
   else { expect(ticket.status).toBe("OPEN"); expect(resolve.body.error.code).toBe("STALE_TICKET"); }
 });
+
+it.each(["create", "edit", "complete"] as const)("serializes Ticket cancellation against Action %s with atomic provenance", async operation => {
+  await db.ticket.update({ where: { id: ticketId }, data: { status: "OPEN" } });
+  const action = await actionFixture({ status: operation === "complete" ? "IN_PROGRESS" : "PLANNED", result: "Verified result" });
+  const expectedTicketVersion = await snapshot();
+  const route = `/api/staff/tickets/${ticketId}/actions${operation === "create" ? "" : `/${action.id}${operation === "complete" ? "/status" : ""}`}`;
+  const body = operation === "create" ? { expectedTicketVersion, clientRequestId: randomUUID(), description: "New concurrent work", assigneeId: ids[2], followUpRequired: false }
+    : operation === "edit" ? { expectedTicketVersion, revision: 1, description: "Concurrent revised work" }
+    : { expectedTicketVersion, revision: 1, status: "COMPLETED" };
+  const child = (operation === "create" ? request(app).post(route) : request(app).patch(route))
+    .set("Cookie", `${cookies[2]}; toktickit_csrf=${csrf}`).set("X-CSRF-Token", csrf).set("Origin", "http://localhost:5173").send(body);
+  const [cancel, mutation] = await Promise.all([transition("CANCELLED", 3, expectedTicketVersion), child]);
+  expect(Number(cancel.status === 200) + Number(mutation.status < 300)).toBe(1);
+  expect([cancel.status, mutation.status].filter(status => status === 409)).toHaveLength(1);
+  const ticket = await db.ticket.findUniqueOrThrow({ where: { id: ticketId } });
+  expect(ticket.version).toBe(expectedTicketVersion + 1);
+  const persisted = await db.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+  const events = await db.actionEvent.findMany({ where: { actionId: action.id } });
+  if (cancel.status === 200) {
+    expect(ticket).toMatchObject({ status: "CANCELLED", ownerId: null, lastOwnerId: ids[2] });
+    expect(persisted).toMatchObject({ status: "CANCELLED", revision: 2, cancellationSource: "TICKET_CASCADE", cancelledById: ids[3] });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ eventType: "TICKET_CASCADE_CANCELLED", revision: 2, actorId: ids[3], createdAt: persisted.cancelledAt });
+    expect(await db.actionTaken.count({ where: { ticketId } })).toBe(1);
+  } else {
+    expect(cancel.body.error.code).toBe("STALE_TICKET");
+    expect(ticket).toMatchObject({ status: "OPEN", ownerId: ids[2] });
+    expect(persisted.cancellationSource).toBeNull();
+    expect(await db.actionTaken.count({ where: { ticketId } })).toBe(operation === "create" ? 2 : 1);
+    if (operation !== "create") {
+      expect(persisted.revision).toBe(2);
+      expect(events).toHaveLength(1);
+      expect(events[0].actorId).toBe(ids[2]);
+    }
+  }
+});

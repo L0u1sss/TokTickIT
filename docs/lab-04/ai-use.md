@@ -8,6 +8,12 @@ LLM used: OpenAI Codex. The student remains responsible for checking the labshee
 
 ## Selected Key Prompts
 
+### Issue #59 — Complete lifecycle and regression verification (used, 2026-10-03)
+
+“ทำงานตาม issue https://github.com/L0u1sss/TokTickIT/issues/59 และเอกสารนี้ D:\Software_Engineering\SE+Lab+4.pdf เมื่อเสร็จแล้วให้เขียน PR title, description โดยอิงโครง PR ก่อนๆ”
+
+**Use:** Codex read Issue #59, the local handout and previous PR #64/#68 descriptions; reconciled planned test paths with existing suites; added exhaustive workflow, Unicode, concurrent Ticket mutations, timezone-boundary, migration/repeated-seed preservation and performance-smoke checks. A sequential verification runner records actual command exits, source hashes, timestamps, raw logs and test reports. PR text follows Problem / Changes / Validation / Dependencies and references #59. AI descriptions are not passing-test evidence: use the [verification manifest](../../artifacts/lab-04/issue-59/verification.json) and [traceability](tests.md#issue-59-verification) for the recorded outcome. Peer review and final-main submission remain separate release evidence.
+
 ### Prompt 1 — Issue decomposition (used, 2026-09-24)
 
 “ช่วยเขียน issue จากเอกสารนี้หน่อย โดยอิงจาก issue ก่อนๆ ใน TokTickIT” with `SE+Lab+4.pdf` attached.

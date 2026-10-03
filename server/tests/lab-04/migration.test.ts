@@ -122,6 +122,15 @@ describe("Issue #53 Actions Taken migration", () => {
     expect(await db.attachment.findUnique({ where: { id: attachment.id } })).toEqual(attachment);
     expect(await db.publicComment.findUnique({ where: { id: comment.id } })).toEqual(comment);
     expect(await db.internalNote.findUnique({ where: { id: note.id } })).toEqual(note);
+    await seedDatabase(db);
+    await seedDatabase(db);
+    expect(await db.user.findMany({ where: { id: { in: [references.requester.id, references.staff.id] } }, orderBy: { id: "asc" } })).toEqual(before.users);
+    expect((await legacyTicketRows(db) as Array<{ id: number }>).filter(row => row.id === ticket.id)).toEqual(before.tickets);
+    expect(await db.ticket.findUniqueOrThrow({ where: { id: ticket.id } })).toMatchObject({ version: 1, workflowCycle: 1, resolvedAt: null });
+    expect(await db.actionTaken.count({ where: { ticketId: ticket.id } })).toBe(0);
+    expect(await db.attachment.findUnique({ where: { id: attachment.id } })).toEqual(attachment);
+    expect(await db.publicComment.findUnique({ where: { id: comment.id } })).toEqual(comment);
+    expect(await db.internalNote.findUnique({ where: { id: note.id } })).toEqual(note);
   }, 60000);
 
   it("supports fresh deployment and repeated seed without overwriting seeded records", async () => {
@@ -252,17 +261,24 @@ describe("Issue #53 Actions Taken migration", () => {
   it("tests guarded pre-use rollback and forward recovery without touching Lab 3 data", async () => {
     const { db, applyLab4, rollbackBeforeUse } = await disposableDatabase(false);
     const references = await seedLab3References(db);
-    await createLegacyTicket(db, references, "TKT-2099-000002");
+    const legacy = await createLegacyTicket(db, references, "TKT-2099-000002");
+    await db.attachment.create({ data: { ticketId: legacy.id, originalName: "recovery.pdf", storageKey: randomUUID(), sizeBytes: 12, mimeType: "application/pdf", uploadedByRequesterId: references.requester.id } });
+    await db.publicComment.create({ data: { ticketId: legacy.id, authorId: references.requester.id, content: "Recovery public comment" } });
+    await db.internalNote.create({ data: { ticketId: legacy.id, authorId: references.staff.id, content: "Recovery internal note" } });
+    const legacySnapshot = async () => ({ users: await db.user.findMany({ orderBy: { id: "asc" } }), tickets: await legacyTicketRows(db), attachments: await db.attachment.findMany(), comments: await db.publicComment.findMany(), notes: await db.internalNote.findMany() });
+    const before = await legacySnapshot();
     const originalUsers = await db.user.count();
     const originalTickets = await db.ticket.count();
     applyLab4();
     rollbackBeforeUse();
     expect(await db.user.count()).toBe(originalUsers);
     expect(await db.ticket.count()).toBe(originalTickets);
+    expect(await legacySnapshot()).toEqual(before);
     expect(await db.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() AND table_name IN ('ActionTaken','ActionEvent')`).toEqual([]);
     applyLab4();
     expect(await db.actionTaken.count()).toBe(0);
     expect(await db.actionEvent.count()).toBe(0);
+    expect(await legacySnapshot()).toEqual(before);
 
     const ticket = await db.ticket.findFirstOrThrow();
     await db.actionTaken.create({ data: { ticketId: ticket.id, clientRequestId: randomUUID(), createFingerprint: "6".repeat(64), description: "Recovery guard fixture", recordedById: references.staff.id, assigneeId: references.staff.id } });

@@ -241,6 +241,12 @@ npm --prefix client run dev
 
 ## Running Tests (การรันระบบทดสอบ)
 
+สำหรับ Issue #59 / Lab 4 ใช้ `node scripts/verify-lab4.mjs` จาก repository root เพื่อรัน lint/build, Prisma validation, server/client regression, dashboard performance-smoke, Required Lab 4 E2E ทั้งสามไฟล์ และ Labs 1–3 browser regression ตามลำดับ ต้องติดตั้ง dependencies ของทั้ง `server`/`client`, Playwright Chromium และกำหนด `TEST_DATABASE_URL` ที่มี test marker และต่างจาก `DATABASE_URL` (อ่านจาก `server/.env` ได้) ไม่ต้องเปิด development server เอง
+
+ผลจริงและ source SHA-256 hashes อยู่ใน `artifacts/lab-04/issue-59/verification.json`, raw logs และ Vitest JSON reports ในโฟลเดอร์เดียวกัน `PASS` ใช้เฉพาะ command ที่จบด้วย exit code 0; ถ้าแก้ source ระหว่างรัน manifest จะระบุ `sourceUnchangedDuringRun: false` และ runner จบด้วย failure สามารถรันเฉพาะ check โดยส่งชื่อ เช่น `node scripts/verify-lab4.mjs server-lint` ซึ่งจะสร้าง `verification-selected.json` แยกจาก full run
+
+ใช้ `npm --prefix server run test:performance` เพื่อวัด Requester/Staff/Admin dashboards แยกจาก regression: 1,000 Tickets, 5,000 Actions, warm-up 5 ครั้งและ sample 40 ครั้งต่อ role, p95 ≤500 ms ตาม [performance contract](docs/lab-04/specification.md#91-performance-smoke-contract-issue-59) ผลทุก sample อยู่ใน `dashboard-performance.json` ภายใต้โฟลเดอร์หลักฐานข้างต้น ทั้ง database และ live browser runners สร้างและลบเฉพาะ disposable schema ของตัวเอง
+
 สำหรับ Lab 3 แนะนำ `npm --prefix server run test:isolated` ซึ่งสร้าง schema ชั่วคราวจาก `TEST_DATABASE_URL`, migrate/seed, รัน suite และลบเฉพาะ schema ที่สร้างเอง โดยไม่ reset development หรือ shared test schema
 
 วิธีรันชุดทดสอบอัตโนมัติที่ตั้งค่าไว้ในโปรเจกต์:

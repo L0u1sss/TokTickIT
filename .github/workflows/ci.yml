@@ -94,12 +94,16 @@ jobs:
         working-directory: server
 
       - name: Run server test suite
-        run: npm test
+        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-59/server-results.json
         working-directory: server
 
       - name: Run client test suite
-        run: npm test
+        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-59/client-results.json
         working-directory: client
+
+      - name: Run Lab 4 dashboard performance smoke
+        run: npm run test:performance
+        working-directory: server
 
       - name: Run authentication browser suite
         run: npm run test:auth:e2e
@@ -171,5 +175,8 @@ jobs:
             artifacts/lab-04/screenshots/ticket-workflow/
             artifacts/lab-04/screenshots/requester-dashboard/
             artifacts/lab-04/screenshots/staff-dashboard/
+            artifacts/lab-04/issue-59/dashboard-performance.json
+            artifacts/lab-04/issue-59/server-results.json
+            artifacts/lab-04/issue-59/client-results.json
             client/test-results/live-e2e/
           if-no-files-found: ignore
