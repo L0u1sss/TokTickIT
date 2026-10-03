@@ -41,7 +41,7 @@ migrations/
     └─ migration.sql
   └─ 20260925000000_actions_taken_foundation/
     └─ migration.sql
-      
+
 All migrations have been successfully applied.
 
 Running 3 tests using 1 worker
