@@ -1,0 +1,28 @@
+{
+  "PDF": "docs/lab-04/SE-Lab4-67070507212.pdf",
+  "PDFSha256": "29455b6226bca8a5a934039dba9dd4fc751e1570548be439aab00d6d7962ff6e",
+  "pages": 21,
+  "partsInOrder": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "draftFooterOnEveryPage": true,
+  "ThaiTextExtractable": true,
+  "runtimeMatchesPassingCandidateHashes": true,
+  "localLinkTargetsChecked": 310,
+  "fixturePairsChecked": 63,
+  "allFixtureFindingsEmpty": true,
+  "mainAtFinalRead": "2a4b172682c610202bb72eb6cb64f3e62730a48e",
+  "stagingAtFinalRead": "bab4fc1992d0d11b523cf9a3ad90d0ed09ff5e5d",
+  "releaseAcceptance": "Pending reviews, staging-to-main merge, final-main tests/CI and final evidence acceptance",
+  "independentPDFReview": "pdf-review/review.json",
+  "externalLinkChecks": "pdf-link-checks.json",
+  "PDFLinkCount": 31
+}

@@ -1,0 +1,240 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "administrator-queue",
+  "viewport": "mobile",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 390,
+    "viewportWidth": 390,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 16,
+          "y": 217.984375,
+          "width": 119.328125,
+          "height": 97.375,
+          "top": 217.984375,
+          "right": 135.328125,
+          "bottom": 315.359375,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Ticket Queue",
+        "rect": {
+          "x": 135.328125,
+          "y": 217.984375,
+          "width": 119.34375,
+          "height": 97.375,
+          "top": 217.984375,
+          "right": 254.671875,
+          "bottom": 315.359375,
+          "left": 135.328125
+        },
+        "outline": "none"
+      },
+      {
+        "name": "User Management",
+        "rect": {
+          "x": 254.671875,
+          "y": 217.984375,
+          "width": 119.328125,
+          "height": 97.375,
+          "top": 217.984375,
+          "right": 374,
+          "bottom": 315.359375,
+          "left": 254.671875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 280.0625,
+          "y": 160.796875,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": 160.796875,
+          "right": 374,
+          "bottom": 205.984375,
+          "left": 280.0625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "",
+        "rect": {
+          "x": 33,
+          "y": 467.09375,
+          "width": 324,
+          "height": 46.78125,
+          "top": 467.09375,
+          "right": 357,
+          "bottom": 513.875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Status",
+        "rect": {
+          "x": 33,
+          "y": 560.265625,
+          "width": 324,
+          "height": 45.78125,
+          "top": 560.265625,
+          "right": 357,
+          "bottom": 606.046875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Requested Priority",
+        "rect": {
+          "x": 33,
+          "y": 652.4375,
+          "width": 324,
+          "height": 45.78125,
+          "top": 652.4375,
+          "right": 357,
+          "bottom": 698.21875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "IT Priority",
+        "rect": {
+          "x": 33,
+          "y": 744.609375,
+          "width": 324,
+          "height": 45.78125,
+          "top": 744.609375,
+          "right": 357,
+          "bottom": 790.390625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Owner",
+        "rect": {
+          "x": 33,
+          "y": 836.78125,
+          "width": 324,
+          "height": 45.78125,
+          "top": 836.78125,
+          "right": 357,
+          "bottom": 882.5625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Sort by",
+        "rect": {
+          "x": 33,
+          "y": 928.953125,
+          "width": 324,
+          "height": 45.78125,
+          "top": 928.953125,
+          "right": 357,
+          "bottom": 974.734375,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Order",
+        "rect": {
+          "x": 33,
+          "y": 1021.125,
+          "width": 324,
+          "height": 45.78125,
+          "top": 1021.125,
+          "right": 357,
+          "bottom": 1066.90625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "",
+        "rect": {
+          "x": 33,
+          "y": 1113.296875,
+          "width": 324,
+          "height": 46.78125,
+          "top": 1113.296875,
+          "right": 357,
+          "bottom": 1160.078125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Apply filters",
+        "rect": {
+          "x": 33,
+          "y": 1176.078125,
+          "width": 324,
+          "height": 44,
+          "top": 1176.078125,
+          "right": 357,
+          "bottom": 1220.078125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Clear filters",
+        "rect": {
+          "x": 33,
+          "y": 1236.078125,
+          "width": 324,
+          "height": 44,
+          "top": 1236.078125,
+          "right": 357,
+          "bottom": 1280.078125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Previous",
+        "rect": {
+          "x": 33,
+          "y": 2308.796875,
+          "width": 93.65625,
+          "height": 44,
+          "top": 2308.796875,
+          "right": 126.65625,
+          "bottom": 2352.796875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Next",
+        "rect": {
+          "x": 142.65625,
+          "y": 2308.796875,
+          "width": 67.109375,
+          "height": 44,
+          "top": 2308.796875,
+          "right": 209.765625,
+          "bottom": 2352.796875,
+          "left": 142.65625
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

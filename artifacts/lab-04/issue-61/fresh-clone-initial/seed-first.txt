@@ -1,0 +1,5 @@
+
+> toktickit-server@1.0.0 prisma:seed
+> tsx prisma/seed.ts
+
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.

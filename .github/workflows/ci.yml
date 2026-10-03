@@ -94,11 +94,13 @@ jobs:
         working-directory: server
 
       - name: Run server test suite
-        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-59/server-results.json
+        id: server_tests
+        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-61/hosted-ci/${{ github.run_id }}/server-results.json
         working-directory: server
 
       - name: Run client test suite
-        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-59/client-results.json
+        id: client_tests
+        run: npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/issue-61/hosted-ci/${{ github.run_id }}/client-results.json
         working-directory: client
 
       - name: Run Lab 4 dashboard performance smoke
@@ -159,6 +161,14 @@ jobs:
         run: npm run build
         working-directory: client
 
+      - name: Record Lab 4 release CI provenance
+        if: always()
+        run: node scripts/record-lab4-ci.mjs
+        env:
+          VERIFICATION_STATUS: ${{ job.status }}
+          SERVER_TEST_OUTCOME: ${{ steps.server_tests.outcome }}
+          CLIENT_TEST_OUTCOME: ${{ steps.client_tests.outcome }}
+
       - name: Upload Lab 3 browser evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -181,6 +191,7 @@ jobs:
             artifacts/lab-04/screenshots/staff-dashboard/
             artifacts/lab-04/screenshots/workflow-screens/
             artifacts/lab-04/issue-60/
+            artifacts/lab-04/issue-61/hosted-ci/
             artifacts/lab-04/issue-59/dashboard-performance.json
             artifacts/lab-04/issue-59/server-results.json
             artifacts/lab-04/issue-59/client-results.json

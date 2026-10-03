@@ -1,0 +1,100 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "admin-dialog",
+  "viewport": "mobile",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 390,
+    "viewportWidth": 390,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "admin-displayName",
+        "rect": {
+          "x": 36,
+          "y": 150.8125,
+          "width": 318,
+          "height": 44,
+          "top": 150.8125,
+          "right": 354,
+          "bottom": 194.8125,
+          "left": 36
+        },
+        "outline": "none"
+      },
+      {
+        "name": "admin-email",
+        "rect": {
+          "x": 36,
+          "y": 234.8125,
+          "width": 318,
+          "height": 44,
+          "top": 234.8125,
+          "right": 354,
+          "bottom": 278.8125,
+          "left": 36
+        },
+        "outline": "none"
+      },
+      {
+        "name": "RequesterIT StaffAdministrator",
+        "rect": {
+          "x": 36,
+          "y": 318.8125,
+          "width": 318,
+          "height": 44,
+          "top": 318.8125,
+          "right": 354,
+          "bottom": 362.8125,
+          "left": 36
+        },
+        "outline": "none"
+      },
+      {
+        "name": "admin-initialPassword",
+        "rect": {
+          "x": 36,
+          "y": 462.8125,
+          "width": 318,
+          "height": 44,
+          "top": 462.8125,
+          "right": 354,
+          "bottom": 506.8125,
+          "left": 36
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Save user",
+        "rect": {
+          "x": 36,
+          "y": 666.8125,
+          "width": 318,
+          "height": 44,
+          "top": 666.8125,
+          "right": 354,
+          "bottom": 710.8125,
+          "left": 36
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Cancel",
+        "rect": {
+          "x": 36,
+          "y": 726.8125,
+          "width": 318,
+          "height": 44,
+          "top": 726.8125,
+          "right": 354,
+          "bottom": 770.8125,
+          "left": 36
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

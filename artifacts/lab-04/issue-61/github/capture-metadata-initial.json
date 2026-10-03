@@ -1,0 +1,57 @@
+{
+  "purpose": "Actual read-only public GitHub pages, without modifying GitHub content or styling. Main is still prior Lab 3 at capture time.",
+  "records": [
+    {
+      "name": "project-kanban",
+      "url": "https://github.com/users/L0u1sss/projects/7",
+      "startedAt": "2026-10-03T14:54:31.563Z",
+      "capturedAt": "2026-10-03T14:54:40.944Z",
+      "finalUrl": "https://github.com/users/L0u1sss/projects/7",
+      "httpStatus": 200,
+      "title": "Backlog · toktikit kanban",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "screenshotPath": "artifacts/lab-04/issue-61/github/project-kanban.png",
+      "visibleText": "Skip to content\nNavigation Menu\nPlatform\nSolutions\nResources\nOpen Source\nEnterprise\nPricing\nSearch\n/\nSign in\nSign up\ntoktikit kanban\nInsights\nBacklog\nPriority board\nTeam items\nRoadmap\nMy items\nFilter\nView\nBacklog\n0\n (0)\nEstimate: 0\nThis item hasn't been started\nReady\n0\n (0)\nEstimate: 0\nThis is ready to be picked up\nIn progress\n1 / 3\n (1 / 3)\nEstimate: 0\nThis is actively being worked on\nTokTickIT #61\nrelease(lab-04): complete final product verification and submit Lab 4 evidence\nClick a value to filter the view\nIn review\n0 / 5\n (0 / 5)\nEstimate: 0\nThis item is in review\nDone\n31\n (31)\nEstimate: 0\nThis has been completed"
+    },
+    {
+      "name": "staging-ci-88",
+      "url": "https://github.com/L0u1sss/TokTickIT/actions/runs/37129764540",
+      "startedAt": "2026-10-03T14:54:41.018Z",
+      "capturedAt": "2026-10-03T14:54:54.231Z",
+      "finalUrl": "https://github.com/L0u1sss/TokTickIT/actions/runs/37129764540",
+      "httpStatus": 200,
+      "title": "Merge pull request #70 from L0u1sss/fix/lab4-ui-accessibility-hardening · L0u1sss/TokTickIT@bab4fc1 · GitHub",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "screenshotPath": "artifacts/lab-04/issue-61/github/staging-ci-88.png",
+      "visibleText": "Skip to content\nNavigation Menu\nPlatform\nSolutions\nResources\nOpen Source\nEnterprise\nPricing\nSearch\n/\nSign in\nSign up\nL0u1sss\n/\nTokTickIT\nPublic\nNotifications\nFork 0\n Star 0\nCode\nIssues\n1\nPull requests\nActions\nProjects\nSecurity and quality\nInsights\nCI\nMerge pull request #70 from L0u1sss/fix/lab4-ui-accessibility-hardening #88\nSign in to view logs\nSummary\nAll jobs\nLint, build, and test\nRun details\nUsage\nWorkflow file\nTriggered via push \nTanaboonnnnn\npushed\n bab4fc1\nlab4-staging\nStatus\nSuccess\nTotal duration\n10m 28s\nArtifacts\n2\nci.yml\non: push\nLint, build, and test\n10m 23s\n\nOh hello! Nice to see you.\n\nMade with ❤️ by humans.txt\n\nAnnotations\n1 warning and 1 notice\nLint, build, and test\nNode.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/\nShow more\n\n\nLint, build, and test\n\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"\nShow more\nArtifacts\nProduced during runtime\nName\tSize\tDigest\t\n\nlab-03-browser-evidence\n\t5.1 MB\t\nsha256:0d5ce31abeca2f9aa7a014d725403cd1f29b7886642f2cabf4e0845c43efe679\n\t\n\n\nlab-04-actions-taken-evidence\n\t42.9 MB\t\nsha256:8dc5192db3502cb10bb18c55b5b2bf552aaf609819ff6c53b04984b291189121\n\t"
+    },
+    {
+      "name": "pr70-approval",
+      "url": "https://github.com/L0u1sss/TokTickIT/pull/70#pullrequestreview-5401218381",
+      "startedAt": "2026-10-03T14:54:54.282Z",
+      "completedAt": "2026-10-03T14:55:08.943Z",
+      "error": "Error: locator.scrollIntoViewIfNeeded: Error: strict mode violation: locator('#pullrequestreview-5401218381') resolved to 2 elements:\n    1) <div id=\"pullrequestreview-5401218381\" data-gid=\"PRR_kwDOTuoaxc8AAAABQfANTQ\" data-url=\"/L0u1sss/TokTickIT/pull/70/partials/reviews/5401218381\" class=\"js-comment js-updatable-content js-socket-channel js-targetable-element js-minimize-container\" data-channel=\"eyJjIjoicHVsbF9yZXF1ZXN0X3Jldmlldzo1NDAxMjE4MzgxIiwidCI6MTc5MTAzOTI5NX0=--c442cd5ff96638d9ba26d5896ea4fff448a8294fae6e39c4fbabdc7b24b595fc\">…</div> aka locator('#pullrequestreview-5401218381').first()\n    2) <div id=\"pullrequestreview-5401218381\" class=\"timeline-comment-group js-minimizable-comment-group js-targetable-element my-0 comment previewable-edit js-task-list-container js-comment timeline-comment--caret timeline-comment--caret-nw timeline-comment tmp-ml-n3 unminimized-comment\">…</div> aka getByText('Tanaboonnnnn left a comment Copy link Copy Markdown Collaborator There was a')\n\nCall log:\n\u001b[2m  - waiting for locator('#pullrequestreview-5401218381')\u001b[22m\n"
+    },
+    {
+      "name": "main-staging-comparison",
+      "url": "https://github.com/L0u1sss/TokTickIT/compare/main...lab4-staging",
+      "startedAt": "2026-10-03T14:55:09.005Z",
+      "capturedAt": "2026-10-03T14:55:22.453Z",
+      "finalUrl": "https://github.com/L0u1sss/TokTickIT/compare/main...lab4-staging",
+      "httpStatus": 200,
+      "title": "Comparing main...lab4-staging · L0u1sss/TokTickIT · GitHub",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "screenshotPath": "artifacts/lab-04/issue-61/github/main-staging-comparison.png",
+      "visibleText": "Skip to content\nNavigation Menu\nPlatform\nSolutions\nResources\nOpen Source\nEnterprise\nPricing\nSearch\n/\nSign in\nSign up\nL0u1sss\n/\nTokTickIT\nPublic\nNotifications\nFork 0\n Star 0\nCode\nIssues\n1\nPull requests\nActions\nProjects\nSecurity and quality\nInsights\nComparing changes\nChoose two branches to see what’s changed or to start a new pull request. If you need to, you can also compare across forks or learn more about diff comparisons.\nbase: main\n...\ncompare: lab4-staging\n Able to merge. These branches can be automatically merged.\n 2 contributors\n Commits 50\n Files changed 416\nCommits on Sep 24, 2026\n\ndocs(lab-04): define Sprint 4 engineering contract\n\nL0u1sss committed \ncad940e\n\nfeat(lab-04): add Actions Taken data foundation\n\nL0u1sss committed \nad5e160\nCommits on Sep 26, 2026\n\nfeat(lab-04): implement Actions Taken APIs\n\nL0u1sss committed \n150ff65\n\nfeat(lab-04): add Actions Taken ticket UI\n\nL0u1sss committed \n0b3d9f0\n\nfeat(lab-04): enforce final Ticket workflow\n\nL0u1sss committed \ned1fe71\n\nfeat(lab-04): add Requester dashboard\n\nL0u1sss committed \nf30d378\nCommits on Sep 27, 2026\n\nfeat(lab-04): add staff operational dashboard\n\nL0u1sss committed \nb617f87\nCommits on Sep 29, 2026\n\ndoc\n\nL0u1sss committed \nf154169\n\nmd\n\nL0u1sss committed \n6851cc9\n\nfix md\n\nL0u1sss committed \nadc5c8f\n\nMerge pull request #62 from L0u1sss/docs/lab4-engineering-contract …\n\nTanaboonnnnn authored \nVerified\n32e3776\n\nMerge remote-tracking branch 'origin/lab4-staging' into feat/lab4-act… …\n\nL0u1sss committed \n6ba3aac\n\ndata\n\nL0u1sss committed \n8705b3c\n\nmigration\n\nL0u1sss committed \n9caa6ef\nCommits on Sep 30, 2026\n\nMerge pull request #63 from L0u1sss/feat/lab4-actions-taken-migration …\n\nTanaboonnnnn authored \nVerified\n013aa37\n\nMerge remote-tracking branch 'origin/lab4-staging' into feat/lab4-act… …\n\nL0u1sss committed \n404eae2\nCommits on Oct 1, 2026\n\ntest suit\n\nL0u1sss committed \n6597765\n\nchangedFields\n\nL0u1sss committed \nd60b460\n\ntest: align isolated regression with ticket versions\n\nL0u1sss committed \n3c00995\n\nMerge pull request #64 from L0u1sss/feat/lab4-actions-taken-api …\n\nTanaboonnnnn authored \nVerified\n69ff7af\n\nMerge branch 'lab4-staging' into feat/lab4-actions-taken-ui\n\nL0u1sss committed \nc00bb1a\n\nup-and-fix\n\nL0u1sss committed \n5767427\n\nci error fix\n\nL0u1sss committed \n087e15e\n\nfix(ci): isolate requester E2E from Lab 4 demo tickets\n\nL0u1sss committed \n8beb2de\nCommits on Oct 2, 2026\n\ndocs(lab4): align PR review evidence and terminal lifecycle\n\nL0u1sss committed \necf961a\n\ndocs: record pending PR metadata publication\n\nL0u1sss committed \n754e9ab\n\nMerge pull request #65 from L0u1sss/feat/lab4-actions-taken-ui …\n\nTanaboonnnnn authored \nVerified\n7102116\n\nMerge remote-tracking branch 'origin/lab4-staging' into feat/lab4-tic… …\n\nL0u1sss committed \n2fb7190\n\nMerge lab4-staging and align Lab 4 Ticket workflow\n\nL0u1sss committed \nfcf839a\n\nfeat(lab-04): enforce final Ticket workflow\n\nL0u1sss committed \nc4621cf\n\nfeat(lab-04): add Requester dashboard\n\nL0u1sss committed \n8d765a4\n\nMerge pull request #66 from L0u1sss/feat/lab4-ticket-workflow …\n\nTanaboonnnnn authored \nVerified\n8d13e12\n\nMerge remote-tracking branch 'origin/lab4-staging' into feat/lab4-req… …\n\nL0u1sss committed \naf9a798\n\nMerge lab4-staging and align Requester dashboard contract and CI\n\nL0u1sss committed \n3746ced\n\nUpdate run-auth-e2e.mjs\n\nL0u1sss committed \n64eefa1\n\nfix(ci): restore browser runner modes and lint before E2E setup\n\nL0u1sss committed \nebfb0f7\nCommits on Oct 3, 2026\n\nfix(requester): address PR 67 role, regression and evidence review\n\nL0u1sss committed \nd05ebe0\n\nMerge pull request #67 from L0u1sss/feat/lab4-requester-dashboard …\n\nTanaboonnnnn authored \nVerified\ncd66073\n\nMerge lab4-staging into feat/lab4-staff-dashboard using incoming conf… …\n\nL0u1sss committed \nbaa49c8\n\nfix(staff): integrate PR 68 dashboard with current Lab 4 contract\n\nL0u1sss committed \n378c8e0\n\ndocs(staff): record PR 68 database and regression evidence\n\nL0u1sss committed \na396f43\n\nchore(staff): normalize whitespace in browser verification logs\n\nL0u1sss committed \n5aa9112\n\nfix(staff): address PR 68 priority labeling and timestamp review\n\nL0u1sss committed \nebf53d8\n\ntest(staff): verify timestamp from rendered dashboard response\n\nL0u1sss committed \n1a3d7bd\n\ndocs(staff): record PR 68 review fix verification\n\nL0u1sss committed \n1bb9670\n\nMerge pull request #68 from L0u1sss/feat/lab4-staff-dashboard …\n\nTanaboonnnnn authored \nVerified\n54238fe\n\nissue #59\n\nL0u1sss committed \n6c40806\n\nMerge pull request #69 from L0u1sss/test/lab4-e2e-and-regression …\n\nTanaboonnnnn authored \nVerified\n68ce6ea\n\nfix/lab4-ui-accessibility-hardening\n\nL0u1sss committed \n0c44918\n\nMerge pull request #70 from L0u1sss/fix/lab4-ui-accessibility-hardening …\n\nTanaboonnnnn authored \nVerified\nbab4fc1\nFooter\n© 2026 GitHub, Inc.\nFooter navigation\nTerms\nPrivacy\nSecurity\nStatus\nCommunity\nDocs\nContact\nManage cookies\nDo not share my personal information"
+    }
+  ]
+}

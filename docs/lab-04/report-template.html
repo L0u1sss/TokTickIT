@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{documentTitle}}</title>
+  <style>
+    {{fontFaces}}
+    :root { color-scheme: light; --green: #185d48; --mint: #eaf4ee; --line: #bbd6c8; --ink: #20352d; --muted: #52675e; }
+    * { box-sizing: border-box; }
+    html { background: #e6ebe8; }
+    body { margin: 0 auto; max-width: 210mm; color: var(--ink); background: white; font-family: "Report Thai", Tahoma, "Noto Sans Thai", Arial, sans-serif; font-size: 10.5pt; line-height: 1.55; }
+    main { padding: 14mm; }
+    .document-meta { border-bottom: 2px solid var(--green); padding-bottom: 5mm; margin-bottom: 6mm; }
+    .document-meta .project { margin: 0; font-size: 12pt; font-weight: 700; color: var(--green); letter-spacing: .02em; }
+    .document-meta .identity { margin: 1.5mm 0; font-size: 9pt; color: var(--muted); }
+    .release-state { display: inline-block; border: 1px solid #bd913e; background: #fff8e8; color: #684a13; padding: 1mm 3mm; font-size: 9pt; font-weight: 700; }
+    .release-state.final { border-color: var(--line); background: var(--mint); color: var(--green); }
+    .snapshot { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 5mm; font-size: 8.5pt; color: var(--muted); margin-top: 3mm; }
+    .snapshot code { overflow-wrap: anywhere; }
+    h1 { font-size: 20pt; line-height: 1.25; color: var(--green); margin: 0 0 5mm; border-bottom: 1px solid var(--line); padding-bottom: 3mm; break-after: avoid; }
+    h1 .part-number { display: block; font-size: 10pt; margin-bottom: 2mm; letter-spacing: .04em; }
+    h2 { font-size: 13pt; line-height: 1.3; color: var(--green); margin: 0 0 3mm; break-after: avoid; }
+    p { margin: 0 0 3mm; widows: 3; orphans: 3; }
+    a { color: var(--green); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+    strong { color: #143f31; }
+    code { font-family: Consolas, "Courier New", monospace; font-size: .87em; }
+    .report-section { break-before: page; }
+    .report-section:first-of-type { break-before: auto; }
+    .link-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin: 5mm 0; }
+    .link-card { border: 1px solid var(--line); background: #f7fbf8; border-radius: 1.5mm; padding: 3mm; break-inside: avoid; }
+    .link-card .label { display: block; font-weight: 700; margin-bottom: 1mm; font-size: 10pt; }
+    .link-card .url { display: block; font-size: 8pt; line-height: 1.4; }
+    table { border-collapse: collapse; width: 100%; margin: 4mm 0; font-size: 8.5pt; line-height: 1.45; table-layout: fixed; }
+    thead { display: table-header-group; }
+    th { color: var(--green); background: var(--mint); font-weight: 700; text-align: left; }
+    th, td { border: 1px solid var(--line); padding: 2.5mm; vertical-align: top; overflow-wrap: anywhere; }
+    tr { break-inside: avoid; }
+    .evidence-page { break-before: page; }
+    .evidence-source { color: var(--muted); font-size: 8pt; margin-bottom: 4mm; }
+    figure { margin: 0 0 4mm; break-inside: avoid; }
+    figure img { display: block; max-width: 100%; max-height: 185mm; width: auto; height: auto; margin: 0 auto; border: 1px solid #d4dfd8; object-fit: contain; }
+    .evidence-page.paired figure img { max-height: 87mm; }
+    .image-crop { position: relative; overflow: hidden; max-width: 100%; margin: 0 auto; border: 1px solid #d4dfd8; }
+    .image-crop img, .evidence-page.paired .image-crop img { position: absolute; max-width: none; max-height: none; margin: 0; border: 0; }
+    figcaption { padding: 2mm 0 0; font-size: 9pt; line-height: 1.45; }
+    .image-path { display: block; color: var(--muted); font-family: Consolas, "Courier New", monospace; font-size: 7pt; overflow-wrap: anywhere; margin-top: .8mm; }
+    .check-summary { background: var(--mint); border-left: 3px solid var(--green); padding: 3mm; margin: 4mm 0; font-size: 9pt; }
+    @page { size: A4; margin: 14mm 14mm 17mm; }
+    @media print {
+      html, body { background: white; max-width: none; }
+      main { padding: 0; }
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      a { text-decoration: underline; }
+    }
+  </style>
+</head>
+<body>
+  <main>{{body}}</main>
+</body>
+</html>

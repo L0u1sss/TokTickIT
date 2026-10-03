@@ -1,0 +1,632 @@
+
+> toktickit-server@1.0.0 test:isolated
+> node scripts/run-isolated-tests.mjs --reporter=default --reporter=json --outputFile=D:\Software_Engineering\toktickit\artifacts\lab-04\issue-61\candidate\server-results.json
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "toktickit_test", schema "suite_test_dca2372fc6d34b3aa6ed6fed87b4df33" at "localhost:5432"
+
+11 migrations found in prisma/migrations
+
+Applying migration `20260806000000_add_category`
+Applying migration `20260820130000_init_lab02_schema`
+Applying migration `20260825000000_align_lab02_contract`
+Applying migration `20260916000000_authentication_foundation`
+Applying migration `20260916010000_migrate_requester_identity`
+Applying migration `20260918000000_staff_queue`
+Applying migration `20260918010000_require_explicit_it_priority`
+Applying migration `20260918010000_staff_ticket_operations`
+Applying migration `20260919000000_align_internal_note_length`
+Applying migration `20260919010000_resolution_indication`
+Applying migration `20260925000000_actions_taken_foundation`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260806000000_add_category/
+    └─ migration.sql
+  └─ 20260820130000_init_lab02_schema/
+    └─ migration.sql
+  └─ 20260825000000_align_lab02_contract/
+    └─ migration.sql
+  └─ 20260916000000_authentication_foundation/
+    └─ migration.sql
+  └─ 20260916010000_migrate_requester_identity/
+    └─ migration.sql
+  └─ 20260918000000_staff_queue/
+    └─ migration.sql
+  └─ 20260918010000_require_explicit_it_priority/
+    └─ migration.sql
+  └─ 20260918010000_staff_ticket_operations/
+    └─ migration.sql
+  └─ 20260919000000_align_internal_note_length/
+    └─ migration.sql
+  └─ 20260919010000_resolution_indication/
+    └─ migration.sql
+  └─ 20260925000000_actions_taken_foundation/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+ RUN  v4.1.10 D:/Software_Engineering/toktickit/server
+
+ ✓ |unit| tests/lab-02/ticket-query.test.ts (22 tests) 16ms
+ ✓ |unit| tests/lab-02/ticket-validation.test.ts (17 tests) 43ms
+ ✓ |unit| tests/lab-03/password-policy.test.ts (13 tests) 222ms
+ ✓ |unit| tests/lab-02/ticket-service.test.ts (5 tests) 14ms
+ ✓ |unit| tests/lab-02/attachment-service.test.ts (6 tests) 17ms
+ ✓ |unit| tests/lab-01/health.test.ts (2 tests) 48ms
+ ✓ |unit| tests/lab-02/requesters.api.test.ts (1 test) 44ms
+ ✓ |unit| tests/lab-02/metadata.test.ts (3 tests) 59ms
+ ✓ |unit| tests/lab-02/requester-context.test.ts (7 tests) 81ms
+ ✓ |unit| tests/lab-02/tickets-detail.test.ts (9 tests) 86ms
+ ✓ |unit| tests/lab-02/attachment-validation.test.ts (8 tests) 10ms
+ ✓ |unit| tests/lab-02/tickets-create.test.ts (13 tests) 188ms
+ ✓ |unit| tests/lab-02/tickets-list.test.ts (14 tests) 201ms
+stderr | tests/lab-02/attachments.api.test.ts > Attachment HTTP lifecycle > returns the safe error envelope for unexpected lifecycle failures
+Failed to upload attachment
+Request failed 15b4ccee-fdea-4f14-a7e8-a70ca54cb4ad
+
+stderr | tests/lab-02/attachments.api.test.ts > Attachment HTTP lifecycle > returns the safe error envelope for unexpected lifecycle failures
+Failed to download attachment
+Request failed df9e0363-a227-4245-acbf-81c43f967b27
+
+ ✓ |unit| tests/lab-04/ticket-workflow.test.ts (64 tests) 13ms
+stderr | tests/lab-02/attachments.api.test.ts > Attachment HTTP lifecycle > returns the safe error envelope for unexpected lifecycle failures
+Failed to remove attachment
+Request failed f6b16946-6712-4811-a885-d72368961390
+
+ ✓ |unit| tests/lab-02/attachments.api.test.ts (11 tests) 276ms
+ ✓ |unit| tests/lab-02/ticket-number.test.ts (3 tests) 6ms
+ ✓ |unit| tests/lab-02/ticket-idempotency.test.ts (1 test) 4ms
+ ✓ |unit| tests/lab-03/staff-query.test.ts (17 tests) 8ms
+ ✓ |unit| tests/lab-03/status-transition.unit.test.ts (4 tests) 4ms
+ ✓ |unit| tests/lab-03/content-validation.test.ts (10 tests) 6ms
+stdout | tests/lab-03/migration.test.ts > Issue #31 disposable populated identity migration > upgrades the reviewed queue schema without rewriting existing IT priorities
+Seeded 4 categories, 6 related systems, 5 Requesters and 5 staff/admin accounts. Lab 4 schema is not present; Ticket and Action fixtures were skipped.
+
+stdout | tests/lab-03/migration.test.ts > Issue #31 disposable populated identity migration > supports fresh migration and repeated seed without resetting changed credentials/flags
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+stdout | tests/lab-03/migration.test.ts > Issue #31 disposable populated identity migration > supports fresh migration and repeated seed without resetting changed credentials/flags
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+ ✓ |database| tests/lab-03/migration.test.ts (5 tests) 24219ms
+     ✓ upgrades the reviewed queue schema without rewriting existing IT priorities  6196ms
+     ✓ preserves requester IDs, activation, timestamps and all Ticket/Attachment audit fields  6353ms
+     ✓ rolls back on an existing User id collision without merging identities  2754ms
+     ✓ rolls back on an existing User email collision without merging identities  2700ms
+     ✓ supports fresh migration and repeated seed without resetting changed credentials/flags  5818ms
+stdout | tests/lab-04/migration.test.ts > Issue #53 Actions Taken migration > preserves populated Lab 3 rows and leaves legacy Tickets with zero Actions
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+stdout | tests/lab-04/migration.test.ts > Issue #53 Actions Taken migration > preserves populated Lab 3 rows and leaves legacy Tickets with zero Actions
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+stdout | tests/lab-04/migration.test.ts > Issue #53 Actions Taken migration > supports fresh deployment and repeated seed without overwriting seeded records
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+stdout | tests/lab-04/migration.test.ts > Issue #53 Actions Taken migration > supports fresh deployment and repeated seed without overwriting seeded records
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+ ✓ |database| tests/lab-04/migration.test.ts (3 tests) 21005ms
+     ✓ preserves populated Lab 3 rows and leaves legacy Tickets with zero Actions  5996ms
+     ✓ supports fresh deployment and repeated seed without overwriting seeded records  6781ms
+     ✓ tests guarded pre-use rollback and forward recovery without touching Lab 3 data  7889ms
+ ✓ |database| tests/lab-03/auth.api.test.ts (18 tests) 5084ms
+     ✓ does not charge successful logins against the failed-attempt budget  940ms
+     ✓ limits attempts by IP and canonical email and exposes Retry-After  363ms
+stderr | tests/lab-04/actions-taken.api.test.ts > returns stable oldest-first lists to staff and only the owning Requester
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > returns stable oldest-first lists to staff and only the owning Requester
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > returns stable oldest-first lists to staff and only the owning Requester
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces authentication, role authorization and read-only Requester access
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces authentication, role authorization and read-only Requester access
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects forged actor fields, invalid text and inconsistent follow-up data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects inactive, Requester and missing assignees without changing data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects inactive, Requester and missing assignees without changing data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects inactive, Requester and missing assignees without changing data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > counts Unicode code points, trims text, and preserves data on boundary failures
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > counts Unicode code points, trims text, and preserves data on boundary failures
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > counts Unicode code points, trims text, and preserves data on boundary failures
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > counts Unicode code points, trims text, and preserves data on boundary failures
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > counts Unicode code points, trims text, and preserves data on boundary failures
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix PLANNED -> PLANNED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix PLANNED -> COMPLETED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix IN_PROGRESS -> PLANNED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix IN_PROGRESS -> IN_PROGRESS without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix COMPLETED -> PLANNED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix COMPLETED -> IN_PROGRESS without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix COMPLETED -> COMPLETED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix COMPLETED -> CANCELLED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix CANCELLED -> PLANNED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix CANCELLED -> IN_PROGRESS without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix CANCELLED -> COMPLETED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the complete Action lifecycle matrix CANCELLED -> CANCELLED without partial rejected writes
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > replays an identical create and rejects reuse with different data
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > races reassignment against completion and enforces the resulting current assignee
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects stale parent versions on Action create, update, and transition
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects stale parent versions on Action create, update, and transition
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > rejects stale parent versions on Action create, update, and transition
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > records staff cancellation provenance and rejects follow-up terminal transitions
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > allows one concurrent revision update and rejects stale writes without partial events
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > allows one concurrent revision update and rejects stale writes without partial events
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the Action lifecycle, completion Result and stable audit ordering
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the Action lifecycle, completion Result and stable audit ordering
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the Action lifecycle, completion Result and stable audit ordering
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > enforces the Action lifecycle, completion Result and stable audit ordering
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > coordinates assignment with deactivation and keeps the final assignee eligible
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > returns safe not-found, path, CSRF and unexpected-failure responses
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > returns safe not-found, path, CSRF and unexpected-failure responses
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > returns safe not-found, path, CSRF and unexpected-failure responses
+Unhandled request failure
+
+stderr | tests/lab-04/actions-taken.api.test.ts > returns safe not-found, path, CSRF and unexpected-failure responses
+Unhandled request failure
+
+ ✓ |database| tests/lab-04/actions-taken.api.test.ts (34 tests) 1484ms
+stderr | tests/lab-04/ticket-workflow.api.test.ts > authorizes staff/admin and strictly validates the final status contract
+Unhandled request failure
+
+stderr | tests/lab-04/ticket-workflow.api.test.ts > cancels current-cycle active Actions with one parent version and immutable provenance
+Unhandled request failure
+
+stderr | tests/lab-04/ticket-workflow.api.test.ts > serializes resolution against new child work without losing the active Action
+Unhandled request failure
+
+stderr | tests/lab-04/ticket-workflow.api.test.ts > serializes Ticket cancellation against Action create with atomic provenance
+Unhandled request failure
+
+stderr | tests/lab-04/ticket-workflow.api.test.ts > serializes Ticket cancellation against Action edit with atomic provenance
+Unhandled request failure
+
+stderr | tests/lab-04/ticket-workflow.api.test.ts > serializes Ticket cancellation against Action complete with atomic provenance
+Unhandled request failure
+
+ ✓ |database| tests/lab-04/ticket-workflow.api.test.ts (79 tests) 1482ms
+stderr | tests/lab-04/staff-dashboard.api.test.ts > GET /api/staff/dashboard > enforces roles and rejects identity/query overrides
+Unhandled request failure
+
+ ✓ |database| tests/lab-04/staff-dashboard.api.test.ts (8 tests) 1353ms
+     ✓ returns numeric zero metrics and empty lists from a real empty migrated schema  967ms
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+stderr | tests/lab-03/staff-ticket-detail.api.test.ts > enforces direct API authorization on every operation and hides resource existence
+Unhandled request failure
+
+ ✓ |database| tests/lab-03/staff-ticket-detail.api.test.ts (75 tests) 1227ms
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > requires authenticated Administrator and valid origin/CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > lists/searches by name/email with one role and never exposes credentials
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > lists/searches by name/email with one role and never exposes credentials
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > lists/searches by name/email with one role and never exposes credentials
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > lists/searches by name/email with one role and never exposes credentials
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > creates hashed initial credentials, rejects normalized duplicates and invalid input
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > edits accounts, prevents self deactivation, duplicate email and deletion
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > edits accounts, prevents self deactivation, duplicate email and deletion
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > edits accounts, prevents self deactivation, duplicate email and deletion
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > edits accounts, prevents self deactivation, duplicate email and deletion
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > edits accounts, prevents self deactivation, duplicate email and deletion
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > edits accounts, prevents self deactivation, duplicate email and deletion
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > allows one concurrent normalized email creation and returns a safe conflict
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > keeps assignment eligibility under concurrent claim/reassign and account mutation
+Unhandled request failure
+
+stderr | tests/lab-03/users-admin.api.test.ts > Issue #35 administrator account APIs > preserves the final Administrator under concurrent demotions
+Unhandled request failure
+
+ ✓ |database| tests/lab-03/users-admin.api.test.ts (9 tests) 624ms
+stderr | tests/lab-03/comments-notes.api.test.ts > blocks requester direct note APIs before disclosing existence, and foreign tickets
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > blocks requester direct note APIs before disclosing existence, and foreign tickets
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > blocks requester direct note APIs before disclosing existence, and foreign tickets
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > blocks requester direct note APIs before disclosing existence, and foreign tickets
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > blocks requester direct note APIs before disclosing existence, and foreign tickets
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > rejects bad content and forged metadata, exposes no edit/delete for 0
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > rejects bad content and forged metadata, exposes no edit/delete for 0
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > rejects bad content and forged metadata, exposes no edit/delete for 0
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > rejects bad content and forged metadata, exposes no edit/delete for 0
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > rejects requester attempts to formally resolve/close and missing CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > checks resource access before invalid body for actor 0
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > checks resource access before invalid body for actor 0
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > checks resource access before invalid body for actor 3
+Unhandled request failure
+
+stderr | tests/lab-03/comments-notes.api.test.ts > checks resource access before invalid body for actor 3
+Unhandled request failure
+
+ ✓ |database| tests/lab-03/comments-notes.api.test.ts (25 tests) 633ms
+stdout | tests/lab-02/db-schema.test.ts
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+stdout | tests/lab-02/db-schema.test.ts > Lab 2 database integration contract > keeps the exact deterministic seed stable across repeated upserts
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+stdout | tests/lab-02/db-schema.test.ts > Lab 2 database integration contract > keeps the exact deterministic seed stable across repeated upserts
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+ ✓ |database| tests/lab-02/db-schema.test.ts (11 tests) 861ms
+stderr | tests/lab-03/staff-queue.api.test.ts > staff queue API > enforces session and roles for queue, assignees and details
+Unhandled request failure
+
+stderr | tests/lab-03/staff-queue.api.test.ts > staff queue API > enforces session and roles for queue, assignees and details
+Unhandled request failure
+
+stderr | tests/lab-03/staff-queue.api.test.ts > staff queue API > enforces session and roles for queue, assignees and details
+Unhandled request failure
+
+stderr | tests/lab-03/staff-queue.api.test.ts > staff queue API > does not disclose database failures
+Request failed 894dbac9-d60b-4b8c-bc63-64fb778fc256
+
+stderr | tests/lab-03/staff-queue.api.test.ts > staff queue API > requires a matching CSRF token for Staff mutations
+Unhandled request failure
+
+stderr | tests/lab-03/staff-queue.api.test.ts > staff queue API > requires a matching CSRF token for Staff mutations
+Unhandled request failure
+
+ ✓ |database| tests/lab-03/staff-queue.api.test.ts (31 tests) 662ms
+stderr | tests/lab-04/requester-dashboard.api.test.ts > GET /api/dashboard/requester > enforces authentication, role authorization, and the query contract
+Unhandled request failure
+
+stderr | tests/lab-04/requester-dashboard.api.test.ts > GET /api/dashboard/requester > enforces authentication, role authorization, and the query contract
+Unhandled request failure
+
+ ✓ |database| tests/lab-04/requester-dashboard.api.test.ts (9 tests) 395ms
+ ✓ |database| tests/lab-02/tickets-list.db.test.ts (4 tests) 438ms
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 2 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 2 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 2 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 2 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 2 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 3 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 3 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 3 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 3 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > blocks non-Requester 3 before Ticket lookup or mutation
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > guards staff/admin namespaces and retires account enumeration
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > guards staff/admin namespaces and retires account enumeration
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > requires Origin before parsing authenticated mutations
+Unhandled request failure
+
+stderr | tests/lab-03/authorization.api.test.ts > Issue #31 authenticated Requester cutover > revalidates role, mandatory password and activation on every request
+Unhandled request failure
+
+ ✓ |database| tests/lab-03/authorization.api.test.ts (9 tests) 376ms
+stderr | tests/lab-03/requester-regression.api.test.ts > preserves the complete session-owned lifecycle and isolates another requester
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > preserves the complete session-owned lifecycle and isolates another requester
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct get /api/staff/tickets by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct get /api/staff/assignees by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct get /api/staff/tickets/2147483647 by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct get /api/staff/tickets/2147483647/attachments/2147483647/download by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct post /api/staff/tickets/2147483647/claim by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct patch /api/staff/tickets/2147483647/owner by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct patch /api/staff/tickets/2147483647/it-priority by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct patch /api/staff/tickets/2147483647/status by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct get /api/staff/tickets/2147483647/comments by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct post /api/staff/tickets/2147483647/comments by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct get /api/staff/tickets/2147483647/internal-notes by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct post /api/staff/tickets/2147483647/internal-notes by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct get /api/admin/users by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct post /api/admin/users by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct patch /api/admin/users/2147483647 by role with valid CSRF
+Unhandled request failure
+
+stderr | tests/lab-03/requester-regression.api.test.ts > rejects Requester direct post /api/admin/users/2147483647/initial-password by role with valid CSRF
+Unhandled request failure
+
+ ✓ |database| tests/lab-03/requester-regression.api.test.ts (17 tests) 360ms
+stderr | tests/lab-04/ticket-mutations.api.test.ts > claim uses the authenticated staff/admin role and rejects requester writes
+Unhandled request failure
+
+stderr | tests/lab-04/ticket-mutations.api.test.ts > owner uses the authenticated staff/admin role and rejects requester writes
+Unhandled request failure
+
+stderr | tests/lab-04/ticket-mutations.api.test.ts > it-priority uses the authenticated staff/admin role and rejects requester writes
+Unhandled request failure
+
+ ✓ |database| tests/lab-04/ticket-mutations.api.test.ts (10 tests) 361ms
+ ✓ |database| tests/lab-02/ticket-detail-attachments.db.test.ts (4 tests) 301ms
+ ✓ |database| tests/lab-02/tickets-create.db.test.ts (4 tests) 184ms
+ ✓ |database| tests/lab-01/categories.test.ts (1 test) 106ms
+
+ Test Files  39 passed (39)
+      Tests  586 passed (586)
+   Start at  21:59:32
+   Duration  70.17s (transform 2.23s, setup 126ms, import 11.85s, tests 62.50s, environment 6ms)
+
+JSON report written to D:/Software_Engineering/toktickit/artifacts/lab-04/issue-61/candidate/server-results.json

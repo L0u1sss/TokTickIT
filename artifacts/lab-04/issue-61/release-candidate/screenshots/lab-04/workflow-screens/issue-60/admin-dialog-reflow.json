@@ -1,0 +1,100 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "admin-dialog",
+  "viewport": "reflow",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 720,
+    "viewportWidth": 720,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "admin-displayName",
+        "rect": {
+          "x": 97,
+          "y": 122.21875,
+          "width": 526,
+          "height": 44,
+          "top": 122.21875,
+          "right": 623,
+          "bottom": 166.21875,
+          "left": 97
+        },
+        "outline": "none"
+      },
+      {
+        "name": "admin-email",
+        "rect": {
+          "x": 97,
+          "y": 206.21875,
+          "width": 526,
+          "height": 44,
+          "top": 206.21875,
+          "right": 623,
+          "bottom": 250.21875,
+          "left": 97
+        },
+        "outline": "none"
+      },
+      {
+        "name": "RequesterIT StaffAdministrator",
+        "rect": {
+          "x": 97,
+          "y": 290.21875,
+          "width": 526,
+          "height": 44,
+          "top": 290.21875,
+          "right": 623,
+          "bottom": 334.21875,
+          "left": 97
+        },
+        "outline": "none"
+      },
+      {
+        "name": "admin-initialPassword",
+        "rect": {
+          "x": 97,
+          "y": 434.21875,
+          "width": 526,
+          "height": 44,
+          "top": 434.21875,
+          "right": 623,
+          "bottom": 478.21875,
+          "left": 97
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Save user",
+        "rect": {
+          "x": 97,
+          "y": 590.21875,
+          "width": 92.828125,
+          "height": 44,
+          "top": 590.21875,
+          "right": 189.828125,
+          "bottom": 634.21875,
+          "left": 97
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Cancel",
+        "rect": {
+          "x": 550.265625,
+          "y": 590.21875,
+          "width": 72.734375,
+          "height": 44,
+          "top": 590.21875,
+          "right": 623,
+          "bottom": 634.21875,
+          "left": 550.265625
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

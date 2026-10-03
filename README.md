@@ -40,13 +40,16 @@ and [test traceability](docs/lab-04/tests.md).
 
 Issue #31 เปลี่ยน Ticket/Attachment API ให้ใช้ session identity แล้ว ไม่มี Development Requester selector อีกต่อไป ดู [migration, initial password, role scope และวิธีรัน](docs/lab-03/identity-migration.md) ก่อน migrate ฐานเดิม ห้าม reset ฐานเพื่อข้ามปัญหา ID/email ชนกัน
 
-สำหรับฐาน local Lab เท่านั้น: หลัง `prisma migrate deploy` และ `prisma db seed` ใช้ `jennifer.a@example.com`, `staff.one@example.com` หรือ `admin@example.com` กับ initial password `Lab3-Initial-password1!` แล้วเปลี่ยนรหัสผ่านก่อนใช้งาน บัญชีเดิมที่เปลี่ยนรหัสผ่านแล้วจะไม่ถูก reset โดย seed ส่วนหน้าปฏิบัติงาน Staff/Admin ยังเป็นงาน issue ถัดไป
+สำหรับฐาน local Lab เท่านั้น: หลัง `prisma migrate deploy` และ `prisma db seed` ใช้ `jennifer.a@example.com`, `staff.one@example.com` หรือ `admin@example.com` กับ initial password `Lab3-Initial-password1!` แล้วเปลี่ยนรหัสผ่านก่อนใช้งาน บัญชีเดิมที่เปลี่ยนรหัสผ่านแล้วจะไม่ถูก reset โดย seed ปัจจุบัน Staff/Admin มี Dashboard, Ticket Queue และ Ticket Detail operations; Administrator มี User Management เพิ่มเติม
 
 ## Lab 3 IT Staff Ticket Queue — Issue #32
 
 IT Staff and Administrators can open `/staff/tickets` to search, filter, sort and
 paginate the shared queue. Desktop uses a table; tablet/mobile use cards. The
-queue opens read-only Ticket Detail; operational actions remain issue #33.
+queue opens Ticket Detail with claim, owner assignment, IT Priority, permitted
+status transitions, Public Comments, Internal Notes and the Lab 4 Actions Taken
+area. The original Issue #32 queue implementation was read-only; Issue #33 and
+Lab 4 added the operational controls.
 
 Before starting this version, apply the additive migration from `server` with
 `npx prisma migrate deploy` and regenerate the client with `npx prisma generate`.
@@ -82,22 +85,32 @@ TokTickIT/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
+├── artifacts/
+│   ├── lab-03/screenshots/
+│   └── lab-04/
+│       └── screenshots/
 ├── client/
 │   ├── e2e/
-│   │   └── lab-02/
+│   │   ├── lab-02/
+│   │   ├── lab-03/
+│   │   └── lab-04/
 │   ├── scripts/
 │   ├── src/
 │   │   ├── components/
 │   │   └── context/
 │   ├── tests/
 │   │   ├── lab-01/
-│   │   └── lab-02/
+│   │   ├── lab-02/
+│   │   ├── lab-03/
+│   │   └── lab-04/
 │   ├── playwright.config.ts
 │   └── playwright.live.config.ts
 ├── docs/
 │   ├── lab-01/
-│   └── lab-02/
-│       └── evidence/
+│   ├── lab-02/evidence/
+│   ├── lab-03/
+│   └── lab-04/
+├── scripts/
 ├── server/
 │   ├── prisma/
 │   │   └── migrations/
@@ -105,7 +118,9 @@ TokTickIT/
 │   ├── src/
 │   └── tests/
 │       ├── lab-01/
-│       └── lab-02/
+│       ├── lab-02/
+│       ├── lab-03/
+│       └── lab-04/
 ├── .gitignore
 └── README.md
 ```
@@ -184,7 +199,7 @@ npm run prisma:seed
 Pop-Location
 ```
 
-ผล seed ปกติคือ 4 Categories, 6 Related Systems, 5 Requesters, 4 IT Staff และ 1 Administrator การรันซ้ำไม่สร้างข้อมูลซ้ำและไม่ reset credentials ของบัญชีเดิม
+ผล seed บน schema Lab 4 คือ 4 Categories, 6 Related Systems, 5 Requesters, 4 IT Staff, 1 Administrator, 8 demo Tickets และ 6 Actions พร้อม audit events ครอบคลุมทุก Ticket status และ Tickets ที่มีศูนย์/หนึ่ง/หลาย Actions การรันซ้ำไม่สร้างข้อมูลซ้ำ ไม่เขียนทับงานเดิม และไม่ reset credentials ของบัญชีเดิม เวลา resolution ของ demo เป็นค่าคงที่ จึงอาจอยู่นอกช่วง Recently Resolved 168 ชั่วโมง; รายการว่างในช่วงนั้นเป็นผลที่ถูกต้อง
 
 ### ขั้นที่ 6: เปิด Backend ใน Terminal 1
 
@@ -218,7 +233,7 @@ npm --prefix client run dev
 
 ### ขั้นที่ 8: Login และตรวจ session
 
-เปิด `/login` และใช้บัญชี local ที่ seed หรือสร้างด้วย `auth:provision` จากนั้นเปลี่ยน initial password ก่อนใช้ Ticket screens หน้า Requester แสดง Create Ticket/My Tickets และ Logout โดยไม่มี selector
+เปิด `/login` และใช้บัญชี local ที่ seed หรือสร้างด้วย `auth:provision` จากนั้นเปลี่ยน initial password ก่อนใช้ Ticket screens Requester เริ่มที่ `/dashboard` และมี Dashboard/Create Ticket/My Tickets/Logout โดยไม่มี selector; Staff/Admin เริ่มที่ `/staff/dashboard`
 
 `GET /api/health` ยังเป็น public ส่วน Ticket/metadata/categories ต้องส่ง session cookie; การเปิด API โดยไม่ Login ได้ `401` เป็นพฤติกรรมที่ถูกต้อง `/api/requesters` ถูกยกเลิกแล้ว หาก Login ไม่สำเร็จ ให้ตรวจ API server, database, migration และ `CLIENT_ORIGIN` ให้ตรงกับ URL ของ Vite
 
@@ -248,6 +263,33 @@ npm --prefix client run dev
 สำหรับ Issue #60 ใช้ `node scripts/verify-lab4.mjs --issue=60` เพื่อเก็บผลใน `artifacts/lab-04/issue-60/` และรักษาหลักฐาน Issue #59 เดิม หรือรันเฉพาะ UI audit ด้วย `npm --prefix client run test:ui:lab4` (ไม่ต้องใช้ฐานข้อมูล) ชุดนี้ใช้ UI fixtures ที่ระบุชัดเจน ตรวจสาม roles ที่ 1440×900, 834×1112, 390×844 และ 720×450 พร้อม axe, keyboard/focus, modal, control bounds, clipping/overlap, long text และ draft recovery ภาพและ JSON อยู่ใน `artifacts/lab-04/screenshots/*/issue-60/` ผลจาก real API/database ใช้ suites เดิมแยกจาก fixtures; automated reflow ไม่ใช่ manual browser zoom หรือ screen-reader review
 
 ใช้ `npm --prefix server run test:performance` เพื่อวัด Requester/Staff/Admin dashboards แยกจาก regression: 1,000 Tickets, 5,000 Actions, warm-up 5 ครั้งและ sample 40 ครั้งต่อ role, p95 ≤500 ms ตาม [performance contract](docs/lab-04/specification.md#91-performance-smoke-contract-issue-59) ผลทุก sample อยู่ใน `dashboard-performance.json` ภายใต้โฟลเดอร์หลักฐานข้างต้น ทั้ง database และ live browser runners สร้างและลบเฉพาะ disposable schema ของตัวเอง
+
+สำหรับ release Issue #61 ให้เก็บ candidate evidence แยกจากผลเดิม:
+
+```powershell
+node scripts/verify-lab4.mjs --issue=61
+```
+
+หลัง release PR ผ่าน review/CI และ merge เข้า `main` แล้ว ให้ fetch และ checkout final `main` ก่อนรัน:
+
+```powershell
+git fetch origin
+git switch main
+git pull --ff-only origin main
+node scripts/verify-lab4.mjs --issue=61 --run=final-main --require-main
+```
+
+`--require-main` ตรวจ branch, clean runtime source และ `HEAD` ตรงกับ `origin/main`; ผล candidate ไม่ถือเป็น final-main evidence แต่ละ run เก็บ manifest/logs/reports และสำเนา screenshots ใน `artifacts/lab-04/issue-61/<run>/` โดยไม่เขียนทับ run ที่มี manifest แล้ว ใช้ชื่อ run ใหม่เมื่อต้อง rerun และบันทึกเหตุผล/ผลเดิมไว้ด้วย Final hosted CI, reviewer approval, Project/Kanban และ PDF Answer Part 1–9 ต้องอ้างอิง release SHA เดียวกัน
+
+เมื่อไม่ระบุ `--run` สำหรับ Issue #61 จะใช้ timestamp เป็นชื่อใหม่อัตโนมัติ ผล candidate ที่เตรียมไว้ใน PR นี้อยู่ใน `artifacts/lab-04/issue-61/release-candidate/` อ่าน [release audit](docs/lab-04/release-audit.md), [report/PDF build](docs/lab-04/report.md) และ [ผลรอบนี้](docs/lab-04/tests.md#issue-61-release-candidate-verification) ก่อน final integration
+
+ตรวจ setup จาก committed fresh clone โดยไม่คัดลอก dependencies หรือ `.env` เดิม:
+
+```powershell
+node scripts/check-lab4-fresh-clone.mjs
+```
+
+คำสั่งนี้ติดตั้ง lockfiles, generate/migrate/seed ซ้ำ/build และตรวจ health ของ API ใหม่บน disposable test schema โดยใช้ `TEST_DATABASE_URL` ที่แยกจาก development; ผลอยู่ใน `artifacts/lab-04/issue-61/fresh-clone/verification.json`
 
 สำหรับ Lab 3 แนะนำ `npm --prefix server run test:isolated` ซึ่งสร้าง schema ชั่วคราวจาก `TEST_DATABASE_URL`, migrate/seed, รัน suite และลบเฉพาะ schema ที่สร้างเอง โดยไม่ reset development หรือ shared test schema
 
@@ -288,6 +330,7 @@ $env:TEST_DATABASE_URL = "postgresql://toktickit:toktickit@localhost:5432/toktic
 $developmentDatabaseUrl = $env:DATABASE_URL
 $env:DATABASE_URL = $env:TEST_DATABASE_URL
 & server/node_modules/.bin/prisma.cmd migrate deploy --schema server/prisma/schema.prisma
+& server/node_modules/.bin/prisma.cmd generate --schema server/prisma/schema.prisma
 npm --prefix server run prisma:seed
 $env:DATABASE_URL = $developmentDatabaseUrl
 ```
@@ -382,13 +425,13 @@ client/tests/lab-03/
 ├── StaffTicketDetail.test.tsx
 └── UserManagement.test.tsx
 
-e2e/lab-03/
+client/e2e/lab-03/
 ├── authentication.spec.ts
 ├── staff-ticket-flow.spec.ts
 └── user-administration.spec.ts
 ```
 
-ชื่อไฟล์ข้างต้นเป็นโครงสร้างขั้นต่ำตาม labsheet ให้ปรับ path ให้ตรงกับไฟล์จริงเมื่อ implementation เสร็จ และบันทึก path จริงไว้ใน `docs/lab-03/tests.md`
+ไฟล์ข้างต้นเป็นส่วนหนึ่งของ suites ที่มีอยู่จริง รายการเพิ่มเติม เช่น staff queue, Public Comments/Internal Notes และ Requester regression อยู่ใน `client/e2e/lab-03/` และมี traceability ใน `docs/lab-03/tests.md`
 
 ### Lab 3 local workflow
 
@@ -404,7 +447,7 @@ Run `npm --prefix client ci` and install Playwright Chromium before the browser
 suites. They include axe accessibility checks; local passing evidence does not
 replace final-main CI or peer approval.
 
-เริ่ม feature branch จาก `lab3-staging` ซึ่งทีมสร้างจาก baseline ที่รวม Lab 2 เสร็จแล้ว:
+ตัวอย่าง workflow ของ Lab 3 เดิมเริ่มจาก `lab3-staging` ซึ่งทีมสร้างจาก baseline ที่รวม Lab 2 เสร็จแล้ว สำหรับงาน Lab 4 ใช้ `lab4-staging` ตาม flow ใน [Sprint 4 specification](docs/lab-04/specification.md#13-branch-and-review-flow):
 
 ```powershell
 git switch lab3-staging
@@ -459,3 +502,16 @@ Run `npm --prefix client run test:requester-dashboard:e2e` with a distinct test-
 IT Staff and Administrator login opens `/staff/dashboard`; Administrators retain User Management. `GET /api/staff/dashboard` returns authoritative Unassigned Open, Owned by Me, all status/IT Priority counts, and at most five recent-open Tickets, High Priority Tickets (`itPriority=HIGH`, across all statuses), and deduplicated My Actions with Recorded/Assigned/Performed attribution. Metric cards filter Ticket Queue; Action links open Ticket Detail at `#actions`. Requesters receive Forbidden for staff dashboard access. High Priority Tickets retain the API key `urgentTickets` for compatibility; `generatedAt` is captured once before the repeatable-read transaction and displayed as Last refreshed.
 
 Run `npm --prefix client run test:dashboards:e2e` for the complete Requester/Staff/Administrator dashboard browser suite against disposable migrated PostgreSQL fixtures. Fresh direct database evidence and desktop/tablet/mobile screenshots are saved under `artifacts/lab-04/screenshots/staff-dashboard/` and `requester-dashboard/`. CI runs this suite and uploads both directories. Loading, zero, safe failures, retry, role access, keyboard drill-down, attribution, axe and overflow are checked; injected browser zero/failure responses verify UI states while the API tests verify real empty-database behavior and backend redaction.
+
+## Lab 4 demonstration
+
+หลัง Quick Start ใช้ฐาน local ที่มี seed เพื่อสาธิตตามลำดับนี้ บัญชีที่เพิ่ง seed ต้องเปลี่ยน initial password ก่อน และการรัน seed ซ้ำจะรักษาข้อมูลที่แก้ไขแล้ว:
+
+1. Login เป็น `jennifer.a@example.com`: ดู Dashboard, เปิด Open/Waiting drill-down และ My Tickets, เปิด Ticket Detail เพื่อดู shared Actions/Public Comments แล้วสร้าง Ticket ใหม่สำหรับ workflow demo
+2. Logout แล้ว Login เป็น `staff.one@example.com`: ดู Unassigned Open, Owned by Me, status/priority และ My Actions บน `/staff/dashboard`; เปิด metric card ไป Queue แล้วค้นหา Ticket ที่สร้างในขั้นแรก
+3. เปิด Ticket Detail, Claim และเปลี่ยน `NEW → OPEN`; ลอง Resolve เพื่อแสดง resolution-gate feedback จากนั้น Add Action โดย assign ให้ Staff One ลอง submit Description ว่างเพื่อแสดง field validation แล้วกรอก Description/Follow-up Note ตามเงื่อนไขและบันทึก
+4. Edit Action เพื่อกรอก Result และ clear follow-up, Start แล้ว Complete; สร้าง Action อีกชิ้นและ Cancel เพื่อแสดงหลาย Actions ใน Ticket เดียวกันพร้อม terminal read-only state จากนั้น Resolve และ Close Ticket
+5. กลับไป Login เป็น Requester เจ้าของ Ticket: ดู Actions แบบ read-only, Recent/Resolved drill-down และ Public Comments ตรวจว่าไม่มี Internal Notes หรือ staff write controls
+6. Login เป็น `admin@example.com`: เปิด Dashboard, Queue และ User Management เพื่อสาธิต role/active/password controls ใช้ `npm --prefix client run test:actions:e2e` สำหรับหลักฐาน inactive-assignee, stale update, lost-response retry และ ownership rejection ที่ทำซ้ำได้จาก real API
+
+หลักฐาน dashboard counts เทียบกับ direct Prisma queries อยู่ใน `artifacts/lab-04/screenshots/staff-dashboard/database-counts.json` และ `requester-dashboard/database-counts.json` พร้อม run/schema/timestamp provenance; ภาพ zero/failure ที่ระบุ UI fixture แสดงเฉพาะพฤติกรรม UI ส่วน API tests ใช้ฐานจริง หลักฐาน final submission ต้องมาจาก final `main` ตาม release flow และจัดเป็น PDF ไฟล์เดียว Answer Part 1–9 ตาม `SE+Lab+4.pdf`

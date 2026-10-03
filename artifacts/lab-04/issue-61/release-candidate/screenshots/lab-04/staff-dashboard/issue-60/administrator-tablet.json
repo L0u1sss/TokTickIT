@@ -1,0 +1,296 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "administrator",
+  "viewport": "tablet",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 834,
+    "viewportWidth": 834,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 413.734375,
+          "y": 12,
+          "width": 110.234375,
+          "height": 49.375,
+          "top": 12,
+          "right": 523.96875,
+          "bottom": 61.375,
+          "left": 413.734375
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Ticket Queue",
+        "rect": {
+          "x": 523.96875,
+          "y": 12,
+          "width": 127.203125,
+          "height": 49.375,
+          "top": 12,
+          "right": 651.171875,
+          "bottom": 61.375,
+          "left": 523.96875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "User Management",
+        "rect": {
+          "x": 651.171875,
+          "y": 12,
+          "width": 166.828125,
+          "height": 49.375,
+          "top": 12,
+          "right": 818,
+          "bottom": 61.375,
+          "left": 651.171875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 153.296875,
+          "y": 173.375,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": 173.375,
+          "right": 247.234375,
+          "bottom": 218.5625,
+          "left": 153.296875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Unassigned Open2Open filtered Ticket Queue",
+        "rect": {
+          "x": 16,
+          "y": 443.6875,
+          "width": 393,
+          "height": 169.90625,
+          "top": 443.6875,
+          "right": 409,
+          "bottom": 613.59375,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Owned by Me1Open filtered Ticket Queue",
+        "rect": {
+          "x": 425,
+          "y": 443.6875,
+          "width": 393,
+          "height": 169.90625,
+          "top": 443.6875,
+          "right": 818,
+          "bottom": 613.59375,
+          "left": 425
+        },
+        "outline": "none"
+      },
+      {
+        "name": "New0",
+        "rect": {
+          "x": 37,
+          "y": 693.03125,
+          "width": 235.796875,
+          "height": 56.765625,
+          "top": 693.03125,
+          "right": 272.796875,
+          "bottom": 749.796875,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Open3",
+        "rect": {
+          "x": 283.1875,
+          "y": 693.03125,
+          "width": 235.8125,
+          "height": 56.765625,
+          "top": 693.03125,
+          "right": 519,
+          "bottom": 749.796875,
+          "left": 283.1875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "In Progress0",
+        "rect": {
+          "x": 37,
+          "y": 760.1875,
+          "width": 235.796875,
+          "height": 56.765625,
+          "top": 760.1875,
+          "right": 272.796875,
+          "bottom": 816.953125,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Waiting For Requester0",
+        "rect": {
+          "x": 283.1875,
+          "y": 760.1875,
+          "width": 235.8125,
+          "height": 56.765625,
+          "top": 760.1875,
+          "right": 519,
+          "bottom": 816.953125,
+          "left": 283.1875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Resolved0",
+        "rect": {
+          "x": 37,
+          "y": 827.34375,
+          "width": 235.796875,
+          "height": 56.765625,
+          "top": 827.34375,
+          "right": 272.796875,
+          "bottom": 884.109375,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Closed0",
+        "rect": {
+          "x": 283.1875,
+          "y": 827.34375,
+          "width": 235.8125,
+          "height": 56.765625,
+          "top": 827.34375,
+          "right": 519,
+          "bottom": 884.109375,
+          "left": 283.1875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Reopened0",
+        "rect": {
+          "x": 37,
+          "y": 894.5,
+          "width": 235.796875,
+          "height": 56.765625,
+          "top": 894.5,
+          "right": 272.796875,
+          "bottom": 951.265625,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Cancelled0",
+        "rect": {
+          "x": 283.1875,
+          "y": 894.5,
+          "width": 235.8125,
+          "height": 56.765625,
+          "top": 894.5,
+          "right": 519,
+          "bottom": 951.265625,
+          "left": 283.1875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Low0",
+        "rect": {
+          "x": 577,
+          "y": 727.46875,
+          "width": 104.796875,
+          "height": 56.765625,
+          "top": 727.46875,
+          "right": 681.796875,
+          "bottom": 784.234375,
+          "left": 577
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Medium0",
+        "rect": {
+          "x": 692.1875,
+          "y": 727.46875,
+          "width": 104.8125,
+          "height": 88.765625,
+          "top": 727.46875,
+          "right": 797,
+          "bottom": 816.234375,
+          "left": 692.1875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "High3",
+        "rect": {
+          "x": 577,
+          "y": 826.625,
+          "width": 104.796875,
+          "height": 56.765625,
+          "top": 826.625,
+          "right": 681.796875,
+          "bottom": 883.390625,
+          "left": 577
+        },
+        "outline": "none"
+      },
+      {
+        "name": "TKT-2026-000042Network diagnostic LongSummaryLongSummaryLong",
+        "rect": {
+          "x": 37,
+          "y": 1102.140625,
+          "width": 351,
+          "height": 246.375,
+          "top": 1102.140625,
+          "right": 388,
+          "bottom": 1348.515625,
+          "left": 37
+        },
+        "outline": "none"
+      },
+      {
+        "name": "TKT-2026-000042Network diagnostic LongSummaryLongSummaryLong",
+        "rect": {
+          "x": 446,
+          "y": 1067.703125,
+          "width": 351,
+          "height": 246.375,
+          "top": 1067.703125,
+          "right": 797,
+          "bottom": 1314.078125,
+          "left": 446
+        },
+        "outline": "none"
+      },
+      {
+        "name": "TKT-2026-000042 · PlannedInspect network cablesRecorded · As",
+        "rect": {
+          "x": 37,
+          "y": 1464.953125,
+          "width": 760,
+          "height": 201.5625,
+          "top": 1464.953125,
+          "right": 797,
+          "bottom": 1666.515625,
+          "left": 37
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

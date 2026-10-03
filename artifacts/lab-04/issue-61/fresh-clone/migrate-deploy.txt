@@ -1,0 +1,44 @@
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "toktickit_test", schema "fresh_clone_test_004804f49f994da4a8e69252a2e69b39" at "localhost:5432"
+
+11 migrations found in prisma/migrations
+
+Applying migration `20260806000000_add_category`
+Applying migration `20260820130000_init_lab02_schema`
+Applying migration `20260825000000_align_lab02_contract`
+Applying migration `20260916000000_authentication_foundation`
+Applying migration `20260916010000_migrate_requester_identity`
+Applying migration `20260918000000_staff_queue`
+Applying migration `20260918010000_require_explicit_it_priority`
+Applying migration `20260918010000_staff_ticket_operations`
+Applying migration `20260919000000_align_internal_note_length`
+Applying migration `20260919010000_resolution_indication`
+Applying migration `20260925000000_actions_taken_foundation`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260806000000_add_category/
+    └─ migration.sql
+  └─ 20260820130000_init_lab02_schema/
+    └─ migration.sql
+  └─ 20260825000000_align_lab02_contract/
+    └─ migration.sql
+  └─ 20260916000000_authentication_foundation/
+    └─ migration.sql
+  └─ 20260916010000_migrate_requester_identity/
+    └─ migration.sql
+  └─ 20260918000000_staff_queue/
+    └─ migration.sql
+  └─ 20260918010000_require_explicit_it_priority/
+    └─ migration.sql
+  └─ 20260918010000_staff_ticket_operations/
+    └─ migration.sql
+  └─ 20260919000000_align_internal_note_length/
+    └─ migration.sql
+  └─ 20260919010000_resolution_indication/
+    └─ migration.sql
+  └─ 20260925000000_actions_taken_foundation/
+    └─ migration.sql
+      
+All migrations have been successfully applied.

@@ -1,0 +1,212 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "requester-queue",
+  "viewport": "mobile",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 390,
+    "viewportWidth": 390,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 16,
+          "y": -87.421875,
+          "width": 119.328125,
+          "height": 73.375,
+          "top": -87.421875,
+          "right": 135.328125,
+          "bottom": -14.046875,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Create Ticket",
+        "rect": {
+          "x": 135.328125,
+          "y": -87.421875,
+          "width": 119.34375,
+          "height": 73.375,
+          "top": -87.421875,
+          "right": 254.671875,
+          "bottom": -14.046875,
+          "left": 135.328125
+        },
+        "outline": "none"
+      },
+      {
+        "name": "My Tickets",
+        "rect": {
+          "x": 254.671875,
+          "y": -87.421875,
+          "width": 119.328125,
+          "height": 73.375,
+          "top": -87.421875,
+          "right": 374,
+          "bottom": -14.046875,
+          "left": 254.671875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 16,
+          "y": -144.609375,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": -144.609375,
+          "right": 109.9375,
+          "bottom": -99.421875,
+          "left": 16
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Create ticket",
+        "rect": {
+          "x": 12,
+          "y": 295.75,
+          "width": 366,
+          "height": 45.1875,
+          "top": 295.75,
+          "right": 378,
+          "bottom": 340.9375,
+          "left": 12
+        },
+        "outline": "none"
+      },
+      {
+        "name": "ticket-search",
+        "rect": {
+          "x": 33,
+          "y": 417.125,
+          "width": 324,
+          "height": 46.78125,
+          "top": 417.125,
+          "right": 357,
+          "bottom": 463.90625,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Search",
+        "rect": {
+          "x": 33,
+          "y": 473.5,
+          "width": 324,
+          "height": 45.1875,
+          "top": 473.5,
+          "right": 357,
+          "bottom": 518.6875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All categoriesHardware",
+        "rect": {
+          "x": 33,
+          "y": 565.078125,
+          "width": 324,
+          "height": 45.78125,
+          "top": 565.078125,
+          "right": 357,
+          "bottom": 610.859375,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All systemsOffice network",
+        "rect": {
+          "x": 33,
+          "y": 657.25,
+          "width": 324,
+          "height": 45.78125,
+          "top": 657.25,
+          "right": 357,
+          "bottom": 703.03125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All prioritiesLowMediumHigh",
+        "rect": {
+          "x": 33,
+          "y": 749.421875,
+          "width": 324,
+          "height": 45.78125,
+          "top": 749.421875,
+          "right": 357,
+          "bottom": 795.203125,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "All statusesOpen TicketsWaiting for RequesterNewResolved / C",
+        "rect": {
+          "x": 33,
+          "y": 841.59375,
+          "width": 324,
+          "height": 45.78125,
+          "top": 841.59375,
+          "right": 357,
+          "bottom": 887.375,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Newest firstOldest firstTicket number A–ZTicket number Z–ASu",
+        "rect": {
+          "x": 33,
+          "y": 933.765625,
+          "width": 324,
+          "height": 45.78125,
+          "top": 933.765625,
+          "right": 357,
+          "bottom": 979.546875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "102050",
+        "rect": {
+          "x": 33,
+          "y": 1025.9375,
+          "width": 324,
+          "height": 45.78125,
+          "top": 1025.9375,
+          "right": 357,
+          "bottom": 1071.71875,
+          "left": 33
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Reset filters",
+        "rect": {
+          "x": 33,
+          "y": 1087.71875,
+          "width": 324,
+          "height": 44,
+          "top": 1087.71875,
+          "right": 357,
+          "bottom": 1131.71875,
+          "left": 33
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

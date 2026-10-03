@@ -1,0 +1,240 @@
+{
+  "evidence": "Deterministic UI fixture",
+  "state": "administrator-list",
+  "viewport": "desktop",
+  "axeViolations": [],
+  "layout": {
+    "pageWidth": 1440,
+    "viewportWidth": 1440,
+    "outside": [],
+    "overlaps": [],
+    "clipped": [],
+    "bounds": [
+      {
+        "name": "Dashboard",
+        "rect": {
+          "x": 891.734375,
+          "y": -1431,
+          "width": 110.234375,
+          "height": 49.375,
+          "top": -1431,
+          "right": 1001.96875,
+          "bottom": -1381.625,
+          "left": 891.734375
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Ticket Queue",
+        "rect": {
+          "x": 1001.96875,
+          "y": -1431,
+          "width": 127.203125,
+          "height": 49.375,
+          "top": -1431,
+          "right": 1129.171875,
+          "bottom": -1381.625,
+          "left": 1001.96875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "User Management",
+        "rect": {
+          "x": 1129.171875,
+          "y": -1431,
+          "width": 166.828125,
+          "height": 49.375,
+          "top": -1431,
+          "right": 1296,
+          "bottom": -1381.625,
+          "left": 1129.171875
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Logout",
+        "rect": {
+          "x": 144,
+          "y": -1317.625,
+          "width": 93.9375,
+          "height": 45.1875,
+          "top": -1317.625,
+          "right": 237.9375,
+          "bottom": -1272.4375,
+          "left": 144
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Claim Ticket",
+        "rect": {
+          "x": 113,
+          "y": -531.5,
+          "width": 291.5,
+          "height": 44,
+          "top": -531.5,
+          "right": 404.5,
+          "bottom": -487.5,
+          "left": 113
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Ticket Owner",
+        "rect": {
+          "x": 420.5,
+          "y": -533.28125,
+          "width": 291.5,
+          "height": 45.78125,
+          "top": -533.28125,
+          "right": 712,
+          "bottom": -487.5,
+          "left": 420.5
+        },
+        "outline": "none"
+      },
+      {
+        "name": "IT Priority",
+        "rect": {
+          "x": 728,
+          "y": -533.28125,
+          "width": 291.5,
+          "height": 45.78125,
+          "top": -533.28125,
+          "right": 1019.5,
+          "bottom": -487.5,
+          "left": 728
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Status",
+        "rect": {
+          "x": 1035.5,
+          "y": -533.28125,
+          "width": 291.5,
+          "height": 45.78125,
+          "top": -533.28125,
+          "right": 1327,
+          "bottom": -487.5,
+          "left": 1035.5
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Add Action",
+        "rect": {
+          "x": 1186.359375,
+          "y": 50.078125,
+          "width": 118.640625,
+          "height": 44,
+          "top": 50.078125,
+          "right": 1305,
+          "bottom": 94.078125,
+          "left": 1186.359375
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Edit Action",
+        "rect": {
+          "x": 396.8125,
+          "y": 532.578125,
+          "width": 116.78125,
+          "height": 44,
+          "top": 532.578125,
+          "right": 513.59375,
+          "bottom": 576.578125,
+          "left": 396.8125
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Start Action",
+        "rect": {
+          "x": 770.40625,
+          "y": 532.578125,
+          "width": 124.046875,
+          "height": 44,
+          "top": 532.578125,
+          "right": 894.453125,
+          "bottom": 576.578125,
+          "left": 770.40625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Cancel Action",
+        "rect": {
+          "x": 1151.265625,
+          "y": 532.578125,
+          "width": 136.734375,
+          "height": 44,
+          "top": 532.578125,
+          "right": 1288,
+          "bottom": 576.578125,
+          "left": 1151.265625
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Public Comment",
+        "rect": {
+          "x": 131,
+          "y": 1868.96875,
+          "width": 1178,
+          "height": 100,
+          "top": 1868.96875,
+          "right": 1309,
+          "bottom": 1968.96875,
+          "left": 131
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Post Public Comment",
+        "rect": {
+          "x": 131,
+          "y": 2008.96875,
+          "width": 195.078125,
+          "height": 44,
+          "top": 2008.96875,
+          "right": 326.078125,
+          "bottom": 2052.96875,
+          "left": 131
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Internal Note",
+        "rect": {
+          "x": 131,
+          "y": 2258.5625,
+          "width": 1178,
+          "height": 100,
+          "top": 2258.5625,
+          "right": 1309,
+          "bottom": 2358.5625,
+          "left": 131
+        },
+        "outline": "none"
+      },
+      {
+        "name": "Add Internal Note",
+        "rect": {
+          "x": 131,
+          "y": 2398.5625,
+          "width": 169.953125,
+          "height": 44,
+          "top": 2398.5625,
+          "right": 300.953125,
+          "bottom": 2442.5625,
+          "left": 131
+        },
+        "outline": "none"
+      }
+    ],
+    "primary": "#006b3c"
+  }
+}

@@ -1,0 +1,59 @@
+
+> toktickit-server@1.0.0 test:performance
+> node scripts/run-isolated-tests.mjs --config vitest.performance.config.ts
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "toktickit_test", schema "suite_test_f57df1d9b19c4f58bb93d5b7fea36f1e" at "localhost:5432"
+
+11 migrations found in prisma/migrations
+
+Applying migration `20260806000000_add_category`
+Applying migration `20260820130000_init_lab02_schema`
+Applying migration `20260825000000_align_lab02_contract`
+Applying migration `20260916000000_authentication_foundation`
+Applying migration `20260916010000_migrate_requester_identity`
+Applying migration `20260918000000_staff_queue`
+Applying migration `20260918010000_require_explicit_it_priority`
+Applying migration `20260918010000_staff_ticket_operations`
+Applying migration `20260919000000_align_internal_note_length`
+Applying migration `20260919010000_resolution_indication`
+Applying migration `20260925000000_actions_taken_foundation`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260806000000_add_category/
+    └─ migration.sql
+  └─ 20260820130000_init_lab02_schema/
+    └─ migration.sql
+  └─ 20260825000000_align_lab02_contract/
+    └─ migration.sql
+  └─ 20260916000000_authentication_foundation/
+    └─ migration.sql
+  └─ 20260916010000_migrate_requester_identity/
+    └─ migration.sql
+  └─ 20260918000000_staff_queue/
+    └─ migration.sql
+  └─ 20260918010000_require_explicit_it_priority/
+    └─ migration.sql
+  └─ 20260918010000_staff_ticket_operations/
+    └─ migration.sql
+  └─ 20260919000000_align_internal_note_length/
+    └─ migration.sql
+  └─ 20260919010000_resolution_indication/
+    └─ migration.sql
+  └─ 20260925000000_actions_taken_foundation/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+Seeded 4 categories, 6 related systems, 5 Requesters, 5 staff/admin accounts, 8 Lab 4 Tickets and 6 Actions. Existing records and credentials are preserved.
+
+ RUN  v4.1.10 D:/Software_Engineering/toktickit/server
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  22:13:51
+   Duration  6.89s (transform 251ms, setup 33ms, import 525ms, tests 6.12s, environment 0ms)
+
