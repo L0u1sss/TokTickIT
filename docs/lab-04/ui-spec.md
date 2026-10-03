@@ -6,7 +6,7 @@
 
 After authentication, the first role-appropriate route is Dashboard. Requesters see Dashboard, Create Ticket, and My Tickets. IT Staff see Dashboard and Ticket Queue. Administrators see Dashboard, Ticket Queue, and User Management. The active item uses text/shape/weight in addition to color; name, role, and Logout remain visible. Forced password-change flow cannot open dashboards.
 
-PR #67 implements the Requester increment. Until the separate Staff Dashboard increment provides `/staff/dashboard`, the current role homes remain `/staff/tickets` for IT Staff and `/admin/users` for Administrators. Opening the Requester `/dashboard` as either role replaces the URL with that role home, discards Requester query parameters, and never requests Requester dashboard data. Once the Staff Dashboard lands, both roles use `/staff/dashboard` as their home and redirect target. Protected staff/admin screens still show Forbidden to unauthorized roles; direct Requester dashboard API access by Staff/Admin remains `403`.
+PR #68 provides `/staff/dashboard` as the home and Requester-dashboard redirect target for IT Staff and Administrators. Opening `/dashboard` as either role replaces the URL with `/staff/dashboard`, discards Requester query parameters, and never requests Requester dashboard data. Administrators retain `/admin/users` navigation. Protected staff/admin screens show Forbidden to unauthorized roles; direct Requester dashboard API access by Staff/Admin remains `403`.
 
 ## 2. Shared UI Rules
 
@@ -18,7 +18,7 @@ PR #67 implements the Requester increment. Until the separate Staff Dashboard in
 
 ## 3. IT Staff and Administrator Dashboard
 
-The page heading is “Dashboard” with last-refreshed information and Retry on failure. Metric cards show label, numeric value, and accessible drill-down action for Unassigned Open, Owned by Me, by Status, and by IT Priority. Separate compact lists show My Actions, Recently Updated Tickets, and Urgent Tickets. Recently Updated follows authoritative Ticket `updatedAt`: accepted Ticket/Action aggregate writes refresh recency; Public Comments, Internal Notes, and attachment-only writes do not. My Actions contains the deduplicated union of Actions recorded by, assigned to, or performed by the signed-in user; show every matching `Recorded`, `Assigned`, and `Performed` label on one row. Each item exposes the identifiers needed to understand it and links to Ticket Detail; cards link to filtered Queue views.
+The page heading is “Dashboard” with last-refreshed information and Retry on failure. Metric cards show label, numeric value, and accessible drill-down action for Unassigned Open, Owned by Me, by Status, and by IT Priority. Separate compact lists show My Actions, Recently Updated Tickets, and High Priority Tickets. High Priority Tickets means exactly `itPriority=HIGH` across all statuses, using the bounded backend list ordered `updatedAt ASC, id ASC`; it does not imply SLA or an additional priority classification. Last refreshed displays the one UTC `generatedAt` captured before the transaction. Recently Updated follows authoritative Ticket `updatedAt`: accepted Ticket/Action aggregate writes refresh recency; Public Comments, Internal Notes, and attachment-only writes do not. My Actions contains the deduplicated union of Actions recorded by, assigned to, or performed by the signed-in user; show every matching `Recorded`, `Assigned`, and `Performed` label on one row. Each item exposes the identifiers needed to understand it and links to Ticket Detail; cards link to filtered Queue views.
 
 Loading retains page structure without false zeroes. A successful zero dataset shows cards with `0` and an explanatory empty state. Forbidden and safe failures do not render stale privileged data. Administrator presentation is identical to staff for this sprint.
 
@@ -83,3 +83,15 @@ Baseline evidence uses desktop `1440×900`, tablet `834×1112`, and mobile `390�
 - [ ] Permitted Ticket transitions and resolution-gate feedback.
 - [ ] Keyboard focus, labels, error placement, non-color cues, wrapping, clipping, overlap, and overflow checked.
 - [ ] Temporary/duplicate/obsolete Lab UI and unfinished controls removed.
+
+
+## PR #68 Staff Dashboard Evidence ? 2026-10-03
+
+- [x] Staff and Administrator non-zero Dashboard at 1440x900, 834x1112 and 390x844; original Staff Dashboard grid CSS retained after integration.
+- [x] Every metric matches fresh direct database counts; all ownership/status/priority drill-down links preserve their filters.
+- [x] My Actions shows all matching Recorded/Assigned/Performed labels without duplicate rows; terminal history remains eligible under BR-28.
+- [x] Ticket and Action links work; `#actions` survives session restoration and scrolls to one unique Actions region after Detail loads.
+- [x] Loading, safe failure/retry, zero UI fixture and Requester Forbidden captured; privileged summaries are absent on denial.
+- [x] Captured states have no page overflow and no serious/critical axe violations; 720x450 reflow viewport also checked.
+
+See [PR #68 validation](./tests.md#pr-68-validation) for logs, screenshot links, database provenance and the distinction between injected UI fixtures, real API/service tests, automated reflow and unperformed manual review.

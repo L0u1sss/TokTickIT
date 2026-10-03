@@ -7,6 +7,8 @@ test("E2E-02 staff workflow persists ownership, priorities, statuses and separat
   await page.getByLabel("Email", { exact: false }).fill("queue-browser@example.test");
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Ticket Queue", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "User Management", exact: true })).toHaveCount(0);
   // Each retry needs an untouched ticket; earlier attempts persist real API writes.

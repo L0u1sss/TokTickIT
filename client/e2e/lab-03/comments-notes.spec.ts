@@ -10,6 +10,7 @@ test("staff/requester communicate with private notes and resolution indication",
     await expect(page.getByRole("button", { name: "Logout", exact: true })).toBeVisible();
   }
   await login("queue-browser@example.test");
+  await page.getByRole("link", { name: "Ticket Queue", exact: true }).click();
   await page.getByRole("link", { name: /View ticket/ }).first().click();
   const id = page.url().split("/").pop()!;
   await page.getByLabel("Public Comment", { exact: true }).fill("Please try the printer again. <script>alert(1)</script>");

@@ -9,6 +9,8 @@ test("administrator: live create/edit/reset, security, responsive reflow and key
   await page.getByLabel("Email", { exact: false }).fill("admin-browser@example.test");
   await page.getByLabel("Password", { exact: false }).fill(process.env.E2E_AUTH_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await page.getByRole("link", { name: "User Management", exact: true }).click();
   await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit Mali Administrator" })).toBeVisible();
   await mkdir("../artifacts/lab-03/screenshots/user-management", { recursive: true });
@@ -78,7 +80,7 @@ test("administrator: live create/edit/reset, security, responsive reflow and key
   await page.getByRole("textbox", { name: "New Password", exact: true }).fill("Final-Password789!");
   await page.getByRole("textbox", { name: "Confirm New Password", exact: true }).fill("Final-Password789!");
   await page.getByRole("button", { name: "Save password", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Ticket Queue", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await page.goto("/admin/users");
   await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
   expect((await page.request.get(`${process.env.E2E_API_URL}/api/admin/users`)).status()).toBe(403);

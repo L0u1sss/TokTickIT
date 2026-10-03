@@ -43,7 +43,7 @@ IT Staff need a reliable record of planned and completed work beneath each Ticke
 - **FR-07 — Ticket workflow:** The backend enforces all Ticket transitions and the resolution gate even if the UI is bypassed.
 - **FR-08 — Requester advisory:** “Problem Appears Resolved” remains advisory and never changes formal Ticket status by itself.
 - **FR-09 — Requester dashboard:** A Requester receives only their own counts and recent Ticket summaries, with drill-down to My Tickets or Ticket Detail.
-- **FR-10 — Staff dashboard:** IT Staff and Administrators receive operational counts, current-user Action information, and recent/urgent Tickets with drill-down to Queue or Ticket Detail.
+- **FR-10 — Staff dashboard:** IT Staff and Administrators receive operational counts, current-user Action information, and recent/high-priority Tickets with drill-down to Queue or Ticket Detail.
 - **FR-11 — Dashboard authority:** Metrics are calculated by the backend from authoritative data and returned as concise aggregates, not complete Ticket collections.
 - **FR-12 — Data continuity:** Migration preserves all existing Users, Tickets, Attachments, Public Comments, Internal Notes, and ownership/history.
 - **FR-13 — Safe interaction:** Forms prevent accidental duplicate submission, retain user input after recoverable failure, and report validation, forbidden, not-found, conflict, and safe server failures consistently.
@@ -90,10 +90,10 @@ IT Staff need a reliable record of planned and completed work beneath each Ticke
 
 - **BR-26:** “Open Tickets” means status in `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, or `REOPENED`; terminal/resolution statuses are excluded.
 - **BR-27:** Requester metrics are: `openCount`; `waitingForRequesterCount`; up to five `recentlyUpdated` Tickets ordered `updatedAt DESC, id DESC`; and up to five `recentlyResolved` Tickets whose current status is `RESOLVED` or `CLOSED` and whose current-cycle `resolvedAt` is in the rolling seven-day window `[from, before)`. One `generatedAt` value is captured per response; `before=generatedAt` and `from=generatedAt-168 hours`. Results are ordered `resolvedAt DESC, id DESC`. `recentlyUpdated` uses the Ticket `updatedAt` semantics in BR-43. Every query includes authenticated `requesterId`.
-- **BR-28:** Staff metrics are: `unassignedOpenCount`; `ownedByMeOpenCount`; counts for every Ticket status; counts for every IT Priority; up to five `recentlyUpdated` open Tickets; up to five `urgentTickets` with `itPriority=HIGH`, ordered `updatedAt ASC, id ASC`; and up to five distinct current-user Actions matching `recordedById=currentUser OR assigneeId=currentUser OR performedById=currentUser`, ordered `updatedAt DESC, id DESC`. Each row includes every matching `Recorded`, `Assigned`, and/or `Performed` attribution; an Action matching multiple roles appears once. `recentlyUpdated` uses the Ticket `updatedAt` semantics in BR-43.
+- **BR-28:** Staff metrics are: `unassignedOpenCount`; `ownedByMeOpenCount`; counts for every Ticket status; counts for every IT Priority; up to five `recentlyUpdated` open Tickets; up to five High Priority Tickets with `itPriority=HIGH` across all statuses, ordered `updatedAt ASC, id ASC` (returned under the compatibility response key `urgentTickets`); and up to five distinct current-user Actions matching `recordedById=currentUser OR assigneeId=currentUser OR performedById=currentUser`, ordered `updatedAt DESC, id DESC`. Each row includes every matching `Recorded`, `Assigned`, and/or `Performed` attribution; an Action matching multiple roles appears once. `recentlyUpdated` uses the Ticket `updatedAt` semantics in BR-43.
 - **Requester recency decision (BR-27):** Recently Updated intentionally has no time cutoff and includes all current statuses; it is the latest five owned Tickets by `updatedAt DESC, id DESC`, even when their timestamps are older than seven days. Recently Resolved alone uses the rolling 168-hour window. All timestamps are UTC.
 - **BR-29:** Administrator reuses the Staff dashboard. User-account counts are excluded from required Sprint 4 scope.
-- **BR-30:** Dashboard time values are stored/returned in UTC ISO 8601. The seven-day recently-resolved window is rolling, not calendar-based; UI formats time in the browser locale. This avoids ambiguous server-local dates.
+- **BR-30:** Staff `generatedAt` is captured once before starting the repeatable-read transaction and remains fixed if query execution takes time. It represents the request capture time displayed as Last refreshed, not query completion or a PostgreSQL snapshot timestamp. Dashboard time values are stored/returned in UTC ISO 8601. The seven-day recently-resolved window is rolling, not calendar-based; UI formats time in the browser locale. This avoids ambiguous server-local dates.
 - **BR-31:** Zero counts return numeric `0`; lists return `[]`. Cards always render, and applicable cards link to documented Queue/My Tickets filters. The Recently Resolved drill-down uses the exact `from`/`before` values returned by the dashboard, not client-recomputed dates. Recent items link to Ticket Detail.
 - **BR-32:** Dashboard responses contain counts and bounded summaries only. Metric queries use the same status/priority definitions as drill-down endpoints.
 
@@ -127,7 +127,7 @@ IT Staff need a reliable record of planned and completed work beneath each Ticke
 ## 7. UI Specification Summary
 
 - Role-appropriate Dashboard navigation is added to the authenticated shell with a non-color active-page cue.
-- Staff Dashboard uses concise metric cards plus bounded Actions/recent/urgent lists. Requester Dashboard uses own-Ticket metrics and bounded recent lists.
+- Staff Dashboard uses concise metric cards plus bounded Actions/recent/high-priority lists. Requester Dashboard uses own-Ticket metrics and bounded recent lists.
 - Ticket Detail adds an Actions Taken region with stable list, create form, view/edit mode, lifecycle controls, revision-conflict recovery, and read-only Requester presentation.
 - Status controls expose only permitted transitions, explain a failed resolution gate, and refresh Ticket summary after success.
 - All screens support loading, empty, forbidden, not-found, conflict, safe-failure, retry, and success states where applicable.
@@ -154,7 +154,7 @@ Staff routes provide Action list/create/update/transition and dashboards; Reques
 - **AC-05:** Requesters see all Actions only on their own Tickets and cannot write them; Internal Notes never leak.
 - **AC-06:** Ticket transitions follow the eight-status matrix and the backend current-cycle resolution gate (completed work with Result, no active Actions, and no outstanding follow-up); Requester advisory alone never resolves a Ticket.
 - **AC-07:** Requester dashboard metrics, bounded lists, the rolling seven-day `resolvedAt` window, exact drill-down bounds, and empty states contain only authenticated-owner data and match database queries.
-- **AC-08:** Staff/Admin dashboard metrics, deduplicated current-user Actions with all matching attribution labels, urgent/recent lists, empty states, and drill-down match database queries.
+- **AC-08:** Staff/Admin dashboard metrics, deduplicated current-user Actions with all matching attribution labels, high-priority/recent lists, empty states, and drill-down match database queries.
 - **AC-09:** Migration preserves populated Lab 3 data; fresh deploy, recovery approach, and repeated seed are verified.
 - **AC-10:** Duplicate clicks/network retry do not duplicate Actions, and safe failures do not discard recoverable form input.
 - **AC-11:** Authentication, Requester, Ticket, Attachment, comment/note, staff operations, and admin management regression tests pass.

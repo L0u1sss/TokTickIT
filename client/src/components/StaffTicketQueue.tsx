@@ -14,9 +14,9 @@ type Ticket = { id: number; ticketNumber: string; summary: string; category: { n
   attachments?: { id: number; fileName: string; downloadable: boolean; isRemoved: boolean }[];
   publicComments?: Communication[]; internalNotes?: Communication[] };
 type Queue = { items: Ticket[]; pagination: { page: number; pageSize: number; totalItems: number; totalPages: number } };
-const statuses = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
+const statuses = ["OPEN_GROUP", "NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"];
 const priorities = ["LOW", "MEDIUM", "HIGH"];
-const label = (value: string) => ({ updatedAt: "Last Updated", createdAt: "Created Date", ticketNumber: "Ticket Number", itPriority: "IT Priority", asc: "Ascending", desc: "Descending" }[value]
+const label = (value: string) => ({ OPEN_GROUP: "Open Tickets", updatedAt: "Last Updated", createdAt: "Created Date", ticketNumber: "Ticket Number", itPriority: "IT Priority", asc: "Ascending", desc: "Descending" }[value]
   ?? value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
 class QueueError extends Error { constructor(public code: string) { super(code); } }
 const validVersion = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value > 0;
@@ -106,6 +106,12 @@ export default function StaffTicketQueue() {
     return () => controller.abort();
   }, [ownerRevision]);
   const onActionsBusyChange = useCallback((busy: boolean) => { actionsBusyRef.current = busy; setActionsBusy(busy); }, []);
+  const loadedTicketId = detail?.id;
+  useEffect(() => {
+    if (!loading && loadedTicketId && window.location.hash === "#actions") {
+      document.getElementById("actions")?.scrollIntoView({ block: "start" });
+    }
+  }, [loading, loadedTicketId]);
   const onTicketNeedsReloadChange = useCallback((needsReload: boolean) => {
     if (loadedDetailPath.current === pathname) { needsReloadRef.current = needsReload; setOperationNeedsReload(needsReload); }
   }, [pathname]);
@@ -219,7 +225,7 @@ export default function StaffTicketQueue() {
         </li>)}</ul> : <p>No attachments.</p>}
       </section>
       {detail.problemAppearsResolvedAt && <p role="status">Requester reports the problem appears resolved: {new Date(detail.problemAppearsResolvedAt).toLocaleString()}</p>}
-      <div id="actions"><ActionsTaken key={detail.id + "actions"} ticketId={detail.id} staff assignees={owners} ticketVersion={detail.version} ticketStatus={detail.status} currentUserId={user?.id}
+      <div><ActionsTaken key={detail.id + "actions"} ticketId={detail.id} staff assignees={owners} ticketVersion={detail.version} ticketStatus={detail.status} currentUserId={user?.id}
         onTicketVersionChange={onTicketVersionChange} onReloadTicket={reloadTicket} ticketBusy={saving} ticketNeedsReload={operationNeedsReload} onTicketNeedsReloadChange={onTicketNeedsReloadChange} onBusyChange={onActionsBusyChange} refreshKey={actionsRefresh} onAssigneesReload={onAssigneesReload} /></div>
       <CommunicationSection key={detail.id + "comments"} ticketId={detail.id} staff />
       <CommunicationSection key={detail.id + "notes"} ticketId={detail.id} staff internal />

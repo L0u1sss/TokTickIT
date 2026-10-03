@@ -1,0 +1,33 @@
+PR #68 local verification excerpts, 2026-10-03 (Asia/Bangkok)
+Repository: L0u1sss/TokTickIT
+Staging source: cd660734cc7e87e2b54b34f6d7c4bdad9ceee9d0
+Merge commit: baa49c857edc7facb8405d5a1897f81b50061cdb
+Implementation commit: 378c8e09f6700848d3045696bc095bafdb5bc8ae
+These are verified terminal excerpts, not complete raw logs or hosted CI.
+
+Server full regression: npm --prefix server run test:isolated
+ Test Files  37 passed (37)
+      Tests  489 passed (489)
+   Start at  16:47:08
+   Duration  72.55s
+This includes 7 Staff Dashboard API/service tests.
+
+Client full regression: npm --prefix client test
+ Test Files  22 passed (22)
+      Tests  161 passed (161)
+   Start at  16:48:58
+   Duration  15.82s
+This includes 7 Staff Dashboard component/role tests.
+
+Server: npm run build (tsc), npm run lint -- both completed with exit 0.
+Client: npm run build (tsc && vite build), npm run lint -- both completed with exit 0.
+Final client build after restoring original staff Dashboard CSS:
+ vite v6.4.3 building for production
+ 46 modules transformed
+ dist/assets/index-BZu8MK3W.css 259.76 kB, gzip 36.86 kB
+ dist/assets/index-nAW_xX-3.js 266.50 kB, gzip 79.38 kB
+ built in 1.01s
+
+Full regression ran in the changed worktree based on baa49c8; its application changes were then committed as 378c8e0. Only Dashboard CSS, browser-navigation steps and documentation changed after component/API regression. The final Dashboard browser run covers that CSS and 378c8e0; fresh database evidence records sourceSha, workingTreeDirty, runId and isolated schema. Dirty state at that run consists of generated evidence/doc changes, not application source changes.
+
+Browser raw logs are the neighboring pr68-*-e2e.txt files; these use the documented runner modes and disposable migrated PostgreSQL schemas. Injected browser zero/failure responses verify client UX; the Staff API/service tests separately verify a real empty schema and safe backend failure. Peer approval, hosted CI and final-main release are separate evidence.

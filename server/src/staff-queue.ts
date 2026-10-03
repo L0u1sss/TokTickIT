@@ -5,6 +5,7 @@ import { ApiError, invalidQueryError, toErrorResponse } from "./errors.js";
 import { parsePositivePathId } from "./path-contract.js";
 
 const sorts = ["updatedAt", "createdAt", "ticketNumber", "itPriority", "status"];
+export const staffOpenStatuses: Status[] = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"];
 const allowed = new Set(["search", "status", "requestedPriority", "itPriority", "ownerId", "sortBy", "sortOrder", "page", "pageSize"]);
 export function parseStaffQuery(raw: Record<string, unknown>) {
   const fail = (field: string): never => { throw invalidQueryError([{ field, issue: "Unsupported or invalid query value." }]); };
@@ -13,7 +14,7 @@ export function parseStaffQuery(raw: Record<string, unknown>) {
   const search = q.search?.trim() ?? null;
   if (search !== null && (!search || Array.from(search).length > 120)) fail("search");
   for (const key of ["requestedPriority", "itPriority"]) if (q[key] !== undefined && !Object.values(Priority).includes(q[key] as Priority)) fail(key);
-  if (q.status !== undefined && !Object.values(Status).includes(q.status as Status)) fail("status");
+  if (q.status !== undefined && q.status !== "OPEN_GROUP" && !Object.values(Status).includes(q.status as Status)) fail("status");
   const integer = (key: string, fallback: number, max: number) => {
     if (q[key] === undefined) return fallback;
     if (!/^[1-9]\d*$/.test(q[key]) || !Number.isSafeInteger(Number(q[key])) || Number(q[key]) > max) fail(key);
@@ -24,7 +25,7 @@ export function parseStaffQuery(raw: Record<string, unknown>) {
   const sortBy = q.sortBy ?? "updatedAt", sortOrder = q.sortOrder ?? "desc";
   if (!sorts.includes(sortBy)) fail("sortBy");
   if (!["asc", "desc"].includes(sortOrder)) fail("sortOrder");
-  return { search, status: (q.status as Status) ?? null, requestedPriority: (q.requestedPriority as Priority) ?? null,
+  return { search, status: (q.status as Status | "OPEN_GROUP") ?? null, requestedPriority: (q.requestedPriority as Priority) ?? null,
     itPriority: (q.itPriority as Priority) ?? null, ownerId, sortBy, sortOrder: sortOrder as "asc" | "desc",
     page: integer("page", 1, 21474836), pageSize: integer("pageSize", 20, 100) };
 }
@@ -47,7 +48,7 @@ staffQueueRouter.get("/tickets", async (req, res) => {
     const where: Prisma.TicketWhereInput = {
       ...(q.search ? { OR: [ { ticketNumber: { contains: q.search, mode: "insensitive" } }, { summary: { contains: q.search, mode: "insensitive" } },
         { requester: { displayName: { contains: q.search, mode: "insensitive" } } }, { requester: { email: { contains: q.search, mode: "insensitive" } } } ] } : {}),
-      ...(q.status ? { status: q.status } : {}), ...(q.requestedPriority ? { requestedPriority: q.requestedPriority } : {}),
+      ...(q.status ? { status: q.status === "OPEN_GROUP" ? { in: staffOpenStatuses } : q.status } : {}), ...(q.requestedPriority ? { requestedPriority: q.requestedPriority } : {}),
       ...(q.itPriority ? { itPriority: q.itPriority } : {}),
       ...(q.ownerId ? { ownerId: q.ownerId === "unassigned" ? null : q.ownerId === "me" ? res.locals.authenticatedUser.id : Number(q.ownerId) } : {}),
     };
